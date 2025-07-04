@@ -2,8 +2,12 @@
 
 package io.github.mimimishkin.jni
 
+import io.github.mimimishkin.jni.JNI.Version.VERSION_10
 import kotlinx.cinterop.*
 import raw_jni.*
+import raw_jni.JNI_VERSION_1_2
+import raw_jni.JNI_VERSION_1_6
+import raw_jni.JNI_VERSION_9
 import kotlin.String
 
 public object JNI {
@@ -65,12 +69,12 @@ public object JNI {
 public typealias JavaVMInitArgs = raw_jni.JavaVMInitArgs
 
 public inline fun MemScope.JavaVMInitArgs(
-    version: Int,
+    version: JNI.Version,
     options: List<Pair<String, CPointer<*>?>> = emptyList(),
     ignoreUnrecognized: Boolean = false,
 ): JavaVMInitArgs {
     return alloc<JavaVMInitArgs> {
-        this.version = version
+        this.version = version.nativeCode
         this.ignoreUnrecognized = ignoreUnrecognized.toJBoolean()
         this.nOptions = options.size
         this.options = allocArray(options.size) { index ->
@@ -79,6 +83,18 @@ public inline fun MemScope.JavaVMInitArgs(
         }
     }
 }
+
+public inline var JavaVMInitArgs.jniVersion: JNI.Version
+    get() = when (version) {
+        JNI_VERSION_1_1 -> JNI.Version.VERSION_1_1
+        JNI_VERSION_1_2 -> JNI.Version.VERSION_1_2
+        JNI_VERSION_1_4 -> JNI.Version.VERSION_1_4
+        JNI_VERSION_1_6 -> JNI.Version.VERSION_1_6
+        JNI_VERSION_1_8 -> JNI.Version.VERSION_1_8
+        JNI_VERSION_9 -> JNI.Version.VERSION_9
+        else -> VERSION_10
+    }
+    set(value) { version = value.nativeCode }
 
 public inline var JavaVMInitArgs.ignoreUnrecognizedOptions: Boolean
     get() = ignoreUnrecognized.toKBoolean()
@@ -176,11 +192,11 @@ public inline fun JavaVM.DestroyJavaVM() {
     checkJniResult(pointed!!.DestroyJavaVM!!(ptr))
 }
 
-public inline fun JavaVM.AttachCurrentThread(version: Int, name: String?, treadGroup: JObject?): JNIEnv {
+public inline fun JavaVM.AttachCurrentThread(version: JNI.Version = VERSION_10, name: String?, treadGroup: JObject?): JNIEnv {
     val env = JNIEnv(NativePtr.NULL)
     memScoped {
         val args = alloc<JavaVMAttachArgs> {
-            this.version = version
+            this.version = version.nativeCode
             this.name = name?.modifiedUtf8?.ptr
             this.group = treadGroup
         }
@@ -195,18 +211,18 @@ public inline fun JavaVM.DetachCurrentThread() {
     checkJniResult(pointed!!.DetachCurrentThread!!(ptr))
 }
 
-public inline fun JavaVM.GetEnv(version: Int): JNIEnv {
+public inline fun JavaVM.GetEnv(version: JNI.Version = VERSION_10): JNIEnv {
     val env = JNIEnv(NativePtr.NULL)
-    val res = pointed!!.GetEnv!!(ptr, env.ptr.reinterpret(), version)
+    val res = pointed!!.GetEnv!!(ptr, env.ptr.reinterpret(), version.nativeCode)
     checkJniResult(res)
     return env
 }
 
-public inline fun JavaVM.AttachCurrentThreadAsDaemon(version: Int, name: String?, treadGroup: JObject?): JNIEnv {
+public inline fun JavaVM.AttachCurrentThreadAsDaemon(version: JNI.Version = VERSION_10, name: String?, treadGroup: JObject?): JNIEnv {
     val env = JNIEnv(NativePtr.NULL)
     memScoped {
         val args = alloc<JavaVMAttachArgs> {
-            this.version = version
+            this.version = version.nativeCode
             this.name = name?.modifiedUtf8?.ptr
             this.group = treadGroup
         }
@@ -1045,11 +1061,3 @@ public inline fun JNIEnv.GetObjectRefType(obj: JObject?): JNI.RefType {
 public inline fun JNIEnv.GetModule(clazz: JClass): JObject {
     return pointed!!.GetModule!!(ptr, clazz)!!
 }
-
-
-//public inline fun JNIEnv.GetKotlinString(string: JString): String? {
-//    val (chars, _) = GetStringChars(string) ?: return null
-//    val res = chars.toKString()
-//    ReleaseStringChars(string, chars)
-//    return res
-//}
