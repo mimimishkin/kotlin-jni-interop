@@ -5,6 +5,8 @@ compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux
 compilerOpts.android = -I ./src/nativeInterop/cinterop/include/linux
 compilerOpts.osx = -I ./src/nativeInterop/cinterop/include/darwin
 compilerOpts.mingw = -I ./src/nativeInterop/cinterop/include/win32
+
+userSetupHint = You need to have JVM dynamic libraries on the linker path to use JNI bindings. Use NativeBinary.linkerOpts("-L $JAVA_HOME/lib/server -l jvm") to use JNI. For JAWT and others, you need libraries of the same name, they are located in $JAVA_HOME/lib
 ---
 typedef struct _jobject {} *jobject;
 typedef struct _jfieldID {} *jfieldID;
