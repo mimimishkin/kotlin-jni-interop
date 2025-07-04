@@ -1,5 +1,5 @@
 #headers = classfile_constants.h jawt.h jdwpTransport.h jni.h jvmti.h jvmticmlr.h
-headers = jni.h jawt.h
+headers = jni.h jni_md.h jawt.h jawt_md.h
 compilerOpts = -I ./src/nativeInterop/cinterop/include
 compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux
 compilerOpts.android = -I ./src/nativeInterop/cinterop/include/linux

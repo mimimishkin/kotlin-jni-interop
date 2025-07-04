@@ -14,14 +14,16 @@ description = "No-op/lightweight JNI bingdings for Kotlin Native"
 
 kotlin {
     val isMac = Os.isFamily(Os.FAMILY_MAC)
+    val isWindows = Os.isFamily(Os.FAMILY_WINDOWS)
+    val isLinux = !isMac && Os.isFamily(Os.FAMILY_UNIX)
     listOfNotNull(
-        mingwX64(),
-        linuxX64(),
-        linuxArm64(),
+        if (isWindows) mingwX64() else null,
         if (isMac) macosX64() else null,
         if (isMac) macosArm64() else null,
-        androidNativeX64(),
-        androidNativeArm64(),
+        if (isLinux) linuxX64() else null,
+        if (isLinux) linuxArm64() else null,
+        if (isLinux) androidNativeX64() else null,
+        if (isLinux) androidNativeArm64() else null,
     ).forEach {
         it.compilations.all {
             cinterops.create("raw_jni")
