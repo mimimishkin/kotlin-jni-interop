@@ -1,0 +1,11 @@
+#headers = classfile_constants.h jawt.h jdwpTransport.h jni.h jvmti.h jvmticmlr.h
+headers = jni.h
+compilerOpts = -I ./src/nativeInterop/cinterop/include
+compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux
+compilerOpts.android = -I ./src/nativeInterop/cinterop/include/linux
+compilerOpts.osx = -I ./src/nativeInterop/cinterop/include/darwin
+compilerOpts.mingw = -I ./src/nativeInterop/cinterop/include/win32
+---
+typedef struct _jobject {} *jobject;
+typedef struct _jfieldID {} *jfieldID;
+typedef struct _jmethodID {} *jmethodID;
