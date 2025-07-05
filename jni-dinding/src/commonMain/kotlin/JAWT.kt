@@ -77,8 +77,8 @@ public inline fun JAwt.FreeDrawingSurface(surface: DrawingSurface) {
  *
  * @since 1.4
  */
-public inline fun JAwt.Unlock(env: JNIEnv) {
-    Unlock!!.invoke(env.ptr)
+public inline fun JAwt.Lock(env: JNIEnv) {
+    Lock!!.invoke(env.ptr)
 }
 
 /**
@@ -86,8 +86,8 @@ public inline fun JAwt.Unlock(env: JNIEnv) {
  *
  * @since 1.4
  */
-public inline fun JAwt.Lock(env: JNIEnv) {
-    Lock!!.invoke(env.ptr)
+public inline fun JAwt.Unlock(env: JNIEnv) {
+    Unlock!!.invoke(env.ptr)
 }
 
 /**
