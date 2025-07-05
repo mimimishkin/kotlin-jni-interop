@@ -2,12 +2,9 @@
 
 package io.github.mimimishkin.jni
 
+import io.github.mimimishkin.jni.raw.*
 import io.github.mimimishkin.jni.JNI.Version.VERSION_10
 import kotlinx.cinterop.*
-import raw_jni.*
-import raw_jni.JNI_VERSION_1_2
-import raw_jni.JNI_VERSION_1_6
-import raw_jni.JNI_VERSION_9
 import kotlin.String
 
 /**
@@ -125,7 +122,7 @@ public object JNI {
  * @see preferences
  * @see ignoreUnrecognizedOptions
  */
-public typealias JavaVMInitArgs = raw_jni.JavaVMInitArgs
+public typealias JavaVMInitArgs = io.github.mimimishkin.jni.raw.JavaVMInitArgs
 
 /**
  * Allocates and initializes a [JavaVMInitArgs] structure.

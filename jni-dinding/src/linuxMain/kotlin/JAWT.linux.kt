@@ -4,7 +4,7 @@ package io.github.mimimishkin.jni
 
 import kotlinx.cinterop.pointed
 import kotlinx.cinterop.reinterpret
-import raw_jni.jawt_X11DrawingSurfaceInfo
+import io.github.mimimishkin.jni.raw.jawt_X11DrawingSurfaceInfo
 
 public typealias X11DrawingSurfaceInfo = jawt_X11DrawingSurfaceInfo
 

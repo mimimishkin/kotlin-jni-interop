@@ -5,7 +5,7 @@ package io.github.mimimishkin.jni
 import kotlinx.cinterop.pointed
 import kotlinx.cinterop.reinterpret
 import platform.windows.HWND
-import raw_jni.jawt_Win32DrawingSurfaceInfo
+import io.github.mimimishkin.jni.raw.jawt_Win32DrawingSurfaceInfo
 
 public typealias Win32DrawingSurfaceInfo = jawt_Win32DrawingSurfaceInfo
 

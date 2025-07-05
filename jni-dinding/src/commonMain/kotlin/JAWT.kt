@@ -2,14 +2,13 @@
 
 package io.github.mimimishkin.jni
 
+import io.github.mimimishkin.jni.raw.*
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.invoke
 import kotlinx.cinterop.pointed
 import kotlinx.cinterop.ptr
-import raw_jni.*
 
 public typealias JAwt = jawt
 
