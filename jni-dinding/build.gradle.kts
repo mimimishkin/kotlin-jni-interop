@@ -26,7 +26,9 @@ kotlin {
         if (isLinux) androidNativeArm64() else null,
     ).forEach {
         it.compilations.all {
-            cinterops.create("raw_jni")
+            cinterops.create("jni") {
+                packageName = "io.github.mimimishkin.jni.raw"
+            }
         }
     }
 

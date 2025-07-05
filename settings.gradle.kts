@@ -11,4 +11,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "java-kotlin-native-interop"
 
-include(":raw-jni-access")
+include(":jni-dinding")
