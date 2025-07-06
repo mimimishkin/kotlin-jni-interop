@@ -11,4 +11,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "java-kotlin-native-interop"
 
-include(":jni-dinding")
+include(":jni-binding")

@@ -4,8 +4,8 @@ package io.github.mimimishkin.jni
 
 import kotlinx.cinterop.memScoped
 
-context(env: JNIEnv)
-public inline fun <T> withAwt(version: JAWT.Version = JAWT.Version.VERSION_9, block: (JAwt) -> T): T {
+context(env: JniEnv)
+public inline fun <T> withAwt(version: AwtVersion = JAWT.lastVersion, block: (Awt) -> T): T {
     return memScoped {
         val awt = env.GetAwt(version)
         if (awt != null) {
@@ -16,19 +16,19 @@ public inline fun <T> withAwt(version: JAWT.Version = JAWT.Version.VERSION_9, bl
     }
 }
 
-context(env: JNIEnv)
-public inline fun <T> JAwt.withLock(block: () -> T): T {
-    Lock(env)
+context(env: JniEnv)
+public inline fun <T> Awt.withLock(block: () -> T): T {
+    Lock()
     try {
         return block()
     } finally {
-        Unlock(env)
+        Unlock()
     }
 }
 
-context(env: JNIEnv)
-public inline fun <T> JAwt.useDrawingSurface(target: JObject, block: (DrawingSurface) -> T): T {
-    val surface = GetDrawingSurface(env, target)
+context(env: JniEnv)
+public inline fun <T> Awt.useDrawingSurface(target: JObject, block: (DrawingSurface) -> T): T {
+    val surface = GetDrawingSurface(target)
     if (surface == null)
         throw IllegalStateException("DrawingSurface not found")
 
@@ -39,13 +39,13 @@ public inline fun <T> JAwt.useDrawingSurface(target: JObject, block: (DrawingSur
     }
 }
 
-public inline fun <T> DrawingSurface.withLock(block: () -> T): T {
+public inline fun <T> DrawingSurface.withLock(block: context(JniEnv) () -> T): T {
     val res = Lock()
     if (res and JAWT.LOCK_ERROR != 0)
         throw IllegalStateException("Error locking surface")
 
     try {
-        return block()
+        return block(env)
     } finally {
         Unlock()
     }

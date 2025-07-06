@@ -1,198 +1,235 @@
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "FunctionName")
 
 package io.github.mimimishkin.jni
 
-import io.github.mimimishkin.jni.raw.*
-import io.github.mimimishkin.jni.JNI.Version.VERSION_10
+import io.github.mimimishkin.jni.internal.raw.*
 import kotlinx.cinterop.*
+import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.reinterpret
 import kotlin.String
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 /**
- * Utilities and wrappers for interacting with the Java Native Interface (JNI) from Kotlin Native.
+ * Functions and utilities to work with JNI (Java Native Interface).
  *
  * Note: every `throws` in documentation is about java side.
  */
-public object JNI {
-    /**
-     * Specifies the mode for applying changes in `JNIEnv.Release<type>ArrayElements` and `JNIEnv.ReleasePrimitiveArrayCritical` functions.
-     */
-    public enum class ApplyChangesMode(@PublishedApi internal val nativeCode: Int) {
-        /** Commit changes back to the original array and safe the buffer. */
-        Commit(JNI_COMMIT),
-        /** Commit changes back to the original array and release the buffer. */
-        FinalCommit(0),
-        /** Abort changes and release the buffer. */
-        Abort(JNI_ABORT),
-    }
+public object JNI
 
-    /**
-     * Represents the type of JNI reference.
-     */
-    public enum class RefType {
-        /** Invalid reference type. */
-        Invalid,
-        /** Local reference. */
-        Local,
-        /** Global reference. */
-        Global,
-        /** Weak global reference. */
-        WeakGlobal
-    }
-
-    /**
-     * The supported JNI versions.
-     */
-    public enum class Version(@PublishedApi internal val nativeCode: Int) {
-        /** Java version 1.1 */
-        VERSION_1_1(JNI_VERSION_1_1),
-        /** Java version 1.2 */
-        VERSION_1_2(JNI_VERSION_1_2),
-        /** Java version 1.4 */
-        VERSION_1_4(JNI_VERSION_1_4),
-        /** Java version 1.6 */
-        VERSION_1_6(JNI_VERSION_1_6),
-        /** Java version 1.8 */
-        VERSION_1_8(JNI_VERSION_1_8),
-        /** Java version 9 */
-        VERSION_9(JNI_VERSION_9),
-        /** Java version 10 and later */
-        VERSION_10(JNI_VERSION_10),
-    }
-
-    /**
-     * Retrieves the default initialization arguments for the Java VM.
-     *
-     * Before calling this function, native code must set the [args]`.version` field to the JNI version it expects the
-     * VM to support.
-     * After this function returns, [args]`.version` will be set to the actual JNI version the VM supports.
-     *
-     * @param args The [JavaVMInitArgs] structure to fill with default values.
-     */
-    public inline fun GetDefaultJavaVMInitArgs(args: JavaVMInitArgs) {
-        checkJniResult(JNI_GetDefaultJavaVMInitArgs(args.ptr))
-    }
-
-    /**
-     * Loads and initializes a Java VM.
-     * The current thread becomes the main thread.
-     *
-     * Creation of multiple VMs in a single process is not supported.
-     *
-     * @param args The initialization arguments for the Java VM.
-     *
-     * @return A pair of [JavaVM] and [JNIEnv] of the main thread.
-     */
-    public inline fun CreateJavaVM(args: JavaVMInitArgs): Pair<JavaVM, JNIEnv> {
-        val vm = CPointerVar<JavaVM>(NativePtr.NULL)
-        val env = CPointerVar<JNIEnv>(NativePtr.NULL)
-
-        val res = JNI_CreateJavaVM(
-            pvm = vm.ptr,
-            penv = env.ptr.reinterpret(),
-            args = args.ptr
-        )
-
-        checkJniResult(res)
-        return vm.pointed!! to env.pointed!!
-    }
-
-    /**
-     * Returns all Java VMs that have been created in the order they are created.
-     *
-     * Creation of multiple VMs in a single process is not supported.
-     */
-    public inline fun GetCreatedJavaVMs(): List<JavaVM> {
-        return memScoped {
-            // test invocation to get VMs count
-            var vms = allocArray<CPointerVar<JavaVM>>(0)
-            val count = alloc<IntVar>()
-            checkJniResult(JNI_GetCreatedJavaVMs(vms, 0, count.ptr))
-
-            vms = allocArray(count.value)
-            checkJniResult(JNI_GetCreatedJavaVMs(vms, count.value, count.ptr))
-            List(count.value) { i -> vms[i]!!.pointed }
-        }
+/**
+ * Executes a [block] containing a JNI call that return one of `JNI_OK`, `JNI_ERR`, `JNI_EDETACHED`, `JNI_EVERSION`,
+ * `JNI_ENOMEM`, `JNI_EEXIST`, `JNI_EINVAL`.
+ *
+ * If the returned value is not `JNI_OK` throws corresponding exception.
+ *
+ * If you use [JniEnv] you don't need this.
+ */
+public inline fun JNI.safeCall(block: () -> Int) {
+    when (block()) {
+        JNI_OK -> {}
+        JNI_EDETACHED -> throw IllegalStateException("Thread detached from the VM")
+        JNI_EVERSION -> throw IllegalArgumentException("JNI version error")
+        JNI_ENOMEM -> throw IllegalStateException("Not enough memory")
+        JNI_EEXIST -> throw IllegalStateException("VM already created")
+        JNI_EINVAL -> throw IllegalArgumentException()
+        else -> throw Exception()
     }
 }
+
+/**
+ * Specifies the mode for applying changes in `JNIEnv.Release<type>ArrayElements` and 
+ * `JNIEnv.ReleasePrimitiveArrayCritical` functions.
+ */
+public enum class ApplyChangesMode(public val nativeCode: Int) {
+    /** Commit changes back to the original array and safe the buffer. */
+    Commit(JNI_COMMIT),
+    /** Commit changes back to the original array and release the buffer. */
+    FinalCommit(0),
+    /** Abort changes and release the buffer. */
+    Abort(JNI_ABORT),
+}
+
+/**
+ * Represents the type of JNI reference.
+ *
+ * @see [JniEnv.GetObjectRefType]
+ */
+public enum class JObjectRefType {
+    /** Invalid reference type. */
+    Invalid,
+    /** Local reference. */
+    Local,
+    /** Global reference. */
+    Global,
+    /** Weak global reference. */
+    WeakGlobal
+}
+
+/**
+ * Java version that corresponds to the new JNI API.
+ * 
+ * By default, JNI functions get JNI of version [JNI.compatibilityVersion]. To request later versions, you need to
+ * expose [JNI_OnLoad](https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/invocation.html#JNJI_OnLoad).
+ */
+public typealias JniVersion = Int
+
+/**
+ * Java version *1.1*.
+ */
+public inline val JNI.v1: JniVersion get() = JNI_VERSION_1_1
+
+/**
+ * Java version *1.2*.
+ */
+public inline val JNI.v2: JniVersion get() = JNI_VERSION_1_2
+
+/**
+ * Java version *1.4*.
+ */
+public inline val JNI.v3: JniVersion get() = JNI_VERSION_1_4
+
+/**
+ * Java version *1.6*.
+ */
+public inline val JNI.v6: JniVersion get() = JNI_VERSION_1_6
+
+/**
+ * Java version *1.8*
+ */
+public inline val JNI.v8: JniVersion get() = JNI_VERSION_1_8
+
+/**
+ * Java version *9*.
+ */
+public inline val JNI.v9: JniVersion get() = JNI_VERSION_9
+
+/**
+ * Java version *10* and later.
+ */
+public inline val JNI.v10: JniVersion get() = JNI_VERSION_10
+
+/**
+ * Latest version of the JNI API.
+ * 
+ * This is always [JNI.v10].
+ */
+public inline val JNI.lastVersion: JniVersion get() = JNI.v10
+
+/**
+ * The version of the JNI that is available in JNI functions by default if not override it via
+ * [JNI_OnLoad](https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/invocation.html#JNJI_OnLoad).
+ * 
+ * This is always [JNI.v1].
+ */
+public inline val JNI.compatibilityVersion: JniVersion get() = JNI.v1
+
+/**
+ * Retrieves the default initialization arguments for the Java VM.
+ *
+ * Before calling this function, native code must set the [args]`.version` field to the JNI version it expects the
+ * VM to support.
+ * After this function returns, [args]`.version` will be set to the actual JNI version the VM supports.
+ *
+ * No need to call it in new JDK/JRE.
+ *
+ * @param args The [JavaVMInitArgs] structure to fill with default values.
+ */
+public inline fun JNI.GetDefaultJavaVMInitArgs(args: JavaVMInitArgs) {
+    JNI.safeCall {
+        JNI_GetDefaultJavaVMInitArgs(args)
+    }
+}
+
+/**
+ * Loads and initializes a Java VM.
+ * The current thread becomes the main thread.
+ *
+ * Creation of multiple VMs in a single process is not supported.
+ *
+ * @param args The initialization arguments for the Java VM.
+ *
+ * @return A pair of [JavaVM] and [JniEnv] of the main thread.
+ *
+ * @see javaVMInitArgs
+ */
+context(memScope: NativePlacement)
+public inline fun JNI.CreateJavaVM(args: JavaVMInitArgs): Pair<JavaVM, JniEnv> {
+    val vm = memScope.alloc<CPointerVar<JavaVM>>()
+    val env = memScope.alloc<CPointerVar<JniEnv>>()
+
+    JNI.safeCall {
+        JNI_CreateJavaVM(
+            pvm = vm.ptr,
+            penv = env.ptr.reinterpret(),
+            args = args
+        )
+    }
+
+    return vm.pointed!! to env.pointed!!
+}
+
+
+/**
+ * Returns all Java VMs that have been created in the order they are created.
+ *
+ * Creation of multiple VMs in a single process is not supported.
+ */
+context(memScope: NativePlacement)
+public inline fun JNI.GetCreatedJavaVMs(): List<JavaVM> {
+    // test invocation to get VMs count
+    val count = memScope.alloc<IntVar>()
+    JNI.safeCall {
+        JNI_GetCreatedJavaVMs(null, 0, count.ptr)
+    }
+
+    val vms = memScope.allocArray<CPointerVar<JavaVM>>(count.value)
+    JNI.safeCall {
+        JNI_GetCreatedJavaVMs(vms, count.value, count.ptr)
+    }
+
+    return List(count.value) { i -> vms[i]!!.pointed }
+}
+
+internal typealias JavaVMInitArgsStruct = io.github.mimimishkin.jni.internal.raw.JavaVMInitArgs
 
 /**
  * JavaVM initialization arguments structure.
- *
- * @see jniVersion
- * @see preferences
- * @see ignoreUnrecognizedOptions
  */
-public typealias JavaVMInitArgs = io.github.mimimishkin.jni.raw.JavaVMInitArgs
-
-/**
- * Allocates and initializes a [JavaVMInitArgs] structure.
- *
- * @param version The JNI version to use.
- * @param options A list of option string/extraInfo JavaVMOption pairs.
- * @param ignoreUnrecognized Whether to ignore unrecognized options.
- */
-public inline fun MemScope.JavaVMInitArgs(
-    version: JNI.Version,
-    options: List<Pair<String, CPointer<*>?>> = emptyList(),
-    ignoreUnrecognized: Boolean = false,
-): JavaVMInitArgs {
-    return alloc<JavaVMInitArgs> {
-        this.version = version.nativeCode
-        this.ignoreUnrecognized = ignoreUnrecognized.toJBoolean()
-        this.nOptions = options.size
-        this.options = allocArray(options.size) { index ->
-            this.optionString = options[index].first.cstr.ptr
-            this.extraInfo = options[index].second
-        }
-    }
-}
+public typealias JavaVMInitArgs = CPointer<JavaVMInitArgsStruct>
 
 /**
  * The JNI version for this [JavaVMInitArgs].
  */
-public inline var JavaVMInitArgs.jniVersion: JNI.Version
-    get() = when (version) {
-        JNI_VERSION_1_1 -> JNI.Version.VERSION_1_1
-        JNI_VERSION_1_2 -> JNI.Version.VERSION_1_2
-        JNI_VERSION_1_4 -> JNI.Version.VERSION_1_4
-        JNI_VERSION_1_6 -> JNI.Version.VERSION_1_6
-        JNI_VERSION_1_8 -> JNI.Version.VERSION_1_8
-        JNI_VERSION_9 -> JNI.Version.VERSION_9
-        else -> VERSION_10
-    }
-    set(value) { version = value.nativeCode }
+public inline var JavaVMInitArgs.version: JniVersion
+    get() = pointed.version
+    set(value) { pointed.version = value }
 
 /**
  * Whether unrecognized options are ignored for this [JavaVMInitArgs].
  */
-public inline var JavaVMInitArgs.ignoreUnrecognizedOptions: Boolean
-    get() = ignoreUnrecognized.toKBoolean()
-    set(value) { ignoreUnrecognized = value.toJBoolean() }
+public inline var JavaVMInitArgs.ignoreUnrecognized: Boolean
+    get() = pointed.ignoreUnrecognized.toKBoolean()
+    set(value) { pointed.ignoreUnrecognized = value.toJBoolean() }
 
 /**
- * String/extraInfo pairs list for this [JavaVMInitArgs].
+ * optionString/extraInfo pairs list for this [JavaVMInitArgs].
  */
-public inline val JavaVMInitArgs.preferences: List<Pair<String, CPointer<*>?>>
-    get() = List(nOptions) { i -> options!![i].optionString!!.toKString() to options!![i].extraInfo }
-
-@PublishedApi
-internal fun checkJniResult(res: Int) {
-    when (res) {
-        JNI_OK -> {}
-        JNI_ERR -> throw Exception()
-        JNI_EDETACHED -> throw IllegalStateException("thread detached from the VM")
-        JNI_EVERSION -> throw IllegalArgumentException("JNI version error")
-        JNI_ENOMEM -> throw IllegalStateException("not enough memory")
-        JNI_EEXIST -> throw IllegalStateException("VM already created")
-        JNI_EINVAL -> throw IllegalArgumentException()
+context(memScope: AutofreeScope)
+public inline var JavaVMInitArgs.options: Map<String, COpaquePointer?>
+    get() = (0 until pointed.nOptions).associate { i -> 
+        pointed.options!![i].optionString!!.toKString() to pointed.options!![i].extraInfo
     }
-}
-
-@PublishedApi
-internal inline fun Boolean.toJBoolean(): UByte = if (this) JNI_TRUE.toUByte() else JNI_FALSE.toUByte()
-
-@PublishedApi
-internal inline fun UByte.toKBoolean(): Boolean = this == JNI_TRUE.toUByte()
+    set(value) {
+        pointed.nOptions = value.size
+        pointed.options = memScope.allocArray<JavaVMOption>(value.size).apply {
+            value.asIterable().forEachIndexed { index, (option, extra) ->
+                this[index].optionString = option.cstr.getPointer(memScope)
+                this[index].extraInfo = extra
+            }
+        }
+    }
 
 /**
  * Converts a String into a null-terminated, modified UTF-8 encoded byte sequence for interoperation
@@ -200,147 +237,173 @@ internal inline fun UByte.toKBoolean(): Boolean = this == JNI_TRUE.toUByte()
  */
 public val String.modifiedUtf8: CValues<ByteVar> get() {
     // Estimate the max possible length: 3 bytes per char + 1 for null terminator
-    val byteArray = ByteArray(this.length * 3 + 1)
+    val bytes = ByteArray(this.length * 3 + 1)
     var pos = 0
     for (ch in this) {
         when (ch) {
             '\u0000' -> {
                 // Null char is encoded as 0xC0 0x80
-                byteArray[pos++] = 0xC0.toByte()
-                byteArray[pos++] = 0x80.toByte()
+                bytes[pos++] = 0xC0.toByte()
+                bytes[pos++] = 0x80.toByte()
             }
             in '\u0001'..'\u007F' -> {
                 // 1-byte encoding
-                byteArray[pos++] = ch.code.toByte()
+                bytes[pos++] = ch.code.toByte()
             }
             in '\u0080'..'\u07FF' -> {
                 // 2-byte encoding
-                byteArray[pos++] = (0xC0 or (ch.code shr 6)).toByte()
-                byteArray[pos++] = (0x80 or (ch.code and 0x3F)).toByte()
+                bytes[pos++] = (0xC0 or (ch.code shr 6)).toByte()
+                bytes[pos++] = (0x80 or (ch.code and 0x3F)).toByte()
             }
             else -> {
                 // 3-byte encoding (including surrogates)
-                byteArray[pos++] = (0xE0 or (ch.code shr 12)).toByte()
-                byteArray[pos++] = (0x80 or ((ch.code shr 6) and 0x3F)).toByte()
-                byteArray[pos++] = (0x80 or (ch.code and 0x3F)).toByte()
+                bytes[pos++] = (0xE0 or (ch.code shr 12)).toByte()
+                bytes[pos++] = (0x80 or ((ch.code shr 6) and 0x3F)).toByte()
+                bytes[pos++] = (0x80 or (ch.code and 0x3F)).toByte()
             }
         }
     }
-    // Null-terminate
-    byteArray[pos++] = 0
-    return byteArray.copyOf(pos).toCValues()
+
+    return object : CValues<ByteVar>() {
+        override val size = pos + 1
+        override val align = 1
+
+        override fun place(placement: CPointer<ByteVar>): CPointer<ByteVar> {
+            for (i in 0..<size) placement[i] = bytes[i]
+            // Null-terminate
+            placement[size] = 0
+            return placement
+        }
+    }
 }
+
+/**
+ * Java interprets boolean values as unsigned byte.
+ */
+public typealias JBoolean = UByte
+
+/**
+ * Converts Kotlin boolean to JVM boolean.
+ */
+public inline fun Boolean.toJBoolean(): JBoolean = if (this) JNI_TRUE.toUByte() else JNI_FALSE.toUByte()
+
+/**
+ * Converts JVM boolean to Kotlin boolean.
+ */
+public inline fun JBoolean.toKBoolean(): Boolean = this == JNI_TRUE.toUByte()
+
+/**
+ * Java interprets char values as unsigned short.
+ */
+public typealias JChar = UShort
+
+/**
+ * Converts Kotlin char to JVM char.
+ */
+public inline fun Char.toJChar(): JChar = code.toUShort()
+
+/**
+ * Converts JVM char to Kotlin char.
+ */
+public inline fun JChar.toKChar(): Char = Char(this)
 
 /**
  * Pointer to `java.lang.Object`.
  */
 public typealias JObject = CPointer<_jobject>
+
 /**
  * Pointer to `java.lang.reflect.Class`.
  */
 public typealias JClass = JObject
+
 /**
  * Pointer to `java.lang.Throwable`.
  */
 public typealias JThrowable = JObject
+
 /**
  * Pointer to `java.lang.String`.
  */
 public typealias JString = JObject
+
 /**
  * Pointer to an array.
  */
 public typealias JArray = JObject
+
 /**
  * Pointer to a boolean[] object.
  */
 public typealias JBooleanArray = JArray
+
 /**
  * Pointer to a byte[] object.
  */
 public typealias JByteArray = JArray
+
 /**
  * Pointer to a char[] object.
  */
 public typealias JCharArray = JArray
+
 /**
  * Pointer to a short[] object.
  */
 public typealias JShortArray = JArray
+
 /**
  * Pointer to an int[] object.
  */
 public typealias JIntArray = JArray
+
 /**
  * Pointer to a long[] object.
  */
 public typealias JLongArray = JArray
+
 /**
  * Pointer to a float[] object.
  */
 public typealias JFloatArray = JArray
+
 /**
  * Pointer to a double[] object.
  */
 public typealias JDoubleArray = JArray
+
 /**
  * Pointer to an array of an object type.
  */
 public typealias JObjectArray = JArray
+
 /**
  * Pointer to `java.lang.Object` which is not counted by GC.
  */
 public typealias JWeak = JObject
 
 /**
- * Special structure to pass parameters to JNI functions.
+ * Union in which JNI expect arguments to pass to Java functions.
  */
 public typealias JValue = jvalue
 
 /**
- * Returns an [JValue] with a boolean initializer.
+ * C array of [JValue].
+ *
+ * Example:
+ * ```
+ * with(env) {
+ *     val clazz = FindClass("path/to/Class")!!
+ *     val method = GetMethodID(clazz, "myMethod", "(Ljava/lang/String;I)Ljava/lang/String;")!!
+ *     val javaString = "Meow".toJString()
+ *     val javaRes = CallStaticObjectMethod(clazz, method, jArgs { ref(javaString); int(42) })
+ *     val res = javaRes?.toKString()
+ * }
+ * ```
+ *
+ * @see jArgs
  */
-public inline fun JValue(boolean: Boolean): JValue.() -> Unit = { z = boolean.toJBoolean() }
-
-/**
- * Returns an [JValue] with a byte initializer.
- */
-public inline fun JValue(byte: Byte): JValue.() -> Unit = { b = byte }
-
-/**
- * Returns an [JValue] with a char initializer.
- */
-public inline fun JValue(char: Char): JValue.() -> Unit = { c = char.code.toUShort() }
-
-/**
- * Returns an [JValue] with a short initializer.
- */
-public inline fun JValue(short: Short): JValue.() -> Unit = { s = short }
-
-/**
- * Returns an [JValue] with an int initializer.
- */
-public inline fun JValue(int: Int): JValue.() -> Unit = { i = int }
-
-/**
- * Returns an [JValue] with a long initializer.
- */
-public inline fun JValue(long: Long): JValue.() -> Unit = { j = long }
-
-/**
- * Returns an [JValue] with a float initializer.
- */
-public inline fun JValue(float: Float): JValue.() -> Unit = { f = float }
-
-/**
- * Returns an [JValue] with a double initializer.
- */
-public inline fun JValue(double: Double): JValue.() -> Unit = { d = double }
-
-/**
- * Returns an [JValue] with an obj initializer.
- */
-public inline fun JValue(obj: JObject?): JValue.() -> Unit = { l = obj }
+public typealias JArguments = CArrayPointer<JValue>
 
 /**
  * Java unique field ID.
@@ -367,11 +430,13 @@ public typealias JavaVM = CPointerVar<JNIInvokeInterface_>
  * the only non-daemon user-level thread.
  */
 public inline fun JavaVM.DestroyJavaVM() {
-    checkJniResult(pointed!!.DestroyJavaVM!!(ptr))
+    JNI.safeCall {
+        pointed!!.DestroyJavaVM!!(ptr)
+    }
 }
 
 /**
- * Attaches the current thread to a Java VM. Returns a [JNIEnv].
+ * Attaches the current thread to a Java VM. Returns a [JniEnv].
  *
  * Trying to attach a thread that is already attached is a no-op.
  *
@@ -380,22 +445,29 @@ public inline fun JavaVM.DestroyJavaVM() {
  * When a thread is attached to the VM, the context class loader is the bootstrap loader.
  *
  * @param version the requested JNI version.
- * @param name the name of the thread
- * @param group global ref of a ThreadGroup object
+ * @param name the name of the thread in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or
+ * **if you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ * @param group global ref of a ThreadGroup object.
  */
-public inline fun JavaVM.AttachCurrentThread(version: JNI.Version = VERSION_10, name: String?, group: JObject?): JNIEnv {
-    val env = JNIEnv(NativePtr.NULL)
-    memScoped {
-        val args = alloc<JavaVMAttachArgs> {
-            this.version = version.nativeCode
-            this.name = name?.modifiedUtf8?.ptr
-            this.group = group
-        }
+context(memScope: AutofreeScope)
+public inline fun JavaVM.AttachCurrentThread(
+    version: JniVersion = JNI.lastVersion,
+    name: CValuesRef<ByteVar>? = null,
+    group: JObject? = null
+): JniEnv {
+    val env = memScope.alloc<COpaquePointerVar>()
 
-        val res = pointed!!.AttachCurrentThread!!(ptr, env.ptr.reinterpret(), args.ptr)
-        checkJniResult(res)
+    val args = memScope.alloc<JavaVMAttachArgs> {
+        this.version = version
+        this.name = name?.getPointer(memScope)
+        this.group = group
     }
-    return env
+
+    JNI.safeCall {
+        pointed!!.AttachCurrentThread!!(ptr, env.ptr, args.ptr)
+    }
+
+    return env.reinterpret<CPointerVar<JniEnv>>().pointed!!
 }
 
 /**
@@ -406,22 +478,28 @@ public inline fun JavaVM.AttachCurrentThread(version: JNI.Version = VERSION_10, 
  * effect on the daemon status of the thread.
  *
  * @param version the requested JNI version.
- * @param name the name of the thread
- * @param group global ref of a ThreadGroup object
+ * @param name the name of the thread in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or
+ * **if you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ * @param group global ref of a ThreadGroup object.
  */
-public inline fun JavaVM.AttachCurrentThreadAsDaemon(version: JNI.Version = VERSION_10, name: String?, group: JObject?): JNIEnv {
-    val env = JNIEnv(NativePtr.NULL)
-    memScoped {
-        val args = alloc<JavaVMAttachArgs> {
-            this.version = version.nativeCode
-            this.name = name?.modifiedUtf8?.ptr
-            this.group = group
-        }
-
-        val res = pointed!!.AttachCurrentThreadAsDaemon!!(ptr, env.ptr.reinterpret(), args.ptr)
-        checkJniResult(res)
+context(memScope: AutofreeScope)
+public inline fun JavaVM.AttachCurrentThreadAsDaemon(
+    version: JniVersion = JNI.lastVersion,
+    name: CValuesRef<ByteVar>? = null,
+    group: JObject? = null
+): JniEnv {
+    val env = memScope.alloc<COpaquePointerVar>()
+    val args = memScope.alloc<JavaVMAttachArgs> {
+        this.version = version
+        this.name = name?.getPointer(memScope)
+        this.group = group
     }
-    return env
+
+    JNI.safeCall {
+        pointed!!.AttachCurrentThreadAsDaemon!!(ptr, env.ptr, args.ptr)
+    }
+
+    return env.reinterpret<CPointerVar<JniEnv>>().pointed!!
 }
 
 /**
@@ -431,32 +509,36 @@ public inline fun JavaVM.AttachCurrentThreadAsDaemon(version: JNI.Version = VERS
  * The main thread can be detached from the VM.
  */
 public inline fun JavaVM.DetachCurrentThread() {
-    checkJniResult(pointed!!.DetachCurrentThread!!(ptr))
+    JNI.safeCall {
+        pointed!!.DetachCurrentThread!!(ptr)
+    }
 }
 
 /**
  * If the current thread is not attached to the VM or the specified version is not supported, throw an exception.
- * Otherwise, returns [JNIEnv].
+ * Otherwise, returns [JniEnv].
  *
  * @param version the requested JNI version.
  */
-public inline fun JavaVM.GetEnv(version: JNI.Version = VERSION_10): JNIEnv {
-    val env = JNIEnv(NativePtr.NULL)
-    val res = pointed!!.GetEnv!!(ptr, env.ptr.reinterpret(), version.nativeCode)
-    checkJniResult(res)
-    return env
+context(memScope: NativePlacement)
+public inline fun JavaVM.GetEnv(version: JniVersion = JNI.lastVersion): JniEnv {
+    val env = memScope.alloc<COpaquePointerVar>()
+    JNI.safeCall {
+        pointed!!.GetEnv!!(ptr, env.ptr, version)
+    }
+    return env.reinterpret<CPointerVar<JniEnv>>().pointed!!
 }
 
 /**
  * Struct to operate with Native JNI API.
  */
-public typealias JNIEnv = CPointerVar<JNINativeInterface_>
+public typealias JniEnv = CPointerVar<JNINativeInterface_>
 
 /**
  * Returns the version of the native method interface.
- * For Java SE Platform 10 and later, it returns [JNI_VERSION_10].
+ * For Java SE Platform 10 and later, it returns [JNI.v10].
  */
-public inline fun JNIEnv.GetVersion(): Int {
+public inline fun JniEnv.GetVersion(): JniVersion {
     return pointed!!.GetVersion!!(ptr)
 }
 
@@ -465,11 +547,25 @@ public inline fun JNIEnv.GetVersion(): Int {
  *
  * The buffer containing the raw class data is not referenced by the VM after the [DefineClass] call returns, and it may
  * be discarded if desired.
+ *
+ * @param name the name of the class or interface to be defined. May be `null`, or it must match the name encoded within
+ * the class file data. Must be encoded in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it or
+ * **if you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ * @param loader a class loader assigned to the defined class. May be `null`, indicating the "null class loader" (or
+ * "bootstrap class loader").
+ * @param classBuf buffer containing the `.class` file data.
+ * @param classBufLen buffer length.
+ *
+ * @return a Java class object or `null` if an error occurs.
+ *
+ * @throws ClassFormatError if the class data does not specify a valid class.
+ * @throws ClassCircularityError if a class or interface is its own superclass or superinterface.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ * @throws SecurityException if the caller attempts to define a class in the "java" package tree.
  */
-public inline fun JNIEnv.DefineClass(name: String?, loader: JObject?, classBuf: CPointer<ByteVarOf<Byte>>, classBufLen: Int): JClass? {
-    return memScoped {
-        pointed!!.DefineClass!!(ptr, name?.modifiedUtf8?.ptr, loader, classBuf, classBufLen)
-    }
+context(memScope: AutofreeScope)
+public inline fun JniEnv.DefineClass(name: CValuesRef<ByteVar>?, loader: JObject?, classBuf: CPointer<ByteVar>, classBufLen: Int): JClass? {
+    return pointed!!.DefineClass!!(ptr, name?.getPointer(memScope), loader, classBuf, classBufLen)
 }
 
 /**
@@ -482,13 +578,13 @@ public inline fun JNIEnv.DefineClass(name: String?, loader: JObject?, classBuf: 
  * Otherwise, the proper class loader will be invoked to load, link and initialize the named class.
  *
  * Since JDK 1.2, when [FindClass] is called through the Invocation Interface, there is no current native method or its
- * associated class loader. In that case, the result of ClassLoader.getSystemClassLoader is used. This is the class
+ * associated class loader. In that case, the result of `ClassLoader.getSystemClassLoader` is used. This is the class
  * loader the virtual machine creates for applications, and is able to locate classes listed in the
  * `java.class.path` property.
  *
  * If [FindClass] is called from a library lifecycle function hook, the class loader is determined as follows:
  * for JNI_OnLoad and JNI_OnLoad_L the class loader of the class that is loading the native library is used for
- * JNI_OnUnload and JNI_OnUnload_L the class loader returned by ClassLoader.getSystemClassLoader is used (as the class
+ * JNI_OnUnload and JNI_OnUnload_L the class loader returned by `ClassLoader.getSystemClassLoader` is used (as the class
  * loader used at on-load time may no longer exist).
  * The name argument is a fully qualified class name or an array type signature.
  *
@@ -498,17 +594,19 @@ public inline fun JNIEnv.DefineClass(name: String?, loader: JObject?, classBuf: 
  * See also: [JNI_OnLoad](https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/invocation.html#JNJI_OnLoad),
  * [JNI_OnUnload](https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/invocation.html#JNI_OnUnload)
  *
- * @return a class object from a fully qualified name, or NULL if the class cannot be found.
+ * @param name name of the class in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or **if you
+ * are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ *
+ * @return a class object from a fully qualified name, or `null` if the class cannot be found.
  *
  * @throws ClassFormatError if the class data does not specify a valid class.
- * @throws ClassCircularityError if a class or interface would be its own superclass or superinterface.
+ * @throws ClassCircularityError if a class or interface is its own superclass or superinterface.
  * @throws NoClassDefFoundError if no definition for a requested class or interface can be found.
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.FindClass(name: String): JClass? {
-    return memScoped {
-        pointed!!.FindClass!!(ptr, name.modifiedUtf8.ptr)
-    }
+context(memScope: AutofreeScope)
+public inline fun JniEnv.FindClass(name: CValuesRef<ByteVar>): JClass? {
+    return pointed!!.FindClass!!(ptr, name.getPointer(memScope))
 }
 
 /**
@@ -518,7 +616,7 @@ public inline fun JNIEnv.FindClass(name: String): JClass? {
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.FromReflectedMethod(method: JObject): JMethodID? {
+public inline fun JniEnv.FromReflectedMethod(method: JObject): JMethodID? {
     return pointed!!.FromReflectedMethod!!(ptr, method)
 }
 
@@ -529,7 +627,7 @@ public inline fun JNIEnv.FromReflectedMethod(method: JObject): JMethodID? {
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.FromReflectedField(field: JObject): JFieldID? {
+public inline fun JniEnv.FromReflectedField(field: JObject): JFieldID? {
     return pointed!!.FromReflectedField!!(ptr, field)
 }
 
@@ -544,7 +642,7 @@ public inline fun JNIEnv.FromReflectedField(field: JObject): JFieldID? {
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.ToReflectedMethod(cls: JClass, methodID: JMethodID, isStatic: Boolean): JObject? {
+public inline fun JniEnv.ToReflectedMethod(cls: JClass, methodID: JMethodID, isStatic: Boolean): JObject? {
     return pointed!!.ToReflectedMethod!!(ptr, cls, methodID, isStatic.toJBoolean())
 }
 
@@ -552,13 +650,13 @@ public inline fun JNIEnv.ToReflectedMethod(cls: JClass, methodID: JMethodID, isS
  * Converts a field ID derived from [cls] to a `java.lang.reflect.Field` object.
  * `isStatic` must be set to `true` if fieldID refers to a static field.
  *
- * @return an instance of the java.lang.reflect.Field which corresponds to the given fieldID, or NULL if the operation fails.
+ * @return an instance of the java.lang.reflect.Field which corresponds to the given fieldID, or `null` if the operation fails.
  *
  * @throws OutOfMemoryError if fails.
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.ToReflectedField(cls: JClass, fieldID: JFieldID, isStatic: Boolean): JObject? {
+public inline fun JniEnv.ToReflectedField(cls: JClass, fieldID: JFieldID, isStatic: Boolean): JObject? {
     return pointed!!.ToReflectedField!!(ptr, cls, fieldID, isStatic.toJBoolean())
 }
 
@@ -570,7 +668,7 @@ public inline fun JNIEnv.ToReflectedField(cls: JClass, fieldID: JFieldID, isStat
  *
  * @return the superclass of the class represented by clazz, or `null`.
  */
-public inline fun JNIEnv.GetSuperclass(clazz: JClass): JClass? {
+public inline fun JniEnv.GetSuperclass(clazz: JClass): JClass? {
     return pointed!!.GetSuperclass!!(ptr, clazz)
 }
 
@@ -578,30 +676,35 @@ public inline fun JNIEnv.GetSuperclass(clazz: JClass): JClass? {
  * Determines whether an object of [clazz1] can be safely cast to [clazz2].
  *
  * Returns `true` if either of the following is true:
- * - The first and second class arguments refer to the same Java class.
+ * - The first and the second class arguments refer to the same Java class.
  * - The first class is a subclass of the second class.
  * - The first class has the second class as one of its interfaces.
  */
-public inline fun JNIEnv.IsAssignableFrom(clazz1: JClass, clazz2: JClass): Boolean {
+public inline fun JniEnv.IsAssignableFrom(clazz1: JClass, clazz2: JClass): Boolean {
     return pointed!!.IsAssignableFrom!!(ptr, clazz1, clazz2).toKBoolean()
 }
 
 /**
  * Causes a `java.lang.Throwable` object to be thrown.
  */
-public inline fun JNIEnv.Throw(throwable: JThrowable) {
-    checkJniResult(pointed!!.Throw!!(ptr, throwable))
+public inline fun JniEnv.Throw(throwable: JThrowable) {
+    JNI.safeCall {
+        pointed!!.Throw!!(ptr, throwable)
+    }
 }
 
 /**
- * Constructs an exception object from the specified class with the message specified by a message and causes that exception to be thrown.
+ * Constructs an exception object from the specified [clazz] with the [message] and causes that exception to be thrown.
  *
  * @param clazz a subclass of `java.lang.Throwable`
- * @param message the message used to construct the `java.lang.Throwable` object.
+ * @param message the message used to construct the `java.lang.Throwable` object in the null-terminated modified UTF-8.
+ * Use [String.modifiedUtf8] to get it, or **if you are sure that your string doesn't have illegal characters** you may
+ * use optimized [String.utf8].
  */
-public inline fun JNIEnv.ThrowNew(clazz: JClass, message: String?) {
-    memScoped {
-        checkJniResult(pointed!!.ThrowNew!!(ptr, clazz, message?.modifiedUtf8?.ptr))
+context(memScope: AutofreeScope)
+public inline fun JniEnv.ThrowNew(clazz: JClass, message: CValuesRef<ByteVar>?) {
+    JNI.safeCall {
+        pointed!!.ThrowNew!!(ptr, clazz, message?.getPointer(memScope))
     }
 }
 
@@ -610,8 +713,10 @@ public inline fun JNIEnv.ThrowNew(clazz: JClass, message: String?) {
  * [ExceptionClear], or the Java code handles the exception.
  *
  * @return Returns the exception object currently in the process of being thrown, or `null` if there is no one.
+ *
+ * @see ExceptionCheck
  */
-public inline fun JNIEnv.ExceptionOccurred(): JThrowable? {
+public inline fun JniEnv.ExceptionOccurred(): JThrowable? {
     return pointed!!.ExceptionOccurred!!(ptr)
 }
 
@@ -621,7 +726,7 @@ public inline fun JNIEnv.ExceptionOccurred(): JThrowable? {
  * The pending exception is cleared as a side effect of calling this function.
  * This is a convenience routine provided for debugging.
  */
-public inline fun JNIEnv.ExceptionDescribe() {
+public inline fun JniEnv.ExceptionDescribe() {
     pointed!!.ExceptionDescribe!!(ptr)
 }
 
@@ -629,7 +734,7 @@ public inline fun JNIEnv.ExceptionDescribe() {
  * Clears any exception that is currently being thrown.
  * If no exception is currently being thrown, this routine has no effect.
  */
-public inline fun JNIEnv.ExceptionClear() {
+public inline fun JniEnv.ExceptionClear() {
     pointed!!.ExceptionClear!!(ptr)
 }
 
@@ -637,11 +742,14 @@ public inline fun JNIEnv.ExceptionClear() {
  * Raises a fatal error and does not expect the VM to recover.
  *
  * This function does not return.
+ *
+ * @param message an error message in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or **if
+ * you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
  */
-public inline fun JNIEnv.FatalError(message: String) {
-    memScoped {
-        pointed!!.FatalError!!(ptr, message.modifiedUtf8.ptr)
-    }
+context(memScope: AutofreeScope)
+public inline fun JniEnv.FatalError(message: CValuesRef<ByteVar>?): Nothing {
+    pointed!!.FatalError!!(ptr, message?.getPointer(memScope))
+    throw Error()
 }
 
 /**
@@ -649,8 +757,23 @@ public inline fun JNIEnv.FatalError(message: String) {
  *
  * @return `true` when there is a pending exception, `false` otherwise.
  */
-public inline fun JNIEnv.ExceptionCheck(): Boolean {
+public inline fun JniEnv.ExceptionCheck(): Boolean {
     return pointed!!.ExceptionCheck!!(ptr).toKBoolean()
+}
+
+/**
+ * Deletes the local reference pointed to by [localRef].
+ *
+ * Note: JDK/JRE 1.1 provides the DeleteLocalRef function above so that programmers can manually delete local
+ * references. For example, if native code iterates through a potentially large array of objects and uses one element
+ * in each iteration, it is a good practice to delete the local reference to the no-longer-used array element before a
+ * new local reference is created in the next iteration.
+ *
+ * As of JDK/JRE 1.2 an additional set of functions are provided: [EnsureLocalCapacity], [PushLocalFrame],
+ * [PopLocalFrame] and [NewLocalRef].
+ */
+public inline fun JniEnv.DeleteLocalRef(localRef: JObject) {
+    pointed!!.DeleteLocalRef!!(ptr, localRef)
 }
 
 /**
@@ -672,8 +795,10 @@ public inline fun JNIEnv.ExceptionCheck(): Boolean {
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.EnsureLocalCapacity(capacity: Int) {
-    checkJniResult(pointed!!.EnsureLocalCapacity!!(ptr, capacity))
+public inline fun JniEnv.EnsureLocalCapacity(capacity: Int) {
+    JNI.safeCall {
+        pointed!!.EnsureLocalCapacity!!(ptr, capacity)
+    }
 }
 
 /**
@@ -682,7 +807,7 @@ public inline fun JNIEnv.EnsureLocalCapacity(capacity: Int) {
  * Note that local references already created in previous local frames are still valid in the current local frame.
  *
  * As with [EnsureLocalCapacity], some Java Virtual Machine implementations may choose to limit the maximum capacity,
- * which may cause the function to return an error.
+ * which may cause the function to throw an exception.
  *
  * @param capacity the minimum number of required local references. Must be > 0.
  *
@@ -690,8 +815,10 @@ public inline fun JNIEnv.EnsureLocalCapacity(capacity: Int) {
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.PushLocalFrame(capacity: Int) {
-    checkJniResult(pointed!!.PushLocalFrame!!(ptr, capacity))
+public inline fun JniEnv.PushLocalFrame(capacity: Int) {
+    JNI.safeCall {
+        pointed!!.PushLocalFrame!!(ptr, capacity)
+    }
 }
 
 /**
@@ -702,7 +829,7 @@ public inline fun JNIEnv.PushLocalFrame(capacity: Int) {
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.PopLocalFrame(result: JObject?): JObject? {
+public inline fun JniEnv.PopLocalFrame(result: JObject? = null): JObject? {
     return pointed!!.PopLocalFrame!!(ptr, result)
 }
 
@@ -714,21 +841,8 @@ public inline fun JNIEnv.PopLocalFrame(result: JObject?): JObject? {
  * - the system has run out of memory
  * - [ref] was a weak global reference and has already been garbage collected.
  */
-public inline fun JNIEnv.NewLocalRef(ref: JObject): JObject? {
+public inline fun JniEnv.NewLocalRef(ref: JObject): JObject? {
     return pointed!!.NewLocalRef!!(ptr, ref)
-}
-
-/**
- * Deletes the local reference pointed to by [localRef].
- *
- * Note: JDK/JRE 1.1 provides the DeleteLocalRef function above so that programmers can manually delete local
- * references. For example, if native code iterates through a potentially large array of objects and uses one element
- * in each iteration, it is a good practice to delete the local reference to the no-longer-used array element before a
- * new local reference is created in the next iteration. As of JDK/JRE 1.2 an additional set of functions are provided
- * for local reference lifetime management. They are the four functions listed below.
- */
-public inline fun JNIEnv.DeleteLocalRef(localRef: JObject) {
-    pointed!!.DeleteLocalRef!!(ptr, localRef)
 }
 
 /**
@@ -741,14 +855,14 @@ public inline fun JNIEnv.DeleteLocalRef(localRef: JObject) {
  * - the system has run out of memory
  * - [obj] was a weak global reference and has already been garbage collected.
  */
-public inline fun JNIEnv.NewGlobalRef(obj: JObject): JObject? {
+public inline fun JniEnv.NewGlobalRef(obj: JObject): JObject? {
     return pointed!!.NewGlobalRef!!(ptr, obj)
 }
 
 /**
  * Deletes the global reference pointed to by globalRef.
  */
-public inline fun JNIEnv.DeleteGlobalRef(globalRef: JObject) {
+public inline fun JniEnv.DeleteGlobalRef(globalRef: JObject) {
     pointed!!.DeleteGlobalRef!!(ptr, globalRef)
 }
 
@@ -767,18 +881,8 @@ public inline fun JNIEnv.DeleteGlobalRef(globalRef: JObject) {
  * @throws InstantiationException if the class is an interface or an abstract class.
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.AllocObject(clazz: JClass): JObject? {
+public inline fun JniEnv.AllocObject(clazz: JClass): JObject? {
     return pointed!!.AllocObject!!(ptr, clazz)
-}
-
-// allocates and initializes an array of jvalue
-@PublishedApi
-internal inline fun MemScope.makeArgs(args: Array<out JValue.() -> Unit>): CArrayPointer<JValue> {
-    val cargs = allocArray<JValue>(args.size)
-    args.forEachIndexed { i, arg ->
-        cargs[i].arg()
-    }
-    return cargs
 }
 
 /**
@@ -794,16 +898,14 @@ internal inline fun MemScope.makeArgs(args: Array<out JValue.() -> Unit>): CArra
  * @throws OutOfMemoryError if the system runs out of memory.
  * @throws other Any exceptions thrown by the constructor.
  */
-public inline fun JNIEnv.NewObject(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): JObject? {
-    return memScoped {
-        pointed!!.NewObjectA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.NewObject(clazz: JClass, methodID: JMethodID, args: JArguments): JObject? {
+    return pointed!!.NewObjectA!!(ptr, clazz, methodID, args)
 }
 
 /**
  * Returns the class of an object.
  */
-public inline fun JNIEnv.GetObjectClass(obj: JObject): JClass {
+public inline fun JniEnv.GetObjectClass(obj: JObject): JClass {
     return pointed!!.GetObjectClass!!(ptr, obj)!!
 }
 
@@ -812,12 +914,12 @@ public inline fun JNIEnv.GetObjectClass(obj: JObject): JClass {
  *
  * @since JDK/JRE 1.6
  */
-public inline fun JNIEnv.GetObjectRefType(obj: JObject?): JNI.RefType {
+public inline fun JniEnv.GetObjectRefType(obj: JObject?): JObjectRefType {
     return when (pointed!!.GetObjectRefType!!(ptr, obj)) {
-        JNIWeakGlobalRefType -> JNI.RefType.WeakGlobal
-        JNIGlobalRefType -> JNI.RefType.Global
-        JNILocalRefType -> JNI.RefType.Local
-        else -> JNI.RefType.Invalid
+        JNIWeakGlobalRefType -> JObjectRefType.WeakGlobal
+        JNIGlobalRefType -> JObjectRefType.Global
+        JNILocalRefType -> JObjectRefType.Local
+        else -> JObjectRefType.Invalid
     }
 }
 
@@ -826,7 +928,7 @@ public inline fun JNIEnv.GetObjectRefType(obj: JObject?): JNI.RefType {
  *
  * @return `true` if [obj] can be cast to [clazz], false otherwise. A `null` can be cast to any class.
  */
-public inline fun JNIEnv.IsInstanceOf(obj: JObject?, clazz: JClass): Boolean {
+public inline fun JniEnv.IsInstanceOf(obj: JObject?, clazz: JClass): Boolean {
     return pointed!!.IsInstanceOf!!(ptr, obj, clazz).toKBoolean()
 }
 
@@ -835,7 +937,7 @@ public inline fun JNIEnv.IsInstanceOf(obj: JObject?, clazz: JClass): Boolean {
  *
  * @return `true` if `ref1` and `ref2` refer to the same Java object, or both are null, false otherwise.
  */
-public inline fun JNIEnv.IsSameObject(ref1: JObject?, ref2: JObject?): Boolean {
+public inline fun JniEnv.IsSameObject(ref1: JObject?, ref2: JObject?): Boolean {
     return pointed!!.IsSameObject!!(ptr, ref1, ref2).toKBoolean()
 }
 
@@ -848,16 +950,20 @@ public inline fun JNIEnv.IsSameObject(ref1: JObject?, ref2: JObject?): Boolean {
  *
  * To get the method ID of a constructor, supply `"<init>"` as the method name and void (`V`) as the return type.
  *
+ * @param clazz a Java class object.
+ * @param name the method name in the null-terminated modified UTF-8.
+ * @param sig the method signaturein in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or **if
+ * you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ *
  * @return a method ID, or `null` if the specified method cannot be found.
  *
  * @throws NoSuchMethodError if the specified method cannot be found.
  * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.GetMethodID(clazz: JClass, name: String, sig: String): JMethodID? {
-    return memScoped {
-        pointed!!.GetMethodID!!(ptr, clazz, name.modifiedUtf8.ptr, sig.modifiedUtf8.ptr)
-    }
+context(memScope: AutofreeScope)
+public inline fun JniEnv.GetMethodID(clazz: JClass, name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JMethodID? {
+    return pointed!!.GetMethodID!!(ptr, clazz, name.getPointer(memScope), sig.getPointer(memScope))
 }
 
 /**
@@ -873,10 +979,8 @@ public inline fun JNIEnv.GetMethodID(clazz: JClass, name: String, sig: String): 
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallObjectMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): JObject? {
-    return memScoped {
-        pointed!!.CallObjectMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallObjectMethod(obj: JObject, methodID: JMethodID, args: JArguments): JObject? {
+    return pointed!!.CallObjectMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -892,10 +996,8 @@ public inline fun JNIEnv.CallObjectMethod(obj: JObject, methodID: JMethodID, var
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallBooleanMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Boolean {
-    return memScoped {
-        pointed!!.CallBooleanMethodA!!(ptr, obj, methodID, makeArgs(args)).toKBoolean()
-    }
+public inline fun JniEnv.CallBooleanMethod(obj: JObject, methodID: JMethodID, args: JArguments): Boolean {
+    return pointed!!.CallBooleanMethodA!!(ptr, obj, methodID, args).toKBoolean()
 }
 
 /**
@@ -911,10 +1013,8 @@ public inline fun JNIEnv.CallBooleanMethod(obj: JObject, methodID: JMethodID, va
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallByteMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Byte {
-    return memScoped {
-        pointed!!.CallByteMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallByteMethod(obj: JObject, methodID: JMethodID, args: JArguments): Byte {
+    return pointed!!.CallByteMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -930,10 +1030,8 @@ public inline fun JNIEnv.CallByteMethod(obj: JObject, methodID: JMethodID, varar
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallCharMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Char {
-    return memScoped {
-        Char(pointed!!.CallCharMethodA!!(ptr, obj, methodID, makeArgs(args)))
-    }
+public inline fun JniEnv.CallCharMethod(obj: JObject, methodID: JMethodID, args: JArguments): Char {
+    return pointed!!.CallCharMethodA!!(ptr, obj, methodID, args).toKChar()
 }
 
 /**
@@ -949,10 +1047,8 @@ public inline fun JNIEnv.CallCharMethod(obj: JObject, methodID: JMethodID, varar
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallShortMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Short {
-    return memScoped {
-        pointed!!.CallShortMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallShortMethod(obj: JObject, methodID: JMethodID, args: JArguments): Short {
+    return pointed!!.CallShortMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -968,10 +1064,8 @@ public inline fun JNIEnv.CallShortMethod(obj: JObject, methodID: JMethodID, vara
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallIntMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Int {
-    return memScoped {
-        pointed!!.CallIntMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallIntMethod(obj: JObject, methodID: JMethodID, args: JArguments): Int {
+    return pointed!!.CallIntMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -987,10 +1081,8 @@ public inline fun JNIEnv.CallIntMethod(obj: JObject, methodID: JMethodID, vararg
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallLongMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Long {
-    return memScoped {
-        pointed!!.CallLongMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallLongMethod(obj: JObject, methodID: JMethodID, args: JArguments): Long {
+    return pointed!!.CallLongMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -1006,10 +1098,8 @@ public inline fun JNIEnv.CallLongMethod(obj: JObject, methodID: JMethodID, varar
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallFloatMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Float {
-    return memScoped {
-        pointed!!.CallFloatMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallFloatMethod(obj: JObject, methodID: JMethodID, args: JArguments): Float {
+    return pointed!!.CallFloatMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -1025,10 +1115,8 @@ public inline fun JNIEnv.CallFloatMethod(obj: JObject, methodID: JMethodID, vara
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallDoubleMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Double {
-    return memScoped {
-        pointed!!.CallDoubleMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallDoubleMethod(obj: JObject, methodID: JMethodID, args: JArguments): Double {
+    return pointed!!.CallDoubleMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -1040,14 +1128,10 @@ public inline fun JNIEnv.CallDoubleMethod(obj: JObject, methodID: JMethodID, var
  *
  * You should use this function only if the Java method you are calling doesn't return values.
  *
- * @return the result of calling the Java method.
- *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallVoidMethod(obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit) {
-    return memScoped {
-        pointed!!.CallVoidMethodA!!(ptr, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallVoidMethod(obj: JObject, methodID: JMethodID, args: JArguments) {
+    return pointed!!.CallVoidMethodA!!(ptr, obj, methodID, args)
 }
 
 /**
@@ -1067,10 +1151,8 @@ public inline fun JNIEnv.CallVoidMethod(obj: JObject, methodID: JMethodID, varar
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualObjectMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): JObject? {
-    return memScoped {
-        pointed!!.CallNonvirtualObjectMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualObjectMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): JObject? {
+    return pointed!!.CallNonvirtualObjectMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1090,10 +1172,8 @@ public inline fun JNIEnv.CallNonvirtualObjectMethod(clazz: JClass, obj: JObject,
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualBooleanMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Boolean {
-    return memScoped {
-        pointed!!.CallNonvirtualBooleanMethodA!!(ptr, clazz, obj, methodID, makeArgs(args)).toKBoolean()
-    }
+public inline fun JniEnv.CallNonvirtualBooleanMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Boolean {
+    return pointed!!.CallNonvirtualBooleanMethodA!!(ptr, clazz, obj, methodID, args).toKBoolean()
 }
 
 /**
@@ -1113,10 +1193,8 @@ public inline fun JNIEnv.CallNonvirtualBooleanMethod(clazz: JClass, obj: JObject
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualByteMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Byte {
-    return memScoped {
-        pointed!!.CallNonvirtualByteMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualByteMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Byte {
+    return pointed!!.CallNonvirtualByteMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1136,10 +1214,8 @@ public inline fun JNIEnv.CallNonvirtualByteMethod(clazz: JClass, obj: JObject, m
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualCharMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Char {
-    return memScoped {
-        Char(pointed!!.CallNonvirtualCharMethodA!!(ptr, clazz, obj, methodID, makeArgs(args)))
-    }
+public inline fun JniEnv.CallNonvirtualCharMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Char {
+    return pointed!!.CallNonvirtualCharMethodA!!(ptr, clazz, obj, methodID, args).toKChar()
 }
 
 /**
@@ -1159,10 +1235,8 @@ public inline fun JNIEnv.CallNonvirtualCharMethod(clazz: JClass, obj: JObject, m
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualShortMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Short {
-    return memScoped {
-        pointed!!.CallNonvirtualShortMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualShortMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Short {
+    return pointed!!.CallNonvirtualShortMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1182,10 +1256,8 @@ public inline fun JNIEnv.CallNonvirtualShortMethod(clazz: JClass, obj: JObject, 
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualIntMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Int {
-    return memScoped {
-        pointed!!.CallNonvirtualIntMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualIntMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Int {
+    return pointed!!.CallNonvirtualIntMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1205,10 +1277,8 @@ public inline fun JNIEnv.CallNonvirtualIntMethod(clazz: JClass, obj: JObject, me
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualLongMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Long {
-    return memScoped {
-        pointed!!.CallNonvirtualLongMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualLongMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Long {
+    return pointed!!.CallNonvirtualLongMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1228,10 +1298,8 @@ public inline fun JNIEnv.CallNonvirtualLongMethod(clazz: JClass, obj: JObject, m
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualFloatMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Float {
-    return memScoped {
-        pointed!!.CallNonvirtualFloatMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualFloatMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Float {
+    return pointed!!.CallNonvirtualFloatMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1251,10 +1319,8 @@ public inline fun JNIEnv.CallNonvirtualFloatMethod(clazz: JClass, obj: JObject, 
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualDoubleMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit): Double {
-    return memScoped {
-        pointed!!.CallNonvirtualDoubleMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualDoubleMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments): Double {
+    return pointed!!.CallNonvirtualDoubleMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1270,14 +1336,10 @@ public inline fun JNIEnv.CallNonvirtualDoubleMethod(clazz: JClass, obj: JObject,
  *
  * You should use this function only if the Java method you are calling doesn't return values.
  *
- * @return the result of calling the Java method.
- *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallNonvirtualVoidMethod(clazz: JClass, obj: JObject, methodID: JMethodID, vararg args: JValue.() -> Unit) {
-    return memScoped {
-        pointed!!.CallNonvirtualVoidMethodA!!(ptr, clazz, obj, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallNonvirtualVoidMethod(clazz: JClass, obj: JObject, methodID: JMethodID, args: JArguments) {
+    return pointed!!.CallNonvirtualVoidMethodA!!(ptr, clazz, obj, methodID, args)
 }
 
 /**
@@ -1289,16 +1351,20 @@ public inline fun JNIEnv.CallNonvirtualVoidMethod(clazz: JClass, obj: JObject, m
  *
  * [GetFieldID] cannot be used to get the length field of an array. Use [GetArrayLength] instead.
  *
+ * @param clazz a Java class object.
+ * @param name the field name in the null-terminated modified UTF-8.
+ * @param sig the field signature in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or **if
+ * you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ *
  * @return a field ID, or `null` if the operation fails.
  *
  * @throws NoSuchFieldError if the specified field cannot be found.
  * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.GetFieldID(clazz: JClass, name: String, sig: String): JFieldID? {
-    return memScoped {
-        pointed!!.GetFieldID!!(ptr, clazz, name.modifiedUtf8.ptr, sig.modifiedUtf8.ptr)
-    }
+context(memScope: AutofreeScope)
+public inline fun JniEnv.GetFieldID(clazz: JClass, name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JFieldID? {
+    return pointed!!.GetFieldID!!(ptr, clazz, name.getPointer(memScope), sig.getPointer(memScope))
 }
 
 /**
@@ -1309,7 +1375,7 @@ public inline fun JNIEnv.GetFieldID(clazz: JClass, name: String, sig: String): J
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetObjectField(obj: JObject, fieldID: JFieldID): JObject? {
+public inline fun JniEnv.GetObjectField(obj: JObject, fieldID: JFieldID): JObject? {
     return pointed!!.GetObjectField!!(ptr, obj, fieldID)
 }
 
@@ -1321,7 +1387,7 @@ public inline fun JNIEnv.GetObjectField(obj: JObject, fieldID: JFieldID): JObjec
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetBooleanField(obj: JObject, fieldID: JFieldID): Boolean {
+public inline fun JniEnv.GetBooleanField(obj: JObject, fieldID: JFieldID): Boolean {
     return pointed!!.GetBooleanField!!(ptr, obj, fieldID).toKBoolean()
 }
 
@@ -1333,7 +1399,7 @@ public inline fun JNIEnv.GetBooleanField(obj: JObject, fieldID: JFieldID): Boole
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetByteField(obj: JObject, fieldID: JFieldID): Byte {
+public inline fun JniEnv.GetByteField(obj: JObject, fieldID: JFieldID): Byte {
     return pointed!!.GetByteField!!(ptr, obj, fieldID)
 }
 
@@ -1345,8 +1411,8 @@ public inline fun JNIEnv.GetByteField(obj: JObject, fieldID: JFieldID): Byte {
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetCharField(obj: JObject, fieldID: JFieldID): Char {
-    return Char(pointed!!.GetCharField!!(ptr, obj, fieldID))
+public inline fun JniEnv.GetCharField(obj: JObject, fieldID: JFieldID): Char {
+    return pointed!!.GetCharField!!(ptr, obj, fieldID).toKChar()
 }
 
 /**
@@ -1357,7 +1423,7 @@ public inline fun JNIEnv.GetCharField(obj: JObject, fieldID: JFieldID): Char {
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetShortField(obj: JObject, fieldID: JFieldID): Short {
+public inline fun JniEnv.GetShortField(obj: JObject, fieldID: JFieldID): Short {
     return pointed!!.GetShortField!!(ptr, obj, fieldID)
 }
 
@@ -1369,7 +1435,7 @@ public inline fun JNIEnv.GetShortField(obj: JObject, fieldID: JFieldID): Short {
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetIntField(obj: JObject, fieldID: JFieldID): Int {
+public inline fun JniEnv.GetIntField(obj: JObject, fieldID: JFieldID): Int {
     return pointed!!.GetIntField!!(ptr, obj, fieldID)
 }
 
@@ -1381,7 +1447,7 @@ public inline fun JNIEnv.GetIntField(obj: JObject, fieldID: JFieldID): Int {
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetLongField(obj: JObject, fieldID: JFieldID): Long {
+public inline fun JniEnv.GetLongField(obj: JObject, fieldID: JFieldID): Long {
     return pointed!!.GetLongField!!(ptr, obj, fieldID)
 }
 
@@ -1393,7 +1459,7 @@ public inline fun JNIEnv.GetLongField(obj: JObject, fieldID: JFieldID): Long {
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetFloatField(obj: JObject, fieldID: JFieldID): Float {
+public inline fun JniEnv.GetFloatField(obj: JObject, fieldID: JFieldID): Float {
     return pointed!!.GetFloatField!!(ptr, obj, fieldID)
 }
 
@@ -1405,7 +1471,7 @@ public inline fun JNIEnv.GetFloatField(obj: JObject, fieldID: JFieldID): Float {
  *
  * @return the content of the field.
  */
-public inline fun JNIEnv.GetDoubleField(obj: JObject, fieldID: JFieldID): Double {
+public inline fun JniEnv.GetDoubleField(obj: JObject, fieldID: JFieldID): Double {
     return pointed!!.GetDoubleField!!(ptr, obj, fieldID)
 }
 
@@ -1415,7 +1481,7 @@ public inline fun JNIEnv.GetDoubleField(obj: JObject, fieldID: JFieldID): Double
  *
  * You should use this function only if the Java field you are writing has `Object` type.
  */
-public inline fun JNIEnv.SetObjectField(obj: JObject, fieldID: JFieldID, value: JObject?) {
+public inline fun JniEnv.SetObjectField(obj: JObject, fieldID: JFieldID, value: JObject?) {
     pointed!!.SetObjectField!!(ptr, obj, fieldID, value)
 }
 
@@ -1425,7 +1491,7 @@ public inline fun JNIEnv.SetObjectField(obj: JObject, fieldID: JFieldID, value: 
  *
  * You should use this function only if the Java field you are writing has `boolean` type.
  */
-public inline fun JNIEnv.SetBooleanField(obj: JObject, fieldID: JFieldID, value: Boolean) {
+public inline fun JniEnv.SetBooleanField(obj: JObject, fieldID: JFieldID, value: Boolean) {
     pointed!!.SetBooleanField!!(ptr, obj, fieldID, value.toJBoolean())
 }
 
@@ -1435,7 +1501,7 @@ public inline fun JNIEnv.SetBooleanField(obj: JObject, fieldID: JFieldID, value:
  *
  * You should use this function only if the Java field you are writing has `byte` type.
  */
-public inline fun JNIEnv.SetByteField(obj: JObject, fieldID: JFieldID, value: Byte) {
+public inline fun JniEnv.SetByteField(obj: JObject, fieldID: JFieldID, value: Byte) {
     pointed!!.SetByteField!!(ptr, obj, fieldID, value)
 }
 
@@ -1445,8 +1511,8 @@ public inline fun JNIEnv.SetByteField(obj: JObject, fieldID: JFieldID, value: By
  *
  * You should use this function only if the Java field you are writing has `char` type.
  */
-public inline fun JNIEnv.SetCharField(obj: JObject, fieldID: JFieldID, value: Char) {
-    pointed!!.SetCharField!!(ptr, obj, fieldID, value.code.toUShort())
+public inline fun JniEnv.SetCharField(obj: JObject, fieldID: JFieldID, value: Char) {
+    pointed!!.SetCharField!!(ptr, obj, fieldID, value.toJChar())
 }
 
 /**
@@ -1455,7 +1521,7 @@ public inline fun JNIEnv.SetCharField(obj: JObject, fieldID: JFieldID, value: Ch
  *
  * You should use this function only if the Java field you are writing has `short` type.
  */
-public inline fun JNIEnv.SetShortField(obj: JObject, fieldID: JFieldID, value: Short) {
+public inline fun JniEnv.SetShortField(obj: JObject, fieldID: JFieldID, value: Short) {
     pointed!!.SetShortField!!(ptr, obj, fieldID, value)
 }
 
@@ -1465,7 +1531,7 @@ public inline fun JNIEnv.SetShortField(obj: JObject, fieldID: JFieldID, value: S
  *
  * You should use this function only if the Java field you are writing has `int` type.
  */
-public inline fun JNIEnv.SetIntField(obj: JObject, fieldID: JFieldID, value: Int) {
+public inline fun JniEnv.SetIntField(obj: JObject, fieldID: JFieldID, value: Int) {
     pointed!!.SetIntField!!(ptr, obj, fieldID, value)
 }
 
@@ -1475,7 +1541,7 @@ public inline fun JNIEnv.SetIntField(obj: JObject, fieldID: JFieldID, value: Int
  *
  * You should use this function only if the Java field you are writing has `long` type.
  */
-public inline fun JNIEnv.SetLongField(obj: JObject, fieldID: JFieldID, value: Long) {
+public inline fun JniEnv.SetLongField(obj: JObject, fieldID: JFieldID, value: Long) {
     pointed!!.SetLongField!!(ptr, obj, fieldID, value)
 }
 
@@ -1485,7 +1551,7 @@ public inline fun JNIEnv.SetLongField(obj: JObject, fieldID: JFieldID, value: Lo
  *
  * You should use this function only if the Java field you are writing has `float` type.
  */
-public inline fun JNIEnv.SetFloatField(obj: JObject, fieldID: JFieldID, value: Float) {
+public inline fun JniEnv.SetFloatField(obj: JObject, fieldID: JFieldID, value: Float) {
     pointed!!.SetFloatField!!(ptr, obj, fieldID, value)
 }
 
@@ -1495,7 +1561,7 @@ public inline fun JNIEnv.SetFloatField(obj: JObject, fieldID: JFieldID, value: F
  *
  * You should use this function only if the Java field you are writing has `double` type.
  */
-public inline fun JNIEnv.SetDoubleField(obj: JObject, fieldID: JFieldID, value: Double) {
+public inline fun JniEnv.SetDoubleField(obj: JObject, fieldID: JFieldID, value: Double) {
     pointed!!.SetDoubleField!!(ptr, obj, fieldID, value)
 }
 
@@ -1504,16 +1570,20 @@ public inline fun JNIEnv.SetDoubleField(obj: JObject, fieldID: JFieldID, value: 
  *
  * [GetStaticMethodID] causes an uninitialized class to be initialized.
  *
- * @return a method ID, or NULL if the operation fails.
+ * @param clazz a Java class object.
+ * @param name the static method name in the null-terminated modified UTF-8.
+ * @param sig the method signature in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or **if
+ * you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ *
+ * @return a method ID, or `null` if the operation fails.
  *
  * @throws NoSuchMethodError if the specified static method cannot be found.
  * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.GetStaticMethodID(clazz: JClass, name: String, sig: String): JMethodID? {
-    return memScoped {
-        pointed!!.GetStaticMethodID!!(ptr, clazz, name.modifiedUtf8.ptr, sig.modifiedUtf8.ptr)
-    }
+context(memScope: AutofreeScope)
+public inline fun JniEnv.GetStaticMethodID(clazz: JClass, name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JMethodID? {
+    return pointed!!.GetStaticMethodID!!(ptr, clazz, name.getPointer(memScope), sig.getPointer(memScope))
 }
 
 /**
@@ -1528,10 +1598,8 @@ public inline fun JNIEnv.GetStaticMethodID(clazz: JClass, name: String, sig: Str
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticObjectMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): JObject? {
-    return memScoped {
-        pointed!!.CallStaticObjectMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticObjectMethod(clazz: JClass, methodID: JMethodID, args: JArguments): JObject? {
+    return pointed!!.CallStaticObjectMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1546,10 +1614,8 @@ public inline fun JNIEnv.CallStaticObjectMethod(clazz: JClass, methodID: JMethod
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticBooleanMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Boolean {
-    return memScoped {
-        pointed!!.CallStaticBooleanMethodA!!(ptr, clazz, methodID, makeArgs(args)).toKBoolean()
-    }
+public inline fun JniEnv.CallStaticBooleanMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Boolean {
+    return pointed!!.CallStaticBooleanMethodA!!(ptr, clazz, methodID, args).toKBoolean()
 }
 
 /**
@@ -1564,10 +1630,8 @@ public inline fun JNIEnv.CallStaticBooleanMethod(clazz: JClass, methodID: JMetho
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticByteMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Byte {
-    return memScoped {
-        pointed!!.CallStaticByteMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticByteMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Byte {
+    return pointed!!.CallStaticByteMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1582,10 +1646,8 @@ public inline fun JNIEnv.CallStaticByteMethod(clazz: JClass, methodID: JMethodID
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticCharMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Char {
-    return memScoped {
-        Char(pointed!!.CallStaticCharMethodA!!(ptr, clazz, methodID, makeArgs(args)))
-    }
+public inline fun JniEnv.CallStaticCharMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Char {
+    return pointed!!.CallStaticCharMethodA!!(ptr, clazz, methodID, args).toKChar()
 }
 
 /**
@@ -1600,10 +1662,8 @@ public inline fun JNIEnv.CallStaticCharMethod(clazz: JClass, methodID: JMethodID
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticShortMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Short {
-    return memScoped {
-        pointed!!.CallStaticShortMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticShortMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Short {
+    return pointed!!.CallStaticShortMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1618,10 +1678,8 @@ public inline fun JNIEnv.CallStaticShortMethod(clazz: JClass, methodID: JMethodI
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticIntMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Int {
-    return memScoped {
-        pointed!!.CallStaticIntMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticIntMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Int {
+    return pointed!!.CallStaticIntMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1636,10 +1694,8 @@ public inline fun JNIEnv.CallStaticIntMethod(clazz: JClass, methodID: JMethodID,
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticLongMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Long {
-    return memScoped {
-        pointed!!.CallStaticLongMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticLongMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Long {
+    return pointed!!.CallStaticLongMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1654,10 +1710,8 @@ public inline fun JNIEnv.CallStaticLongMethod(clazz: JClass, methodID: JMethodID
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticFloatMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Float {
-    return memScoped {
-        pointed!!.CallStaticFloatMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticFloatMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Float {
+    return pointed!!.CallStaticFloatMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1672,10 +1726,8 @@ public inline fun JNIEnv.CallStaticFloatMethod(clazz: JClass, methodID: JMethodI
  *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticDoubleMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit): Double {
-    return memScoped {
-        pointed!!.CallStaticDoubleMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticDoubleMethod(clazz: JClass, methodID: JMethodID, args: JArguments): Double {
+    return pointed!!.CallStaticDoubleMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1686,14 +1738,10 @@ public inline fun JNIEnv.CallStaticDoubleMethod(clazz: JClass, methodID: JMethod
  *
  * You should use this function only if the Java method you are calling returns `void` values.
  *
- * @return the result of calling the static Java method.
- *
  * @throws any Exceptions raised during the execution of the Java method.
  */
-public inline fun JNIEnv.CallStaticVoidMethod(clazz: JClass, methodID: JMethodID, vararg args: JValue.() -> Unit) {
-    return memScoped {
-        pointed!!.CallStaticVoidMethodA!!(ptr, clazz, methodID, makeArgs(args))
-    }
+public inline fun JniEnv.CallStaticVoidMethod(clazz: JClass, methodID: JMethodID, args: JArguments) {
+    return pointed!!.CallStaticVoidMethodA!!(ptr, clazz, methodID, args)
 }
 
 /**
@@ -1703,16 +1751,20 @@ public inline fun JNIEnv.CallStaticVoidMethod(clazz: JClass, methodID: JMethodID
  *
  * [GetStaticFieldID] causes an uninitialized class to be initialized.
  *
- * @return a field ID, or NULL if the specified static field cannot be found.
+ * @param clazz a Java class object.
+ * @param name the static field name in the null-terminated modified UTF-8.
+ * @param sig the field signature in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or **if
+ * you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ *
+ * @return a field ID, or `null` if the specified static field cannot be found.
  *
  * @throws NoSuchFieldError if the specified static field cannot be found.
  * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.GetStaticFieldID(clazz: JClass, name: String, sig: String): JFieldID? {
-    return memScoped {
-        pointed!!.GetStaticFieldID!!(ptr, clazz, name.modifiedUtf8.ptr, sig.modifiedUtf8.ptr)
-    }
+context(memScope: AutofreeScope)
+public inline fun JniEnv.GetStaticFieldID(clazz: JClass, name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JFieldID? {
+    return pointed!!.GetStaticFieldID!!(ptr, clazz, name.getPointer(memScope), sig.getPointer(memScope))
 }
 
 /**
@@ -1723,7 +1775,7 @@ public inline fun JNIEnv.GetStaticFieldID(clazz: JClass, name: String, sig: Stri
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticObjectField(clazz: JClass, fieldID: JFieldID): JObject? {
+public inline fun JniEnv.GetStaticObjectField(clazz: JClass, fieldID: JFieldID): JObject? {
     return pointed!!.GetStaticObjectField!!(ptr, clazz, fieldID)
 }
 
@@ -1735,7 +1787,7 @@ public inline fun JNIEnv.GetStaticObjectField(clazz: JClass, fieldID: JFieldID):
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticBooleanField(clazz: JClass, fieldID: JFieldID): Boolean {
+public inline fun JniEnv.GetStaticBooleanField(clazz: JClass, fieldID: JFieldID): Boolean {
     return pointed!!.GetStaticBooleanField!!(ptr, clazz, fieldID).toKBoolean()
 }
 
@@ -1747,7 +1799,7 @@ public inline fun JNIEnv.GetStaticBooleanField(clazz: JClass, fieldID: JFieldID)
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticByteField(clazz: JClass, fieldID: JFieldID): Byte {
+public inline fun JniEnv.GetStaticByteField(clazz: JClass, fieldID: JFieldID): Byte {
     return pointed!!.GetStaticByteField!!(ptr, clazz, fieldID)
 }
 
@@ -1759,8 +1811,8 @@ public inline fun JNIEnv.GetStaticByteField(clazz: JClass, fieldID: JFieldID): B
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticCharField(clazz: JClass, fieldID: JFieldID): Char {
-    return Char(pointed!!.GetStaticCharField!!(ptr, clazz, fieldID))
+public inline fun JniEnv.GetStaticCharField(clazz: JClass, fieldID: JFieldID): Char {
+    return pointed!!.GetStaticCharField!!(ptr, clazz, fieldID).toKChar()
 }
 
 /**
@@ -1771,7 +1823,7 @@ public inline fun JNIEnv.GetStaticCharField(clazz: JClass, fieldID: JFieldID): C
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticShortField(clazz: JClass, fieldID: JFieldID): Short {
+public inline fun JniEnv.GetStaticShortField(clazz: JClass, fieldID: JFieldID): Short {
     return pointed!!.GetStaticShortField!!(ptr, clazz, fieldID)
 }
 
@@ -1783,7 +1835,7 @@ public inline fun JNIEnv.GetStaticShortField(clazz: JClass, fieldID: JFieldID): 
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticIntField(clazz: JClass, fieldID: JFieldID): Int {
+public inline fun JniEnv.GetStaticIntField(clazz: JClass, fieldID: JFieldID): Int {
     return pointed!!.GetStaticIntField!!(ptr, clazz, fieldID)
 }
 
@@ -1795,7 +1847,7 @@ public inline fun JNIEnv.GetStaticIntField(clazz: JClass, fieldID: JFieldID): In
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticLongField(clazz: JClass, fieldID: JFieldID): Long {
+public inline fun JniEnv.GetStaticLongField(clazz: JClass, fieldID: JFieldID): Long {
     return pointed!!.GetStaticLongField!!(ptr, clazz, fieldID)
 }
 
@@ -1807,7 +1859,7 @@ public inline fun JNIEnv.GetStaticLongField(clazz: JClass, fieldID: JFieldID): L
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticFloatField(clazz: JClass, fieldID: JFieldID): Float {
+public inline fun JniEnv.GetStaticFloatField(clazz: JClass, fieldID: JFieldID): Float {
     return pointed!!.GetStaticFloatField!!(ptr, clazz, fieldID)
 }
 
@@ -1819,7 +1871,7 @@ public inline fun JNIEnv.GetStaticFloatField(clazz: JClass, fieldID: JFieldID): 
  *
  * @return the content of the static field.
  */
-public inline fun JNIEnv.GetStaticDoubleField(clazz: JClass, fieldID: JFieldID): Double {
+public inline fun JniEnv.GetStaticDoubleField(clazz: JClass, fieldID: JFieldID): Double {
     return pointed!!.GetStaticDoubleField!!(ptr, clazz, fieldID)
 }
 
@@ -1829,7 +1881,7 @@ public inline fun JNIEnv.GetStaticDoubleField(clazz: JClass, fieldID: JFieldID):
  *
  * You should use this function only if the Java field you are writing has `Object` type.
  */
-public inline fun JNIEnv.SetStaticObjectField(clazz: JClass, fieldID: JFieldID, value: JObject?) {
+public inline fun JniEnv.SetStaticObjectField(clazz: JClass, fieldID: JFieldID, value: JObject?) {
     pointed!!.SetStaticObjectField!!(ptr, clazz, fieldID, value)
 }
 
@@ -1839,7 +1891,7 @@ public inline fun JNIEnv.SetStaticObjectField(clazz: JClass, fieldID: JFieldID, 
  *
  * You should use this function only if the Java field you are writing has `boolean` type.
  */
-public inline fun JNIEnv.SetStaticBooleanField(clazz: JClass, fieldID: JFieldID, value: Boolean) {
+public inline fun JniEnv.SetStaticBooleanField(clazz: JClass, fieldID: JFieldID, value: Boolean) {
     pointed!!.SetStaticBooleanField!!(ptr, clazz, fieldID, value.toJBoolean())
 }
 
@@ -1849,7 +1901,7 @@ public inline fun JNIEnv.SetStaticBooleanField(clazz: JClass, fieldID: JFieldID,
  *
  * You should use this function only if the Java field you are writing has `byte` type.
  */
-public inline fun JNIEnv.SetStaticByteField(clazz: JClass, fieldID: JFieldID, value: Byte) {
+public inline fun JniEnv.SetStaticByteField(clazz: JClass, fieldID: JFieldID, value: Byte) {
     pointed!!.SetStaticByteField!!(ptr, clazz, fieldID, value)
 }
 
@@ -1859,8 +1911,8 @@ public inline fun JNIEnv.SetStaticByteField(clazz: JClass, fieldID: JFieldID, va
  *
  * You should use this function only if the Java field you are writing has `char` type.
  */
-public inline fun JNIEnv.SetStaticCharField(clazz: JClass, fieldID: JFieldID, value: Char) {
-    pointed!!.SetStaticCharField!!(ptr, clazz, fieldID, value.code.toUShort())
+public inline fun JniEnv.SetStaticCharField(clazz: JClass, fieldID: JFieldID, value: Char) {
+    pointed!!.SetStaticCharField!!(ptr, clazz, fieldID, value.toJChar())
 }
 
 /**
@@ -1869,7 +1921,7 @@ public inline fun JNIEnv.SetStaticCharField(clazz: JClass, fieldID: JFieldID, va
  *
  * You should use this function only if the Java field you are writing has `short` type.
  */
-public inline fun JNIEnv.SetStaticShortField(clazz: JClass, fieldID: JFieldID, value: Short) {
+public inline fun JniEnv.SetStaticShortField(clazz: JClass, fieldID: JFieldID, value: Short) {
     pointed!!.SetStaticShortField!!(ptr, clazz, fieldID, value)
 }
 
@@ -1879,7 +1931,7 @@ public inline fun JNIEnv.SetStaticShortField(clazz: JClass, fieldID: JFieldID, v
  *
  * You should use this function only if the Java field you are writing has `int` type.
  */
-public inline fun JNIEnv.SetStaticIntField(clazz: JClass, fieldID: JFieldID, value: Int) {
+public inline fun JniEnv.SetStaticIntField(clazz: JClass, fieldID: JFieldID, value: Int) {
     pointed!!.SetStaticIntField!!(ptr, clazz, fieldID, value)
 }
 
@@ -1889,7 +1941,7 @@ public inline fun JNIEnv.SetStaticIntField(clazz: JClass, fieldID: JFieldID, val
  *
  * You should use this function only if the Java field you are writing has `long` type.
  */
-public inline fun JNIEnv.SetStaticLongField(clazz: JClass, fieldID: JFieldID, value: Long) {
+public inline fun JniEnv.SetStaticLongField(clazz: JClass, fieldID: JFieldID, value: Long) {
     pointed!!.SetStaticLongField!!(ptr, clazz, fieldID, value)
 }
 
@@ -1899,7 +1951,7 @@ public inline fun JNIEnv.SetStaticLongField(clazz: JClass, fieldID: JFieldID, va
  *
  * You should use this function only if the Java field you are writing has `float` type.
  */
-public inline fun JNIEnv.SetStaticFloatField(clazz: JClass, fieldID: JFieldID, value: Float) {
+public inline fun JniEnv.SetStaticFloatField(clazz: JClass, fieldID: JFieldID, value: Float) {
     pointed!!.SetStaticFloatField!!(ptr, clazz, fieldID, value)
 }
 
@@ -1909,7 +1961,7 @@ public inline fun JNIEnv.SetStaticFloatField(clazz: JClass, fieldID: JFieldID, v
  *
  * You should use this function only if the Java field you are writing has `double` type.
  */
-public inline fun JNIEnv.SetStaticDoubleField(clazz: JClass, fieldID: JFieldID, value: Double) {
+public inline fun JniEnv.SetStaticDoubleField(clazz: JClass, fieldID: JFieldID, value: Double) {
     pointed!!.SetStaticDoubleField!!(ptr, clazz, fieldID, value)
 }
 
@@ -1923,14 +1975,14 @@ public inline fun JNIEnv.SetStaticDoubleField(clazz: JClass, fieldID: JFieldID, 
  *
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.NewString(unicodeChars: CPointer<UShortVar>, len: Int): JString? {
+public inline fun JniEnv.NewString(unicodeChars: CPointer<UShortVar>, len: Int): JString? {
     return pointed!!.NewString!!(ptr, unicodeChars, len)
 }
 
 /**
  * Returns the length (the count of Unicode characters) of a Java string.
  */
-public inline fun JNIEnv.GetStringLength(string: JString): Int {
+public inline fun JniEnv.GetStringLength(string: JString): Int {
     return pointed!!.GetStringLength!!(ptr, string)
 }
 
@@ -1945,19 +1997,18 @@ public inline fun JNIEnv.GetStringLength(string: JString): Int {
  *
  * @see GetStringRegion
  */
-public inline fun JNIEnv.GetStringChars(string: JString): Pair<CPointer<UShortVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val chars = pointed!!.GetStringChars!!(ptr, string, isCopy.ptr)
-        chars?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetStringChars(string: JString): Pair<CPointer<UShortVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val chars = pointed!!.GetStringChars!!(ptr, string, isCopy.ptr)
+    return chars?.let { it to isCopy.value.toKBoolean() }
 }
 
 /**
  * Informs the VM that the native code no longer needs access to chars. The [chars] argument is a pointer obtained from
  * string using [GetStringChars].
  */
-public inline fun JNIEnv.ReleaseStringChars(string: JString, chars: CPointer<UShortVar>) {
+public inline fun JniEnv.ReleaseStringChars(string: JString, chars: CPointer<UShortVar>) {
     pointed!!.ReleaseStringChars!!(ptr, string, chars)
 }
 
@@ -1968,14 +2019,14 @@ public inline fun JNIEnv.ReleaseStringChars(string: JString, chars: CPointer<USh
  *
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.NewStringUTF(bytes: CPointer<ByteVar>): JString? {
+public inline fun JniEnv.NewStringUTF(bytes: CPointer<ByteVar>): JString? {
     return pointed!!.NewStringUTF!!(ptr, bytes)
 }
 
 /**
  * Returns the length in bytes of the modified UTF-8 representation of a string.
  */
-public inline fun JNIEnv.GetStringUTFLength(string: JString): Int {
+public inline fun JniEnv.GetStringUTFLength(string: JString): Int {
     return pointed!!.GetStringUTFLength!!(ptr, string)
 }
 
@@ -1988,12 +2039,11 @@ public inline fun JNIEnv.GetStringUTFLength(string: JString): Int {
  *
  * @return a pointer to a modified UTF-8 string and a copy marker, or `null` if the operation fails.
  */
-public inline fun JNIEnv.GetStringUTFChars(string: JString): Pair<CPointer<ByteVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val utf = pointed!!.GetStringUTFChars!!(ptr, string, isCopy.ptr)
-        utf?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetStringUTFChars(string: JString): Pair<CPointer<ByteVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val utf = pointed!!.GetStringUTFChars!!(ptr, string, isCopy.ptr)
+    return utf?.let { it to isCopy.value.toKBoolean() }
 }
 
 /**
@@ -2004,21 +2054,21 @@ public inline fun JNIEnv.GetStringUTFChars(string: JString): Pair<CPointer<ByteV
  *
  * @see GetStringUTFRegion
  */
-public inline fun JNIEnv.ReleaseStringUTFChars(string: JString, utf: CPointer<ByteVar>) {
+public inline fun JniEnv.ReleaseStringUTFChars(string: JString, utf: CPointer<ByteVar>) {
     pointed!!.ReleaseStringUTFChars!!(ptr, string, utf)
 }
 
 /**
  * Returns the number of elements in the [array].
  */
-public inline fun JNIEnv.GetArrayLength(array: JArray): Int {
+public inline fun JniEnv.GetArrayLength(array: JArray): Int {
     return pointed!!.GetArrayLength!!(ptr, array)
 }
 
 /**
  * Constructs a new array holding objects in class [elementClass]. All elements are initially set to [initialElement].
  *
- * @param length array size, must be >= 0.
+ * @param length array size; must be >= 0.
  * @param elementClass array element class.
  * @param initialElement initialization value.
  *
@@ -2026,7 +2076,7 @@ public inline fun JNIEnv.GetArrayLength(array: JArray): Int {
  *
  * @throws OutOfMemoryError if the system runs out of memory.
  */
-public inline fun JNIEnv.NewObjectArray(length: Int, elementClass: JClass, initialElement: JObject?): JObjectArray? {
+public inline fun JniEnv.NewObjectArray(length: Int, elementClass: JClass, initialElement: JObject?): JObjectArray? {
     return pointed!!.NewObjectArray!!(ptr, length, elementClass, initialElement)
 }
 
@@ -2037,7 +2087,7 @@ public inline fun JNIEnv.NewObjectArray(length: Int, elementClass: JClass, initi
  *
  * @throws ArrayIndexOutOfBoundsException if [index] does not specify a valid index in the array.
  */
-public inline fun JNIEnv.GetObjectArrayElement(array: JObjectArray, index: Int): JObject? {
+public inline fun JniEnv.GetObjectArrayElement(array: JObjectArray, index: Int): JObject? {
     return pointed!!.GetObjectArrayElement!!(ptr, array, index)
 }
 
@@ -2047,63 +2097,63 @@ public inline fun JNIEnv.GetObjectArrayElement(array: JObjectArray, index: Int):
  * @throws ArrayIndexOutOfBoundsException if [index] does not specify a valid index in the array.
  * @throws ArrayStoreException if the class of value is not a subclass of the element class of the array.
  */
-public inline fun JNIEnv.SetObjectArrayElement(array: JObjectArray, index: Int, value: JObject?) {
+public inline fun JniEnv.SetObjectArrayElement(array: JObjectArray, index: Int, value: JObject?) {
     pointed!!.SetObjectArrayElement!!(ptr, array, index, value)
 }
 
 /**
  * Constructs a new `boolean[]` array object.
  */
-public inline fun JNIEnv.NewBooleanArray(length: Int): JBooleanArray? {
+public inline fun JniEnv.NewBooleanArray(length: Int): JBooleanArray? {
     return pointed!!.NewBooleanArray!!(ptr, length)
 }
 
 /**
  * Constructs a new `byte[]` array object.
  */
-public inline fun JNIEnv.NewByteArray(length: Int): JByteArray? {
+public inline fun JniEnv.NewByteArray(length: Int): JByteArray? {
     return pointed!!.NewByteArray!!(ptr, length)
 }
 
 /**
  * Constructs a new `char[]` array object.
  */
-public inline fun JNIEnv.NewCharArray(length: Int): JCharArray? {
+public inline fun JniEnv.NewCharArray(length: Int): JCharArray? {
     return pointed!!.NewCharArray!!(ptr, length)
 }
 
 /**
  * Constructs a new `short[]` array object.
  */
-public inline fun JNIEnv.NewShortArray(length: Int): JShortArray? {
+public inline fun JniEnv.NewShortArray(length: Int): JShortArray? {
     return pointed!!.NewShortArray!!(ptr, length)
 }
 
 /**
  * Constructs a new `int[]` array object.
  */
-public inline fun JNIEnv.NewIntArray(length: Int): JIntArray? {
+public inline fun JniEnv.NewIntArray(length: Int): JIntArray? {
     return pointed!!.NewIntArray!!(ptr, length)
 }
 
 /**
  * Constructs a new `long[]` array object.
  */
-public inline fun JNIEnv.NewLongArray(length: Int): JLongArray? {
+public inline fun JniEnv.NewLongArray(length: Int): JLongArray? {
     return pointed!!.NewLongArray!!(ptr, length)
 }
 
 /**
  * Constructs a new `float[]` array object.
  */
-public inline fun JNIEnv.NewFloatArray(length: Int): JFloatArray? {
+public inline fun JniEnv.NewFloatArray(length: Int): JFloatArray? {
     return pointed!!.NewFloatArray!!(ptr, length)
 }
 
 /**
  * Constructs a new `double[]` array object.
  */
-public inline fun JNIEnv.NewDoubleArray(length: Int): JDoubleArray? {
+public inline fun JniEnv.NewDoubleArray(length: Int): JDoubleArray? {
     return pointed!!.NewDoubleArray!!(ptr, length)
 }
 
@@ -2120,12 +2170,11 @@ public inline fun JNIEnv.NewDoubleArray(length: Int): JDoubleArray? {
  * to [UByte]s, with each byte denoting an element (the unpacked representation).
  * All arrays of other types are guaranteed to be contiguous in memory.
  */
-public inline fun JNIEnv.GetBooleanArrayElements(array: JBooleanArray): Pair<CPointer<UByteVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetBooleanArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetBooleanArrayElements(array: JBooleanArray): Pair<CPointer<UByteVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetBooleanArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
 /**
@@ -2137,14 +2186,12 @@ public inline fun JNIEnv.GetBooleanArrayElements(array: JBooleanArray): Pair<CPo
  * Since the returned array may be a copy of the Java array, changes made to the returned array will not necessarily be
  * reflected in the original array until [ReleaseByteArrayElements] is called.
  */
-public inline fun JNIEnv.GetByteArrayElements(array: JByteArray): Pair<CPointer<ByteVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetByteArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetByteArrayElements(array: JByteArray): Pair<CPointer<ByteVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetByteArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
-
 
 /**
  * Returns the body of the primitive array and a boolean value `isCopy` which specifies whether the array is a copy
@@ -2155,14 +2202,12 @@ public inline fun JNIEnv.GetByteArrayElements(array: JByteArray): Pair<CPointer<
  * Since the returned array may be a copy of the Java array, changes made to the returned array will not necessarily be
  * reflected in the original array until [ReleaseCharArrayElements] is called.
  */
-public inline fun JNIEnv.GetCharArrayElements(array: JCharArray): Pair<CPointer<UShortVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetCharArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetCharArrayElements(array: JCharArray): Pair<CPointer<UShortVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetCharArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
-
 
 /**
  * Returns the body of the primitive array and a boolean value `isCopy` which specifies whether the array is a copy
@@ -2173,14 +2218,12 @@ public inline fun JNIEnv.GetCharArrayElements(array: JCharArray): Pair<CPointer<
  * Since the returned array may be a copy of the Java array, changes made to the returned array will not necessarily be
  * reflected in the original array until [ReleaseShortArrayElements] is called.
  */
-public inline fun JNIEnv.GetShortArrayElements(array: JShortArray): Pair<CPointer<ShortVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetShortArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetShortArrayElements(array: JShortArray): Pair<CPointer<ShortVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetShortArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
-
 
 /**
  * Returns the body of the primitive array and a boolean value `isCopy` which specifies whether the array is a copy
@@ -2191,14 +2234,12 @@ public inline fun JNIEnv.GetShortArrayElements(array: JShortArray): Pair<CPointe
  * Since the returned array may be a copy of the Java array, changes made to the returned array will not necessarily be
  * reflected in the original array until [ReleaseIntArrayElements] is called.
  */
-public inline fun JNIEnv.GetIntArrayElements(array: JIntArray): Pair<CPointer<IntVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetIntArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetIntArrayElements(array: JIntArray): Pair<CPointer<IntVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetIntArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
-
 
 /**
  * Returns the body of the primitive array and a boolean value `isCopy` which specifies whether the array is a copy
@@ -2209,14 +2250,12 @@ public inline fun JNIEnv.GetIntArrayElements(array: JIntArray): Pair<CPointer<In
  * Since the returned array may be a copy of the Java array, changes made to the returned array will not necessarily be
  * reflected in the original array until [ReleaseLongArrayElements] is called.
  */
-public inline fun JNIEnv.GetLongArrayElements(array: JLongArray): Pair<CPointer<LongVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetLongArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetLongArrayElements(array: JLongArray): Pair<CPointer<LongVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetLongArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
-
 
 /**
  * Returns the body of the primitive array and a boolean value `isCopy` which specifies whether the array is a copy
@@ -2227,14 +2266,12 @@ public inline fun JNIEnv.GetLongArrayElements(array: JLongArray): Pair<CPointer<
  * Since the returned array may be a copy of the Java array, changes made to the returned array will not necessarily be
  * reflected in the original array until [ReleaseFloatArrayElements] is called.
  */
-public inline fun JNIEnv.GetFloatArrayElements(array: JFloatArray): Pair<CPointer<FloatVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetFloatArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetFloatArrayElements(array: JFloatArray): Pair<CPointer<FloatVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetFloatArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
-
 
 /**
  * Returns the body of the primitive array and a boolean value `isCopy` which specifies whether the array is a copy
@@ -2245,12 +2282,11 @@ public inline fun JNIEnv.GetFloatArrayElements(array: JFloatArray): Pair<CPointe
  * Since the returned array may be a copy of the Java array, changes made to the returned array will not necessarily be
  * reflected in the original array until [ReleaseDoubleArrayElements] is called.
  */
-public inline fun JNIEnv.GetDoubleArrayElements(array: JDoubleArray): Pair<CPointer<DoubleVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val elements = pointed!!.GetDoubleArrayElements!!(ptr, array, isCopy.ptr)
-        elements?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetDoubleArrayElements(array: JDoubleArray): Pair<CPointer<DoubleVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val elements = pointed!!.GetDoubleArrayElements!!(ptr, array, isCopy.ptr)
+    return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
 /**
@@ -2264,7 +2300,7 @@ public inline fun JNIEnv.GetDoubleArrayElements(array: JDoubleArray): Pair<CPoin
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseBooleanArrayElements(array: JBooleanArray, elems: CPointer<UByteVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseBooleanArrayElements(array: JBooleanArray, elems: CPointer<UByteVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseBooleanArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2279,7 +2315,7 @@ public inline fun JNIEnv.ReleaseBooleanArrayElements(array: JBooleanArray, elems
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseByteArrayElements(array: JByteArray, elems: CPointer<ByteVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseByteArrayElements(array: JByteArray, elems: CPointer<ByteVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseByteArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2294,7 +2330,7 @@ public inline fun JNIEnv.ReleaseByteArrayElements(array: JByteArray, elems: CPoi
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseCharArrayElements(array: JCharArray, elems: CPointer<UShortVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseCharArrayElements(array: JCharArray, elems: CPointer<UShortVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseCharArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2309,7 +2345,7 @@ public inline fun JNIEnv.ReleaseCharArrayElements(array: JCharArray, elems: CPoi
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseShortArrayElements(array: JShortArray, elems: CPointer<ShortVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseShortArrayElements(array: JShortArray, elems: CPointer<ShortVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseShortArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2324,7 +2360,7 @@ public inline fun JNIEnv.ReleaseShortArrayElements(array: JShortArray, elems: CP
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseIntArrayElements(array: JIntArray, elems: CPointer<IntVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseIntArrayElements(array: JIntArray, elems: CPointer<IntVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseIntArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2339,7 +2375,7 @@ public inline fun JNIEnv.ReleaseIntArrayElements(array: JIntArray, elems: CPoint
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseLongArrayElements(array: JLongArray, elems: CPointer<LongVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseLongArrayElements(array: JLongArray, elems: CPointer<LongVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseLongArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2354,7 +2390,7 @@ public inline fun JNIEnv.ReleaseLongArrayElements(array: JLongArray, elems: CPoi
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseFloatArrayElements(array: JFloatArray, elems: CPointer<FloatVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseFloatArrayElements(array: JFloatArray, elems: CPointer<FloatVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseFloatArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2369,7 +2405,7 @@ public inline fun JNIEnv.ReleaseFloatArrayElements(array: JFloatArray, elems: CP
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
  * - `ApplyChangesMode.Abort`       -> free the buffer without copying back the possible changes.
  */
-public inline fun JNIEnv.ReleaseDoubleArrayElements(array: JDoubleArray, elems: CPointer<DoubleVar>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleaseDoubleArrayElements(array: JDoubleArray, elems: CPointer<DoubleVar>, mode: ApplyChangesMode) {
     pointed!!.ReleaseDoubleArrayElements!!(ptr, array, elems, mode.nativeCode)
 }
 
@@ -2377,14 +2413,14 @@ public inline fun JNIEnv.ReleaseDoubleArrayElements(array: JDoubleArray, elems: 
  * Copies a region of a `boolean[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetBooleanArrayRegion(array: JBooleanArray, start: Int, len: Int, buf: CPointer<UByteVar>) {
+public inline fun JniEnv.GetBooleanArrayRegion(array: JBooleanArray, start: Int, len: Int, buf: CPointer<UByteVar>) {
     pointed!!.GetBooleanArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2392,14 +2428,14 @@ public inline fun JNIEnv.GetBooleanArrayRegion(array: JBooleanArray, start: Int,
  * Copies a region of a `byte[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetByteArrayRegion(array: JByteArray, start: Int, len: Int, buf: CPointer<ByteVar>) {
+public inline fun JniEnv.GetByteArrayRegion(array: JByteArray, start: Int, len: Int, buf: CPointer<ByteVar>) {
     pointed!!.GetByteArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2407,14 +2443,14 @@ public inline fun JNIEnv.GetByteArrayRegion(array: JByteArray, start: Int, len: 
  * Copies a region of a `char[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetCharArrayRegion(array: JCharArray, start: Int, len: Int, buf: CPointer<UShortVar>) {
+public inline fun JniEnv.GetCharArrayRegion(array: JCharArray, start: Int, len: Int, buf: CPointer<UShortVar>) {
     pointed!!.GetCharArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2422,14 +2458,14 @@ public inline fun JNIEnv.GetCharArrayRegion(array: JCharArray, start: Int, len: 
  * Copies a region of a `short[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetShortArrayRegion(array: JShortArray, start: Int, len: Int, buf: CPointer<ShortVar>) {
+public inline fun JniEnv.GetShortArrayRegion(array: JShortArray, start: Int, len: Int, buf: CPointer<ShortVar>) {
     pointed!!.GetShortArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2437,14 +2473,14 @@ public inline fun JNIEnv.GetShortArrayRegion(array: JShortArray, start: Int, len
  * Copies a region of a `int[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetIntArrayRegion(array: JIntArray, start: Int, len: Int, buf: CPointer<IntVar>) {
+public inline fun JniEnv.GetIntArrayRegion(array: JIntArray, start: Int, len: Int, buf: CPointer<IntVar>) {
     pointed!!.GetIntArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2452,14 +2488,14 @@ public inline fun JNIEnv.GetIntArrayRegion(array: JIntArray, start: Int, len: In
  * Copies a region of a `long[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetLongArrayRegion(array: JLongArray, start: Int, len: Int, buf: CPointer<LongVar>) {
+public inline fun JniEnv.GetLongArrayRegion(array: JLongArray, start: Int, len: Int, buf: CPointer<LongVar>) {
     pointed!!.GetLongArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2467,14 +2503,14 @@ public inline fun JNIEnv.GetLongArrayRegion(array: JLongArray, start: Int, len: 
  * Copies a region of a `float[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetFloatArrayRegion(array: JFloatArray, start: Int, len: Int, buf: CPointer<FloatVar>) {
+public inline fun JniEnv.GetFloatArrayRegion(array: JFloatArray, start: Int, len: Int, buf: CPointer<FloatVar>) {
     pointed!!.GetFloatArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2482,32 +2518,29 @@ public inline fun JNIEnv.GetFloatArrayRegion(array: JFloatArray, start: Int, len
  * Copies a region of a `double[]` array into a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
  * @param len the number of elements to be copied, must be greater than or equal to zero, and `start + len` must be less
  * than array length.
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.GetDoubleArrayRegion(array: JDoubleArray, start: Int, len: Int, buf: CPointer<DoubleVar>) {
+public inline fun JniEnv.GetDoubleArrayRegion(array: JDoubleArray, start: Int, len: Int, buf: CPointer<DoubleVar>) {
     pointed!!.GetDoubleArrayRegion!!(ptr, array, start, len, buf)
 }
-
-// TODO: добавить see
-// TODO: добавить since
 
 /**
  * Copies back a region of a `boolean[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetBooleanArrayRegion(array: JBooleanArray, start: Int, len: Int, buf: CPointer<UByteVar>) {
+public inline fun JniEnv.SetBooleanArrayRegion(array: JBooleanArray, start: Int, len: Int, buf: CPointer<UByteVar>) {
     pointed!!.SetBooleanArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2515,14 +2548,14 @@ public inline fun JNIEnv.SetBooleanArrayRegion(array: JBooleanArray, start: Int,
  * Copies back a region of a `byte[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetByteArrayRegion(array: JByteArray, start: Int, len: Int, buf: CPointer<ByteVar>) {
+public inline fun JniEnv.SetByteArrayRegion(array: JByteArray, start: Int, len: Int, buf: CPointer<ByteVar>) {
     pointed!!.SetByteArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2530,14 +2563,14 @@ public inline fun JNIEnv.SetByteArrayRegion(array: JByteArray, start: Int, len: 
  * Copies back a region of a `char[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetCharArrayRegion(array: JCharArray, start: Int, len: Int, buf: CPointer<UShortVar>) {
+public inline fun JniEnv.SetCharArrayRegion(array: JCharArray, start: Int, len: Int, buf: CPointer<UShortVar>) {
     pointed!!.SetCharArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2545,14 +2578,14 @@ public inline fun JNIEnv.SetCharArrayRegion(array: JCharArray, start: Int, len: 
  * Copies back a region of a `short[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetShortArrayRegion(array: JShortArray, start: Int, len: Int, buf: CPointer<ShortVar>) {
+public inline fun JniEnv.SetShortArrayRegion(array: JShortArray, start: Int, len: Int, buf: CPointer<ShortVar>) {
     pointed!!.SetShortArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2560,14 +2593,14 @@ public inline fun JNIEnv.SetShortArrayRegion(array: JShortArray, start: Int, len
  * Copies back a region of a `int[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetIntArrayRegion(array: JIntArray, start: Int, len: Int, buf: CPointer<IntVar>) {
+public inline fun JniEnv.SetIntArrayRegion(array: JIntArray, start: Int, len: Int, buf: CPointer<IntVar>) {
     pointed!!.SetIntArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2575,14 +2608,14 @@ public inline fun JNIEnv.SetIntArrayRegion(array: JIntArray, start: Int, len: In
  * Copies back a region of a `long[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetLongArrayRegion(array: JLongArray, start: Int, len: Int, buf: CPointer<LongVar>) {
+public inline fun JniEnv.SetLongArrayRegion(array: JLongArray, start: Int, len: Int, buf: CPointer<LongVar>) {
     pointed!!.SetLongArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2590,14 +2623,14 @@ public inline fun JNIEnv.SetLongArrayRegion(array: JLongArray, start: Int, len: 
  * Copies back a region of a `float[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetFloatArrayRegion(array: JFloatArray, start: Int, len: Int, buf: CPointer<FloatVar>) {
+public inline fun JniEnv.SetFloatArrayRegion(array: JFloatArray, start: Int, len: Int, buf: CPointer<FloatVar>) {
     pointed!!.SetFloatArrayRegion!!(ptr, array, start, len, buf)
 }
 
@@ -2605,19 +2638,24 @@ public inline fun JNIEnv.SetFloatArrayRegion(array: JFloatArray, start: Int, len
  * Copies back a region of a `double[]` array from a buffer [buf].
  *
  * @param array a Java array.
- * @param start the starting index, must be greater than or equal to zero, and less than the array length.
- * @param len the number of elements to be copied, must be greater than or equal to zero, and "start + len" must be less
- * than array length.
+ * @param start the starting index; must be greater than or equal to zero, and less than the array length.
+ * @param len the number of elements to be copied; must be greater than or equal to zero, and "start + len" must be less
+ * than the array length.
  * @param buf the source buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
  */
-public inline fun JNIEnv.SetDoubleArrayRegion(array: JDoubleArray, start: Int, len: Int, buf: CPointer<DoubleVar>) {
+public inline fun JniEnv.SetDoubleArrayRegion(array: JDoubleArray, start: Int, len: Int, buf: CPointer<DoubleVar>) {
     pointed!!.SetDoubleArrayRegion!!(ptr, array, start, len, buf)
 }
 
 /**
- * Registers native methods with the class specified by the clazz argument.
+ * A struct of name, signature and function pointer.
+ */
+public typealias JNINativeMethod = io.github.mimimishkin.jni.internal.raw.JNINativeMethod
+
+/**
+ * Registers native methods with the class specified by the [clazz] argument.
  * The [methods] parameter specifies a list of triples that contain the names, signatures and function pointers of the
  * native methods.
  *
@@ -2631,35 +2669,33 @@ public inline fun JNIEnv.SetDoubleArrayRegion(array: JDoubleArray, start: Int, l
  * Therefore, use applications that have native libraries utilizing the [RegisterNatives] function with caution.
  *
  * @throws NoSuchMethodError if a specified method cannot be found or if the method is not native.
+ *
+ * @see registerNativesFor
  */
-public inline fun JNIEnv.RegisterNatives(clazz: JClass, methods: List<Triple<String, String, CPointer<CFunction<*>>>>) {
-    memScoped {
-        val jniMethods = allocArray<JNINativeMethod>(methods.size)
-        methods.forEachIndexed { i, (name, signature, fnPtr) ->
-            val method = jniMethods[i]
-            method.name = name.modifiedUtf8.ptr
-            method.signature = signature.modifiedUtf8.ptr
-            method.fnPtr = fnPtr
-        }
-        checkJniResult(pointed!!.RegisterNatives!!(ptr, clazz, jniMethods, methods.size))
+context(memScope: NativePlacement)
+public inline fun JniEnv.RegisterNatives(clazz: JClass, methods: CArrayPointer<JNINativeMethod>, methodsCount: Int) {
+    JNI.safeCall {
+        pointed!!.RegisterNatives!!(ptr, clazz, methods, methodsCount)
     }
 }
 
 /**
- * Unregisters native methods of a class. The class goes back to the state before it was linked or registered with its
+ * Unregisters native methods of a [clazz]. The class goes back to the state before it was linked or registered with its
  * native method functions.
  *
  * This function should not be used in normal native code. Instead, it provides special programs a way to reload and
  * relink native libraries.
  */
-public inline fun JNIEnv.UnregisterNatives(clazz: JClass) {
-    checkJniResult(pointed!!.UnregisterNatives!!(ptr, clazz))
+public inline fun JniEnv.UnregisterNatives(clazz: JClass) {
+    JNI.safeCall {
+        pointed!!.UnregisterNatives!!(ptr, clazz)
+    }
 }
 
 /**
  * Enters the monitor associated with the underlying Java object referred to by [obj].
  *
- * Enters the monitor associated with the object referred to by [obj]. The [obj] reference must not be NULL.
+ * Enters the monitor associated with the object referred to by [obj].
  *
  * Each Java object has a monitor associated with it. If the current thread already owns the monitor associated with
  * [obj], it increments a counter in the monitor indicating the number of times this thread has entered the monitor.
@@ -2674,8 +2710,10 @@ public inline fun JNIEnv.UnregisterNatives(clazz: JClass) {
  * To avoid deadlocks, a monitor entered through a [MonitorEnter] JNI function call must be exited using the
  * [MonitorExit] JNI call, unless the DetachCurrentThread call is used to implicitly release JNI monitors.
  */
-public inline fun JNIEnv.MonitorEnter(obj: JObject) {
-    checkJniResult(pointed!!.MonitorEnter!!(ptr, obj))
+public inline fun JniEnv.MonitorEnter(obj: JObject) {
+    JNI.safeCall {
+        pointed!!.MonitorEnter!!(ptr, obj)
+    }
 }
 
 /**
@@ -2686,36 +2724,39 @@ public inline fun JNIEnv.MonitorEnter(obj: JObject) {
  * Native code must not use [MonitorExit] to exit a monitor entered through a synchronized method or a `monitorenter`
  * Java virtual machine instruction.
  */
-public inline fun JNIEnv.MonitorExit(obj: JObject) {
-    checkJniResult(pointed!!.MonitorExit!!(ptr, obj))
+public inline fun JniEnv.MonitorExit(obj: JObject) {
+    JNI.safeCall {
+        pointed!!.MonitorExit!!(ptr, obj)
+    }
 }
 
 /**
  * Returns the [JavaVM] interface associated with the current thread.
  */
-public inline fun JNIEnv.GetJavaVM(): JavaVM {
-    return memScoped {
-        val vm = alloc<CPointerVar<JavaVM>>()
-        checkJniResult(pointed!!.GetJavaVM!!(ptr, vm.ptr))
-        vm.pointed!!
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetJavaVM(): JavaVM {
+    val vm = memScope.alloc<CPointerVar<JavaVM>>()
+    JNI.safeCall {
+        pointed!!.GetJavaVM!!(ptr, vm.ptr)
     }
+    return vm.pointed!!
 }
 
 /**
  * Copies len number of Unicode characters beginning at offset start to the given buffer [buf].
  *
  * @param str a Java string object.
- * @param start the index of the first unicode character in the string to copy. Must be greater than or equal to zero,
+ * @param start the index of the first Unicode character in the string to copy. Must be greater than or equal to zero,
  * and less than string length.
- * @param len the number of unicode characters to copy. Must be greater than or equal to zero, and "start + len" must be
+ * @param len the number of Unicode characters to copy. Must be greater than or equal to zero, and "start + len" must be
  * less than string length.
- * @param buf the unicode character buffer into which to copy the string region.
+ * @param buf the Unicode character buffer into which to copy the string region.
  *
  * @throws StringIndexOutOfBoundsException on index overflow.
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.GetStringRegion(str: JString, start: Int, len: Int, buf: CPointer<UShortVar>) {
+public inline fun JniEnv.GetStringRegion(str: JString, start: Int, len: Int, buf: CPointer<UShortVar>) {
     pointed!!.GetStringRegion!!(ptr, str, start, len, buf)
 }
 
@@ -2723,25 +2764,25 @@ public inline fun JNIEnv.GetStringRegion(str: JString, start: Int, len: Int, buf
  * Translates len number of Unicode characters beginning at offset start into modified UTF-8 encoding and place the
  * result in the given buffer [buf].
  *
- * The [len] argument specifies the number of unicode characters. The resulting number modified UTF-8 encoding
+ * The [len] argument specifies the number of Unicode characters. The resulting number modified UTF-8 encoding
  * characters may be greater than the given [len] argument. [GetStringUTFLength] may be used to determine the maximum
  * size of the required character buffer.
  *
  * Since this specification does not require the resulting string copy be NULL terminated, it is advisable to clear the
- * given character buffer (e.g. "memset()") before using this function, to safely perform strlen().
+ * given character buffer (e.g. `memset()`) before using this function to safely perform `strlen()`.
  *
- * @param str: a Java string object.
- * @param start: the index of the first unicode character in the string to copy. Must be greater than or equal to zero,
+ * @param str a Java string object.
+ * @param start the index of the first Unicode character in the string to copy. Must be greater than or equal to zero,
  * and less than the string length.
- * @param len: the number of unicode characters to copy. Must be greater than zero, and "start + len" must be less than
+ * @param len the number of Unicode characters to copy. Must be greater than zero, and "start + len" must be less than
  * string length.
- * @param buf: the unicode character buffer into which to copy the string region.
+ * @param buf the Unicode character buffer into which to copy the string region.
  *
  * @throws StringIndexOutOfBoundsException on index overflow.
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.GetStringUTFRegion(str: JString, start: Int, len: Int, buf: CPointer<ByteVar>) {
+public inline fun JniEnv.GetStringUTFRegion(str: JString, start: Int, len: Int, buf: CPointer<ByteVar>) {
     pointed!!.GetStringUTFRegion!!(ptr, str, start, len, buf)
 }
 
@@ -2752,7 +2793,7 @@ public inline fun JNIEnv.GetStringUTFRegion(str: JString, start: Int, len: Int, 
  *
  * After calling [GetPrimitiveArrayCritical], the native code should not run for an extended period of time before it
  * calls [ReleasePrimitiveArrayCritical]. We must treat the code inside this pair of functions as running in a
- * "critical region." Inside a critical region, native code must not call other JNI functions, or any system call that
+ * "critical region." Inside a critical region, native code must not call other JNI functions or any system call that
  * may cause the current thread to block and wait for another Java thread. (For example, the current thread must not
  * call read on a stream being written by another Java thread.)
  *
@@ -2779,12 +2820,11 @@ public inline fun JNIEnv.GetStringUTFRegion(str: JString, start: Int, len: Int, 
 
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.GetPrimitiveArrayCritical(array: JArray): Pair<CArrayPointer<*>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val carray = pointed!!.GetPrimitiveArrayCritical!!(ptr, array, isCopy.ptr)
-        carray?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetPrimitiveArrayCritical(array: JArray): Pair<CArrayPointer<*>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val carray = pointed!!.GetPrimitiveArrayCritical!!(ptr, array, isCopy.ptr)
+    return carray?.let { it to isCopy.value.toKBoolean() }
 }
 
 /**
@@ -2794,7 +2834,7 @@ public inline fun JNIEnv.GetPrimitiveArrayCritical(array: JArray): Pair<CArrayPo
  * The [carray] argument is a pointer derived from [array] using the [GetPrimitiveArrayCritical] function.
  * If necessary, this function copies back all changes made to elems to the original array.
  *
- * The [mode] argument provides information on how the array buffer should be released. [mode] has no effect if [elems]
+ * The [mode] argument provides information on how the array buffer should be released. [mode] has no effect if [carray]
  * is not a copy of the elements in [array]. Otherwise, mode has the following impact:
  * - `ApplyChangesMode.Commit`      -> copy back the content and free the elems buffer.
  * - `ApplyChangesMode.FinalCommit` -> copy back the content but do not free the elems buffer.
@@ -2802,7 +2842,7 @@ public inline fun JNIEnv.GetPrimitiveArrayCritical(array: JArray): Pair<CArrayPo
  *
  * After calling [GetPrimitiveArrayCritical], the native code should not run for an extended period of time before it
  * calls [ReleasePrimitiveArrayCritical]. We must treat the code inside this pair of functions as running in a
- * "critical region." Inside a critical region, native code must not call other JNI functions, or any system call that
+ * "critical region." Inside a critical region, native code must not call other JNI functions or any system call that
  * may cause the current thread to block and wait for another Java thread. (For example, the current thread must not
  * call read on a stream being written by another Java thread.)
  *
@@ -2812,7 +2852,7 @@ public inline fun JNIEnv.GetPrimitiveArrayCritical(array: JArray): Pair<CArrayPo
 
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.ReleasePrimitiveArrayCritical(array: JArray, carray: CArrayPointer<*>, mode: JNI.ApplyChangesMode) {
+public inline fun JniEnv.ReleasePrimitiveArrayCritical(array: JArray, carray: CArrayPointer<*>, mode: ApplyChangesMode) {
     pointed!!.ReleasePrimitiveArrayCritical!!(ptr, array, carray, mode.nativeCode)
 }
 
@@ -2826,12 +2866,11 @@ public inline fun JNIEnv.ReleasePrimitiveArrayCritical(array: JArray, carray: CA
 
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.GetStringCritical(string: JString): Pair<CPointer<UShortVar>, Boolean>? {
-    return memScoped {
-        val isCopy = alloc<UByteVar>()
-        val carray = pointed!!.GetStringCritical!!(ptr, string, isCopy.ptr)
-        carray?.let { it to isCopy.value.toKBoolean() }
-    }
+context(memScope: NativePlacement)
+public inline fun JniEnv.GetStringCritical(string: JString): Pair<CPointer<UShortVar>, Boolean>? {
+    val isCopy = memScope.alloc<UByteVar>()
+    val carray = pointed!!.GetStringCritical!!(ptr, string, isCopy.ptr)
+    return carray?.let { it to isCopy.value.toKBoolean() }
 }
 
 /**
@@ -2844,7 +2883,7 @@ public inline fun JNIEnv.GetStringCritical(string: JString): Pair<CPointer<UShor
 
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.ReleaseStringCritical(string: JString, carray: CPointer<UShortVar>) {
+public inline fun JniEnv.ReleaseStringCritical(string: JString, carray: CPointer<UShortVar>) {
     pointed!!.ReleaseStringCritical!!(ptr, string, carray)
 }
 
@@ -2862,7 +2901,7 @@ public inline fun JNIEnv.ReleaseStringCritical(string: JString, carray: CPointer
 
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.NewWeakGlobalRef(obj: JObject): JWeak? {
+public inline fun JniEnv.NewWeakGlobalRef(obj: JObject): JWeak? {
     return pointed!!.NewWeakGlobalRef!!(ptr, obj)
 }
 
@@ -2871,7 +2910,7 @@ public inline fun JNIEnv.NewWeakGlobalRef(obj: JObject): JWeak? {
  *
  * @since JDK/JRE 1.2
  */
-public inline fun JNIEnv.DeleteWeakGlobalRef(obj: JWeak) {
+public inline fun JniEnv.DeleteWeakGlobalRef(obj: JWeak) {
     pointed!!.DeleteWeakGlobalRef!!(ptr, obj)
 }
 
@@ -2886,7 +2925,7 @@ public inline fun JNIEnv.DeleteWeakGlobalRef(obj: JWeak) {
  * effect or cause an unspecified exception to be thrown.
  *
  * @param address the starting address of the memory region.
- * @param capacity the size in bytes of the memory region, must be positive.
+ * @param capacity the size in bytes of the memory region; must be positive.
  *
  * @return a local reference to the newly instantiated java.nio.ByteBuffer object. Returns `null` if an exception
  * occurs, or if this virtual machine does not support JNI access to direct buffers.
@@ -2895,7 +2934,7 @@ public inline fun JNIEnv.DeleteWeakGlobalRef(obj: JWeak) {
  *
  * @since JDK/JRE 1.4
  */
-public inline fun JNIEnv.NewDirectByteBuffer(address: COpaquePointer, capacity: Long): JObject? {
+public inline fun JniEnv.NewDirectByteBuffer(address: COpaquePointer, capacity: Long): JObject? {
     return pointed!!.NewDirectByteBuffer!!(ptr, address, capacity)
 }
 
@@ -2913,7 +2952,7 @@ public inline fun JNIEnv.NewDirectByteBuffer(address: COpaquePointer, capacity: 
  *
  * @since JDK/JRE 1.4
  */
-public inline fun JNIEnv.GetDirectBufferAddress(buf: JObject): COpaquePointer? {
+public inline fun JniEnv.GetDirectBufferAddress(buf: JObject): COpaquePointer? {
     return pointed!!.GetDirectBufferAddress!!(ptr, buf)
 }
 
@@ -2929,7 +2968,7 @@ public inline fun JNIEnv.GetDirectBufferAddress(buf: JObject): COpaquePointer? {
  *
  * @since JDK/JRE 1.4
  */
-public inline fun JNIEnv.GetDirectBufferCapacity(buf: JObject): Long {
+public inline fun JniEnv.GetDirectBufferCapacity(buf: JObject): Long {
     return pointed!!.GetDirectBufferCapacity!!(ptr, buf)
 }
 
@@ -2943,6 +2982,6 @@ public inline fun JNIEnv.GetDirectBufferCapacity(buf: JObject): Long {
  *
  * @since JDK/JRE 9
  */
-public inline fun JNIEnv.GetModule(clazz: JClass): JObject {
+public inline fun JniEnv.GetModule(clazz: JClass): JObject {
     return pointed!!.GetModule!!(ptr, clazz)!!
 }
