@@ -1,11 +1,13 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
+//import com.vanniktech.maven.publish.SonatypeHost
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     kotlin("multiplatform") version "2.2.0"
-//    id("com.vanniktech.maven.publish") version "0.31.0"
+//    id("com.vanniktech.maven.publish") version "0.33.0"
+    `maven-publish`
 }
 
 group = "io.github.mimimishkin"
@@ -26,8 +28,8 @@ kotlin {
         if (isMac) macosArm64() else null,
         if (isLinux) linuxX64() else null,
         if (isLinux) linuxArm64() else null,
-        if (isLinux) androidNativeX64() else null,
-        if (isLinux) androidNativeArm64() else null,
+//        if (isLinux) androidNativeX64() else null,
+//        if (isLinux) androidNativeArm64() else null,
     ).forEach { target ->
         target.compilations.all {
             cinterops.create("jni") {

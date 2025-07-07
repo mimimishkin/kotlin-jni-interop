@@ -12,6 +12,17 @@
           </set>
         </option>
       </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/samples" />
+        <option name="gradleHome" value="" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/samples" />
+            <option value="$PROJECT_DIR$/samples/long-computation" />
+            <option value="$PROJECT_DIR$/samples/long-computation/native-part" />
+          </set>
+        </option>
+      </GradleProjectSettings>
     </option>
   </component>
 </project>
