@@ -17,6 +17,7 @@ import kotlinx.cinterop.get
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.staticCFunction
 import kotlinx.cinterop.toKString
+import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.utf16
 import kotlinx.cinterop.utf8
 import kotlin.Boolean
@@ -31,6 +32,7 @@ import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
 import kotlin.code
+import kotlin.reflect.KFunction
 import kotlin.toUShort
 
 /**
@@ -265,7 +267,7 @@ public inline fun <T> JniEnv.refFrame(capacity: Int, block: () -> T): T {
 }
 
 /**
- * Type that exposes methods [JNINativeMethodRegistry.register] to register native methods.
+ * Type that exposes method [JNINativeMethodRegistry.register] to register native methods.
  */
 public typealias JNINativeMethodRegistry = (JNINativeMethod.() -> Unit) -> Unit
 
@@ -276,7 +278,7 @@ public typealias JNINativeMethodRegistry = (JNINativeMethod.() -> Unit) -> Unit
  * are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
  */
 context(memScope: AutofreeScope)
-public inline fun JNINativeMethodRegistry.register(name: CValuesRef<ByteVar>, signature: CValuesRef<ByteVar>, functionPointer: COpaquePointer): Unit = this {
+public inline fun JNINativeMethodRegistry.register(name: CValuesRef<ByteVar>, signature: CValuesRef<ByteVar>, functionPointer: CPointer<out CFunction<*>>): Unit = this {
     this.name = name.getPointer(memScope)
     this.signature = signature.getPointer(memScope)
     this.fnPtr = functionPointer
