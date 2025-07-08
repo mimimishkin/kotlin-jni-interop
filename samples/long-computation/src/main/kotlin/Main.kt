@@ -1,10 +1,17 @@
 package io.github.mimimishkin.samples.longcomputation
 
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import kotlin.io.path.toPath
 import kotlin.time.measureTime
 
 object Main {
     init {
-        System.load("C:\\Users\\mika\\Desktop\\my_folder\\0\\projects\\java-kotlin-native-interop\\samples\\long-computation\\native-part\\build\\bin\\mingwX64\\releaseShared\\computation.dll")
+        val name = System.mapLibraryName("computation")
+        val lib = Main::class.java.getResource("/$name").toURI().toPath()
+        val file = Files.createTempFile(null, name)
+        Files.copy(lib, file, REPLACE_EXISTING)
+        System.load(file.toString())
     }
 
     fun crossPlatformComputation(count: Int) {

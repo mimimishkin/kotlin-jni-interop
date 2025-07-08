@@ -11,3 +11,7 @@ kotlin {
         freeCompilerArgs.add("-Xcontext-parameters")
     }
 }
+
+tasks.getByName("build") {
+    dependsOn(":long-computation:native-part:build")
+}

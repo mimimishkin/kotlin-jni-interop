@@ -48,3 +48,17 @@ kotlin {
         freeCompilerArgs.add("-Xcontext-parameters")
     }
 }
+
+tasks.register<Copy>("copyJniLib") {
+    val bins = layout.buildDirectory.dir("bin")
+    from(
+        fileTree(bins) {
+            include("**/release*/*.so", "**/release*/*.dll", "**/release*/*.dylib")
+        }.files
+    )
+    into("../src/main/resources")
+}
+
+tasks.named("build") {
+    finalizedBy("copyJniLib")
+}
