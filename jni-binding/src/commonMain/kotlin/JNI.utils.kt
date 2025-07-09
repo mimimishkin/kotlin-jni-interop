@@ -15,9 +15,7 @@ import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.get
 import kotlinx.cinterop.ptr
-import kotlinx.cinterop.staticCFunction
 import kotlinx.cinterop.toKString
-import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.utf16
 import kotlinx.cinterop.utf8
 import kotlin.Boolean
@@ -32,7 +30,6 @@ import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
 import kotlin.code
-import kotlin.reflect.KFunction
 import kotlin.toUShort
 
 /**
@@ -317,3 +314,49 @@ public inline fun JniEnv.registerNativesFor(clazz: JClass, count: Int, block: JN
 
     RegisterNatives(clazz, methods, index)
 }
+
+/**
+ * Version of the native method interface. For Java SE Platform 10 and later, it returns [JNI.v10].
+ */
+public inline val JniEnv.version: JniVersion get() = GetVersion()
+
+/**
+ * Exception object currently in the process of being thrown, or `null` if there is no one.
+ *
+ * The exception stays being thrown until either the native code calls [ExceptionClear], or the Java code handles the
+ * exception.
+ */
+public inline val JniEnv.exception: JThrowable? get() = ExceptionOccurred()
+
+/**
+ * Executes [block] in case there is pending exception. Then clear the exception.
+ */
+public inline fun JniEnv.handleException(block: (JThrowable) -> Unit) {
+    val throwable = exception
+    if (throwable != null) {
+        block(throwable)
+        ExceptionClear()
+    }
+}
+
+/**
+ * Executes [block] in case there is pending exception of a class [clazz]. Then clear the exception.
+ */
+public inline fun JniEnv.handleException(clazz: JClass, block: (JThrowable) -> Unit) {
+    val throwable = exception
+    if (throwable != null && IsInstanceOf(throwable, clazz)) {
+        block(throwable)
+        ExceptionClear()
+    }
+}
+
+/**
+ * `true` when there is a pending exception, `false` otherwise.
+ */
+public inline val JniEnv.isExceptionThrown: Boolean get() = ExceptionCheck()
+
+/**
+ * `JavaVM` interface associated with the current thread.
+ */
+context(memScope: NativePlacement)
+public inline val JniEnv.virtualMachine: JavaVM get() = GetJavaVM()
