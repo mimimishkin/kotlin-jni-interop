@@ -10,15 +10,16 @@ plugins {
 
 kotlin {
     val javaHome = System.getProperty("java.home")
+    val isX64 = Os.isArch("amd64") || Os.isArch("x86_64")
     val isMac = Os.isFamily(Os.FAMILY_MAC)
     val isWindows = Os.isFamily(Os.FAMILY_WINDOWS)
     val isLinux = !isMac && Os.isFamily(Os.FAMILY_UNIX)
     listOfNotNull(
         if (isWindows) mingwX64() else null,
-        if (isMac) macosX64() else null,
-        if (isMac) macosArm64() else null,
-        if (isLinux) linuxX64() else null,
-        if (isLinux) linuxArm64() else null
+        if (isX64 && isMac) macosX64() else null,
+        if (!isX64 && isMac) macosArm64() else null,
+        if (isX64 && isLinux) linuxX64() else null,
+        if (!isX64 && isLinux) linuxArm64() else null
     ).forEach { target ->
         target.binaries {
             sharedLib {
