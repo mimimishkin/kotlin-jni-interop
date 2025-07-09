@@ -9,6 +9,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "java-kotlin-native-interop"
+rootProject.name = "kotlin-jni-interop"
 
 include(":jni-binding")
