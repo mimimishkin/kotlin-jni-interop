@@ -1,18 +1,16 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
-//import com.vanniktech.maven.publish.SonatypeHost
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     kotlin("multiplatform") version "2.2.0"
-//    id("com.vanniktech.maven.publish") version "0.33.0"
-    `maven-publish`
+    id("com.vanniktech.maven.publish") version "0.33.0"
 }
 
 group = "io.github.mimimishkin"
-version = "1.0-SNAPSHOT"
-description = "No-op JNI bingdings for Kotlin Native"
+version = "1.0.0"
+description = "JNI bingdings for Kotlin Native"
 
 kotlin {
     val isMac = Os.isFamily(Os.FAMILY_MAC)
@@ -53,33 +51,33 @@ kotlin {
     }
 }
 
-//mavenPublishing {
-//    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-//
-//    signAllPublications()
-//
-//    coordinates(group.toString(), name, version.toString())
-//
-//    pom {
-//        name = project.name
-//        description = project.description
-//        inceptionYear = "2025"
-//        url = "https://github.com/mimimishkin/${project.name}"
-//        licenses {
-//            license {
-//                name = "MIT"
-//            }
-//        }
-//        developers {
-//            developer {
-//                id = "mimimishkin"
-//                name = "mimimishkin"
-//                email = "printf.mika@gmail.com"
-//            }
-//        }
-//        scm {
-//            url = "https://github.com/mimimishkin/${project.name}"
-//            connection = "scm:git:git://github.com/mimimishkin/${project.name}"
-//        }
-//    }
-//}
+mavenPublishing {
+    publishToMavenCentral(true)
+
+    signAllPublications()
+
+    coordinates(groupId = group.toString(), artifactId = name, version = version.toString())
+
+    pom {
+        name = project.name
+        description = project.description
+        inceptionYear = "2025"
+        url = "https://github.com/mimimishkin/${project.name}"
+        licenses {
+            license {
+                name = "MIT"
+            }
+        }
+        developers {
+            developer {
+                id = "mimimishkin"
+                name = "mimimishkin"
+                email = "printf.mika@gmail.com"
+            }
+        }
+        scm {
+            url = "https://github.com/mimimishkin/${project.name}"
+            connection = "scm:git:git://github.com/mimimishkin/${project.name}"
+        }
+    }
+}

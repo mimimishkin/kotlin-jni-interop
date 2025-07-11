@@ -5,7 +5,7 @@ Ready-for-use, zero-cost (most of the time) K/Native binding to JNI for all plat
 No longer need to configure cinterop yourself and suffer with inconvenient C pointers and function calls. 
 Just add 
 ```kotlin
-implementation("io.github.mimimishkin:jni-binding:1.0")
+implementation("io.github.mimimishkin:jni-binding:1.0.0")
 ```
 to project dependencies.
 
@@ -19,7 +19,7 @@ is likely to reduce, since they are not used anywhere).
 All other methods and properties are inline and will not take up space in the already huge Kotlin binaries, and will not 
 affect performance.
 
-Thirdly, these bindings are prepared specifically for Kotlin using all its possibilities: null-safety, DSL, functions 
+Thirdly, these bindings are cooked specifically for Kotlin using all its possibilities: null-safety, DSL, functions 
 with receiver and context parameters. This makes JNI easy to use, even for a child.
 
 And of coerce, documentation.
