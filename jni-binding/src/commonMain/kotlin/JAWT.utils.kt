@@ -62,3 +62,14 @@ public inline fun <T> DrawingSurface.useInfo(block: (DrawingSurfaceInfo) -> T): 
         FreeDrawingSurfaceInfo(info)
     }
 }
+
+context(env: JniEnv)
+public inline fun <T> Awt.useDrawingSurfaceInfo(target: JObject, block: DrawingSurface.(DrawingSurfaceInfo) -> T): T {
+    return useDrawingSurface(target) { surface ->
+        surface.withLock {
+            surface.useInfo { info ->
+                surface.block(info)
+            }
+        }
+    }
+}

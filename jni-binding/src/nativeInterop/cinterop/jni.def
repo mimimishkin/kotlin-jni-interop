@@ -3,6 +3,7 @@ headers = jni.h jni_md.h jawt.h jawt_md.h
 compilerOpts = -I ./src/nativeInterop/cinterop/include
 compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux -I ./src/nativeInterop/cinterop/include/linux_only -I /usr/include
 compilerOpts.android = -I ./src/nativeInterop/cinterop/include/linux
+language.osx = Objective-C
 compilerOpts.osx = -I ./src/nativeInterop/cinterop/include/darwin
 compilerOpts.mingw = -I ./src/nativeInterop/cinterop/include/win32
 
