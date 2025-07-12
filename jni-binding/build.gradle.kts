@@ -52,7 +52,7 @@ kotlin {
 }
 
 mavenPublishing {
-    publishToMavenCentral(true)
+    publishToMavenCentral(false)
 
     signAllPublications()
 
