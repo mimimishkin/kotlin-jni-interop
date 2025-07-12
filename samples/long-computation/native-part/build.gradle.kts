@@ -36,7 +36,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.mimimishkin:jni-binding:1.0-SNAPSHOT")
+            implementation("io.github.mimimishkin:jni-binding:1.0.1")
         }
 
         all {

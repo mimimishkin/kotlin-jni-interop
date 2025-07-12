@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "io.github.mimimishkin"
-version = "1.0.0"
+version = "1.0.1"
 description = "JNI bingdings for Kotlin Native"
 
 kotlin {
