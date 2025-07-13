@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
-import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.internal.extensions.stdlib.capitalized
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsMac
@@ -48,6 +48,28 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
         freeCompilerArgs.add("-Xcontext-parameters")
+    }
+}
+
+afterEvaluate {
+    for (repository in publishing.repositories) {
+        val repositoryName = repository.name.capitalized()
+        tasks.register("publishAllSupportedPublicationsTo${repositoryName}Repository") {
+            group = "publishing"
+
+            tasks.withType<PublishToMavenRepository> {
+                val name = publication.name
+                val match = repositoryName in name && when {
+                    name.contains("mingw", ignoreCase = true) -> hostIsMingw
+                    name.contains("macos", ignoreCase = true) -> hostIsMac
+                    else /* all others */ -> true
+                }
+
+                if (match) {
+                    this@register.dependsOn(this@withType)
+                }
+            }
+        }
     }
 }
 
