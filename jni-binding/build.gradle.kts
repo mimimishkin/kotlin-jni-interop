@@ -54,21 +54,18 @@ kotlin {
 afterEvaluate {
     for (repository in publishing.repositories) {
         val repositoryName = repository.name.capitalized()
+        val supportedTasks = tasks.withType<PublishToMavenRepository>().filter { task ->
+            repositoryName in task.name && when {
+                "mingw" in task.publication.name -> hostIsMingw
+                "macos" in task.publication.name -> hostIsMac
+                else /* all others */ -> hostIsLinux
+            }
+        }
+
         tasks.register("publishAllSupportedPublicationsTo${repositoryName}Repository") {
             group = "publishing"
-
-            tasks.withType<PublishToMavenRepository> {
-                val name = publication.name
-                val match = repositoryName in name && when {
-                    name.contains("mingw", ignoreCase = true) -> hostIsMingw
-                    name.contains("macos", ignoreCase = true) -> hostIsMac
-                    else /* all others */ -> true
-                }
-
-                if (match) {
-                    this@register.dependsOn(this@withType)
-                }
-            }
+            description = "Publishes all supported by this host publications to the '${repository.name}' repository"
+            dependsOn(supportedTasks)
         }
     }
 }
