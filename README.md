@@ -1,5 +1,14 @@
 # Kotlin Native JNI interop
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.mimimishkin/jni-binding.svg)](https://central.sonatype.org/artifact/io.github.mimimishkin/jni-binding)
+![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-mingwX64-4287f5)
+![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-macosX64-f5d042)
+![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-macosArm64-f5d042)
+![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-linuxX64-f54242)
+![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-linuxArm64-f54242)
+![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-androidNativeX64-42b554)
+![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-androidNativeArm64-42b554)
+
 Ready-for-use, zero-cost (most of the time) K/Native binding to JNI for all platforms.
 
 No longer need to configure cinterop yourself and suffer with inconvenient C pointers and function calls. 
@@ -16,7 +25,7 @@ First and foremost, you don't need to configure cinterop, which would be a pain 
 Secondly, this library contains only four non-inline declarations — a function to check what error the JNI function 
 returned, `String.modifiedUtf8` to pass valid strings to JNI, and two empty objects for convenience (which the compiler 
 is likely to reduce, since they are not used anywhere). 
-All other methods and properties are inline and will not take up space in the already huge Kotlin binaries, and will not 
+All other methods and properties are inline and will not take up space in the already huge Kotlin binaries and will not 
 affect performance.
 
 Thirdly, these bindings are cooked specifically for Kotlin using all its possibilities: null-safety, DSL, functions 
@@ -24,9 +33,22 @@ with receiver and context parameters. This makes JNI easy to use, even for a chi
 
 And of coerce, documentation.
 
+## Functions naming rules and parameters
+
+Most of the JNI functions have the same name as the original ones. For example, if in C you write 
+`(*env)->FindClass(env, "com/example/Main")` then in Kotlin its equivalent is `env.FindClass("com/example/Main".utf8)`.
+As you noticed, there is no need to duplicate `env` in the parameters.
+
+Some functions and constants have `JNI_` prefix. They have been grouped into a `JNI` object. The same if true for
+declarations with `JAWT_` prefix.
+
+There are also some names in camelCase. They are Kotlin wrappers that allow writing more readable and Kotlin-styled
+code. For example `refFrame {}` which executes a block of code inside a new reference frame and `jArgs {}` which creates 
+arguments to pass to JVM functions.
+
 ## You need to know
 
-As you may have noticed, almost everything in Kotlin is in experimental stage. This library uses cinterop, cinterop 
+As you may have noticed, almost everything in Kotlin is in experimental stage. This library uses cinterop, cinterop
 commonization and context parameters. You need to accept that a new version of Kotlin can make this library obsolete.
 
 Kotlin currently doesn't support publishing commonized cinterop. So you cannot build for more than one target at one
