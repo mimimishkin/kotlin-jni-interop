@@ -6,7 +6,7 @@ headers.osx = jawt_md.h
 
 compilerOpts = -I ./src/nativeInterop/cinterop/include
 compilerOpts.android = -I ./src/nativeInterop/cinterop/include/android
-compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux -I /usr/include
+compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux
 compilerOpts.mingw = -I ./src/nativeInterop/cinterop/include/win32
 compilerOpts.osx = -I ./src/nativeInterop/cinterop/include/darwin
 
