@@ -2,6 +2,9 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
+import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsMac
+import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsMingw
 
 plugins {
     kotlin("multiplatform") version "2.2.0"
@@ -13,21 +16,18 @@ version = "1.0.1"
 description = "JNI bingdings for Kotlin Native"
 
 kotlin {
-    val isMac = Os.isFamily(Os.FAMILY_MAC)
-    val isWindows = Os.isFamily(Os.FAMILY_WINDOWS)
-    val isLinux = !isMac && Os.isFamily(Os.FAMILY_UNIX)
-    if (isLinux) {
+    if (hostIsLinux) {
         // Cinterop generates enormous paths, so the build fails. Therefore, set the build directory to a short location
         layout.buildDirectory = file("/tmp/12345")
     }
-    listOfNotNull(
-        if (isWindows) mingwX64() else null,
-        if (isMac) macosX64() else null,
-        if (isMac) macosArm64() else null,
-        if (isLinux) linuxX64() else null,
-        if (isLinux) linuxArm64() else null,
-//        if (isLinux) androidNativeX64() else null,
-//        if (isLinux) androidNativeArm64() else null,
+    listOf(
+        mingwX64(),
+        macosX64(),
+        macosArm64(),
+        linuxX64(),
+        linuxArm64(),
+        androidNativeX64(),
+        androidNativeArm64(),
     ).forEach { target ->
         target.compilations.all {
             cinterops.create("jni") {
