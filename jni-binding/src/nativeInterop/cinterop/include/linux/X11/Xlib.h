@@ -1,4 +1,4 @@
-struct _XDisplay;
+struct _XDisplay {};
 typedef struct _XDisplay Display;
 
 typedef unsigned long CARD32;
