@@ -1,11 +1,16 @@
-#headers = classfile_constants.h jawt.h jdwpTransport.h jni.h jvmti.h jvmticmlr.h
-headers = jni.h jni_md.h jawt.h jawt_md.h
+#headers = classfile_constants.h jdwpTransport.h jvmti.h jvmticmlr.h
+headers = jni.h jni_md.h jawt.h
+headers.linux = jawt_md.h
+headers.mingw = jawt_md.h
+headers.osx = jawt_md.h
+
 compilerOpts = -I ./src/nativeInterop/cinterop/include
-compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux -I ./src/nativeInterop/cinterop/include/linux_only -I /usr/include
-compilerOpts.android = -I ./src/nativeInterop/cinterop/include/linux
-language.osx = Objective-C
-compilerOpts.osx = -I ./src/nativeInterop/cinterop/include/darwin
+compilerOpts.android = -I ./src/nativeInterop/cinterop/include/android
+compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux -I /usr/include
 compilerOpts.mingw = -I ./src/nativeInterop/cinterop/include/win32
+compilerOpts.osx = -I ./src/nativeInterop/cinterop/include/darwin
+
+language.osx = Objective-C
 
 userSetupHint = You need to have JVM dynamic libraries on the linker path to use JNI bindings. Use NativeBinary.linkerOpts("-L $JAVA_HOME/lib/server", "-l jvm") or NativeBinary.linkerOpts("-L $JAVA_HOME/lib", "-l jvm") on Windows to use JNI. For JAWT and others, you need libraries of the same name, they are located in $JAVA_HOME/lib.
 ---
