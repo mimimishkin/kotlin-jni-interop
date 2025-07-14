@@ -6,10 +6,14 @@ import io.github.mimimishkin.jni.JObject
 import io.github.mimimishkin.jni.JniEnv
 import kotlinx.cinterop.memScoped
 
-context(env: JniEnv)
-public inline fun <T> withAwt(version: AwtVersion = JAWT.lastVersion, block: (Awt) -> T): T {
+/**
+ * Receive [Awt] from [JniEnv] and executes [block] with it.
+ *
+ * Throw [IllegalStateException] if [GetAwt] fails.
+ */
+public inline fun <T> JniEnv.withAwt(version: AwtVersion = JAWT.lastVersion, block: (Awt) -> T): T {
     return memScoped {
-        val awt = env.GetAwt(version)
+        val awt = GetAwt(version)
         if (awt != null) {
             block(awt)
         } else {
@@ -18,6 +22,11 @@ public inline fun <T> withAwt(version: AwtVersion = JAWT.lastVersion, block: (Aw
     }
 }
 
+/**
+ * Locks the entire AWT, executes [block] and then release lock.
+ *
+ * @since 1.4
+ */
 context(env: JniEnv)
 public inline fun <T> Awt.withLock(block: () -> T): T {
     Lock()
@@ -28,6 +37,11 @@ public inline fun <T> Awt.withLock(block: () -> T): T {
     }
 }
 
+/**
+ * Gets a [DrawingSurface] from a target [JObject] and executes [block] with it. Then safely release the surface.
+ *
+ * Throw [IllegalStateException] if [GetDrawingSurface] fails.
+ */
 context(env: JniEnv)
 public inline fun <T> Awt.useDrawingSurface(target: JObject, block: (DrawingSurface) -> T): T {
     val surface = GetDrawingSurface(target)
@@ -41,6 +55,11 @@ public inline fun <T> Awt.useDrawingSurface(target: JObject, block: (DrawingSurf
     }
 }
 
+/**
+ * Locks the surface and executes [block], then release lock.
+ *
+ * Throw [IllegalStateException] if [Lock] fails.
+ */
 public inline fun <T> DrawingSurface.withLock(block: context(JniEnv) () -> T): T {
     val res = Lock()
     if (res and JAWT.LOCK_ERROR != 0)
@@ -53,6 +72,11 @@ public inline fun <T> DrawingSurface.withLock(block: context(JniEnv) () -> T): T
     }
 }
 
+/**
+ * Gets a [DrawingSurfaceInfo] and executes [block], then release the surface info.
+ *
+ * Throw [IllegalStateException] if [GetDrawingSurfaceInfo] fails.
+ */
 public inline fun <T> DrawingSurface.useInfo(block: (DrawingSurfaceInfo) -> T): T {
     val info = GetDrawingSurfaceInfo()
     if (info == null)
@@ -65,6 +89,9 @@ public inline fun <T> DrawingSurface.useInfo(block: (DrawingSurfaceInfo) -> T): 
     }
 }
 
+/**
+ * Alias for stacking [Awt.useDrawingSurface], [DrawingSurface.withLock] and [DrawingSurface.useInfo].
+ */
 context(env: JniEnv)
 public inline fun <T> Awt.useDrawingSurfaceInfo(target: JObject, block: DrawingSurface.(DrawingSurfaceInfo) -> T): T {
     return useDrawingSurface(target) { surface ->

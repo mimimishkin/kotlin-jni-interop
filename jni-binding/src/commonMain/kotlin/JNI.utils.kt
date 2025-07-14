@@ -253,6 +253,8 @@ public inline fun jArgs(count: Int, block: JArgumentsBuilder.() -> Unit): JArgum
  *
  * Some Java Virtual Machine implementations may choose to limit the maximum capacity, which may cause the function to
  * throw an exception.
+ *
+ * @since JDK/JRE 1.2
  */
 public inline fun <T> JniEnv.refFrame(capacity: Int, block: () -> T): T {
     PushLocalFrame(capacity)
