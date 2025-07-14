@@ -1,8 +1,12 @@
 @file:Suppress("NOTHING_TO_INLINE", "FunctionName")
 
-package io.github.mimimishkin.jni
+package io.github.mimimishkin.jni.awt
 
+import io.github.mimimishkin.jni.JObject
+import io.github.mimimishkin.jni.JniEnv
 import io.github.mimimishkin.jni.internal.raw.*
+import io.github.mimimishkin.jni.toJBoolean
+import io.github.mimimishkin.jni.toKBoolean
 import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CPointer
@@ -14,8 +18,6 @@ import kotlinx.cinterop.pointed
 import kotlinx.cinterop.ptr
 
 /**
- * **This API is greatly platform-specific!!!**
- *
  * AWT native interface.
  *
  * The AWT native interface allows a native application as a means by which to access native structures in AWT. This is

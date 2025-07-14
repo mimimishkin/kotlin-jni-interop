@@ -1,10 +1,9 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package io.github.mimimishkin.jni
+package io.github.mimimishkin.jni.awt
 
 import io.github.mimimishkin.jni.internal.raw.jawt_Win32DrawingSurfaceInfo
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.pointed
 import kotlinx.cinterop.reinterpret
 import platform.windows.HBITMAP

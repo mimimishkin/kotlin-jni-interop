@@ -1,7 +1,9 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package io.github.mimimishkin.jni
+package io.github.mimimishkin.jni.awt
 
+import io.github.mimimishkin.jni.JObject
+import io.github.mimimishkin.jni.JniEnv
 import kotlinx.cinterop.memScoped
 
 context(env: JniEnv)

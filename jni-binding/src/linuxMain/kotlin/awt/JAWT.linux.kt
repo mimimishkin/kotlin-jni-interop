@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE", "FunctionName")
 
-package io.github.mimimishkin.jni
+package io.github.mimimishkin.jni.awt
 
 import io.github.mimimishkin.jni.internal.raw.Colormap
 import io.github.mimimishkin.jni.internal.raw.Display
