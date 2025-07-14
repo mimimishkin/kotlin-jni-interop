@@ -1,10 +1,12 @@
 pluginManagement {
-    includeBuild("build-logic")
-
     repositories {
         mavenCentral()
         gradlePluginPortal()
     }
+}
+
+plugins {
+    id("dev.panuszewski.typesafe-conventions") version "0.7.4"
 }
 
 dependencyResolutionManagement {
@@ -14,6 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "kotlin-jni-interop"
-
-include(":jni-binding")
+rootProject.name = "build-logic"
+include(":convention")
