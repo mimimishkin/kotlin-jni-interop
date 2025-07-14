@@ -32,7 +32,7 @@ import kotlinx.cinterop.ptr
  * These interfaces are not part of the Java SE specification, and a VM is not required to implement this API.
  * However, it is strongly recommended that all implementations which support headful AWT also support these interfaces.
  */
-public typealias Awt = jawt
+public typealias Awt = CPointer<jawt>
 
 /**
  * Functions and utilities to work with JAWT (Java Abstract Window Toolkit).
@@ -94,11 +94,11 @@ public inline val JAWT.LOCK_SURFACE_CHANGED: Int get() = JAWT_LOCK_SURFACE_CHANG
  */
 context(memScope: MemScope)
 public fun JniEnv.GetAwt(version: AwtVersion = JAWT.lastVersion): Awt? {
-    val awt = memScope.alloc<Awt> {
+    val awt = memScope.alloc<jawt> {
         this.version = version
     }
     val success = JAWT_GetAWT(ptr, awt.ptr).toKBoolean()
-    return if (success) awt else null
+    return if (success) awt.ptr else null
 }
 
 /**
@@ -173,14 +173,14 @@ public inline val DrawingSurfaceInfo.clipRects: List<JAwtRectangle>
  */
 context(env: JniEnv)
 public inline fun Awt.GetDrawingSurface(target: JObject): DrawingSurface? {
-    return GetDrawingSurface!!.invoke(env.ptr, target)
+    return pointed.GetDrawingSurface!!(env.ptr, target)
 }
 
 /**
  * Free the drawing surface allocated in [GetDrawingSurface].
  */
 public inline fun Awt.FreeDrawingSurface(surface: DrawingSurface) {
-    FreeDrawingSurface!!.invoke(surface)
+    pointed.FreeDrawingSurface!!(surface)
 }
 
 /**
@@ -190,7 +190,7 @@ public inline fun Awt.FreeDrawingSurface(surface: DrawingSurface) {
  */
 context(env: JniEnv)
 public inline fun Awt.Lock() {
-    Lock!!.invoke(env.ptr)
+    pointed.Lock!!(env.ptr)
 }
 
 /**
@@ -200,7 +200,7 @@ public inline fun Awt.Lock() {
  */
 context(env: JniEnv)
 public inline fun Awt.Unlock() {
-    Unlock!!.invoke(env.ptr)
+    pointed.Unlock!!(env.ptr)
 }
 
 /**
@@ -216,7 +216,7 @@ public inline fun Awt.Unlock() {
  */
 context(env: JniEnv)
 public inline fun Awt.GetComponent(platformInfo: COpaquePointer): JObject? {
-    return GetComponent!!.invoke(env.ptr, platformInfo)
+    return pointed.GetComponent!!(env.ptr, platformInfo)
 }
 
 /**
@@ -232,7 +232,7 @@ public inline fun Awt.GetComponent(platformInfo: COpaquePointer): JObject? {
  */
 context(env: JniEnv)
 public inline fun Awt.CreateEmbeddedFrame(platformInfo: COpaquePointer): JObject? {
-    return CreateEmbeddedFrame!!.invoke(env.ptr, platformInfo)
+    return pointed.CreateEmbeddedFrame!!(env.ptr, platformInfo)
 }
 
 /**
@@ -252,7 +252,7 @@ public inline fun Awt.CreateEmbeddedFrame(platformInfo: COpaquePointer): JObject
  */
 context(env: JniEnv)
 public inline fun Awt.SetBounds(embeddedFrame: JObject, x: Int, y: Int, w: Int, h: Int) {
-    SetBounds!!.invoke(env.ptr, embeddedFrame, x, y, w, h)
+    pointed.SetBounds!!(env.ptr, embeddedFrame, x, y, w, h)
 }
 
 /**
@@ -265,7 +265,7 @@ public inline fun Awt.SetBounds(embeddedFrame: JObject, x: Int, y: Int, w: Int, 
  */
 context(env: JniEnv)
 public inline fun Awt.SynthesizeWindowActivation(embeddedFrame: JObject, doActivate: Boolean) {
-    SynthesizeWindowActivation!!.invoke(env.ptr, embeddedFrame, doActivate.toJBoolean())
+    pointed.SynthesizeWindowActivation!!(env.ptr, embeddedFrame, doActivate.toJBoolean())
 }
 
 /**
