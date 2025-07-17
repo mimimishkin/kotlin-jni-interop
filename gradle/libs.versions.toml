@@ -2,6 +2,7 @@
 kotlin = "2.2.0"
 dokka = "2.0.0"
 mavenPublish = "0.33.0"
+androidLibrary = "8.10.1"
 
 [libraries]
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -10,3 +11,4 @@ kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-pl
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+android-library = { id = "com.android.library", version.ref = "androidLibrary" }
