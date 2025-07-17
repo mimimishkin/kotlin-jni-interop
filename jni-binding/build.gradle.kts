@@ -7,11 +7,8 @@ import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 plugins {
     id("convention.native64bit-library")
     id("convention.publish")
-    id("convention.dokka")
 }
 
-group = "io.github.mimimishkin"
-version = "1.0.1"
 description = "JNI bingdings for Kotlin Native"
 
 kotlin {

@@ -23,6 +23,7 @@
             <option value="$PROJECT_DIR$/build-logic" />
             <option value="$PROJECT_DIR$/build-logic/convention" />
             <option value="$PROJECT_DIR$/jni-binding" />
+            <option value="$PROJECT_DIR$/jni-binding-annotations" />
           </set>
         </option>
       </GradleProjectSettings>
