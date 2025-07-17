@@ -20,6 +20,8 @@ kotlin {
         }
     }
 
+    jvmToolchain(17)
+
     if (hostIsLinux) {
         // Cinterop generates enormous paths, so the build fails. Therefore, set the build directory to a short location
         layout.buildDirectory = file("/tmp/12345")
