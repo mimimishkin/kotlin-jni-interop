@@ -278,34 +278,64 @@ public val String.modifiedUtf8: CValues<ByteVar> get() {
 }
 
 /**
- * Java interprets boolean values as unsigned byte.
+ * JVM interprets `boolean` values as unsigned byte.
  */
 public typealias JBoolean = UByte
 
 /**
- * Converts Kotlin boolean to JVM boolean.
+ * Converts Kotlin `boolean` to JVM `boolean`.
  */
 public inline fun Boolean.toJBoolean(): JBoolean = if (this) JNI_TRUE.toUByte() else JNI_FALSE.toUByte()
 
 /**
- * Converts JVM boolean to Kotlin boolean.
+ * Converts JVM `boolean` to Kotlin `boolean`.
  */
 public inline fun JBoolean.toKBoolean(): Boolean = this == JNI_TRUE.toUByte()
 
 /**
- * Java interprets char values as unsigned short.
+ * JVM interprets `byte` values the same way as Kotlin.
+ */
+public typealias JByte = Byte
+
+/**
+ * JVM interprets `char` values as unsigned short.
  */
 public typealias JChar = UShort
 
 /**
- * Converts Kotlin char to JVM char.
+ * Converts Kotlin `char` to JVM `char`.
  */
 public inline fun Char.toJChar(): JChar = code.toUShort()
 
 /**
- * Converts JVM char to Kotlin char.
+ * Converts JVM `char` to Kotlin `char`.
  */
 public inline fun JChar.toKChar(): Char = Char(this)
+
+/**
+ * JVM interprets `short` values the same way as Kotlin.
+ */
+public typealias JShort = Short
+
+/**
+ * JVM interprets `int` values the same way as Kotlin.
+ */
+public typealias JInt = Int
+
+/**
+ * JVM interprets `long` values the same way as Kotlin.
+ */
+public typealias JLong = Long
+
+/**
+ * JVM interprets `float` values the same way as Kotlin.
+ */
+public typealias JFloat = Float
+
+/**
+ * JVM interprets `double` values the same way as Kotlin.
+ */
+public typealias JDouble = Double
 
 /**
  * Pointer to `java.lang.Object`.

@@ -86,7 +86,7 @@ fun onLoad(vm: JavaVM, unused: COpaquePointer): JniVersion {
                 ThrowNew(exClass, "Could not find class".utf8)
             } else {
                 registerNativesFor(clazz, 1) {
-                    register("nativeComputation".utf8, "(I)V".utf8, staticCFunction { env: JniEnv, clazz: JClass, count: Int ->
+                    register("nativeComputation".utf8, "(I)V".utf8, staticCFunction { env: JniEnv, clazz: JClass, count: JInt ->
                         val array = ByteArray(count)
                         for ((index, b) in array.withIndex()) {
                             array[index] = (b + index).toByte()
