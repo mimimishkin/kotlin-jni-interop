@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 
 plugins {
-    id("convention.multiplatform-library")
+    id("convention.native64bit-library")
     id("convention.publish")
     id("convention.dokka")
 }
