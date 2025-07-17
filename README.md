@@ -1,6 +1,8 @@
 # Kotlin Native JNI interop
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.mimimishkin/jni-binding.svg)](https://central.sonatype.org/artifact/io.github.mimimishkin/jni-binding)
+![Kotlin](https://img.shields.io/badge/Kotlin-%E2%89%A52.0.0-7F52FF)
+
 ![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-mingwX64-4287f5)
 ![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-macosX64-f5d042)
 ![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-macosArm64-f5d042)
