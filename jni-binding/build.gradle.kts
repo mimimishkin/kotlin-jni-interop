@@ -27,3 +27,14 @@ kotlin {
         layout.buildDirectory = file("/tmp/12345")
     }
 }
+
+dokka {
+    dokkaSourceSets.configureEach {
+        // Dokka does not include the Cinterop package. So we create an empty file in this package and set
+        // skipEmptyPackages = true to at least document it
+        skipEmptyPackages = false
+
+        // Now we include all source sets, so we need to filter it
+        if (name !in listOf("commonMain", "linuxMain", "mingwMain", "macosMain")) suppress = true
+    }
+}
