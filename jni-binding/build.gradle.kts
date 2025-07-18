@@ -1,5 +1,8 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
+import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
+import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier.Private
+import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier.Public
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
@@ -30,11 +33,11 @@ kotlin {
 
 dokka {
     dokkaSourceSets.configureEach {
-        // Dokka does not include the Cinterop package. So we create an empty file in this package and set
-        // skipEmptyPackages = true to at least document it
-        skipEmptyPackages = false
-
-        // Now we include all source sets, so we need to filter it
-        if (name !in listOf("nativeMain", "linuxMain", "mingwMain", "macosMain")) suppress = true
+        // Dokka does not include the Cinterop package.
+        // So we create a file with a stub and include it in docs to at least document this package.
+        perPackageOption {
+            matchingRegex = ".*\\.internal\\.raw"
+            documentedVisibilities = setOf(Public, Private)
+        }
     }
 }
