@@ -35,6 +35,6 @@ dokka {
         skipEmptyPackages = false
 
         // Now we include all source sets, so we need to filter it
-        if (name !in listOf("commonMain", "linuxMain", "mingwMain", "macosMain")) suppress = true
+        if (name !in listOf("nativeMain", "linuxMain", "mingwMain", "macosMain")) suppress = true
     }
 }
