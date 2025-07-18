@@ -152,7 +152,7 @@ public inline fun JNI.GetDefaultJavaVMInitArgs(args: JavaVMInitArgs) {
  *
  * @return A pair of [JavaVM] and [JniEnv] of the main thread.
  *
- * @see javaVMInitArgs
+ * @see io.github.mimimishkin.jni.ext.javaVMInitArgs
  */
 context(memScope: NativePlacement)
 public inline fun JNI.CreateJavaVM(args: JavaVMInitArgs): Pair<JavaVM, JniEnv> {
@@ -192,12 +192,20 @@ public inline fun JNI.GetCreatedJavaVMs(): List<JavaVM> {
     return List(count.value) { i -> vms[i]!!.pointed }
 }
 
+/**
+ * Underlying structure for [JavaVMInitArgs].
+ */
 internal typealias JavaVMInitArgsStruct = io.github.mimimishkin.jni.internal.raw.JavaVMInitArgs
 
 /**
- * JavaVM initialization arguments structure.
+ * Java VM initialization arguments structure.
  */
 public typealias JavaVMInitArgs = CPointer<JavaVMInitArgsStruct>
+
+/**
+ * Java VM initialization option.
+ */
+public typealias JavaVMOption = io.github.mimimishkin.jni.internal.raw.JavaVMOption
 
 /**
  * The JNI version for this [JavaVMInitArgs].
@@ -431,7 +439,7 @@ public typealias JValue = jvalue
  * }
  * ```
  *
- * @see jArgs
+ * @see io.github.mimimishkin.jni.ext.jArgs
  */
 public typealias JArguments = CArrayPointer<JValue>
 
@@ -2700,7 +2708,7 @@ public typealias JNINativeMethod = io.github.mimimishkin.jni.internal.raw.JNINat
  *
  * @throws NoSuchMethodError if a specified method cannot be found or if the method is not native.
  *
- * @see registerNativesFor
+ * @see io.github.mimimishkin.jni.ext.registerNativesFor
  */
 context(memScope: NativePlacement)
 public inline fun JniEnv.RegisterNatives(clazz: JClass, methods: CArrayPointer<JNINativeMethod>, methodsCount: Int) {

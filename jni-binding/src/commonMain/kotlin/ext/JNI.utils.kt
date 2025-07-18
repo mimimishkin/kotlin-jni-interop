@@ -1,8 +1,8 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package io.github.mimimishkin.jni
+package io.github.mimimishkin.jni.ext
 
-import io.github.mimimishkin.jni.internal.raw.JavaVMOption
+import io.github.mimimishkin.jni.*
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CFunction
