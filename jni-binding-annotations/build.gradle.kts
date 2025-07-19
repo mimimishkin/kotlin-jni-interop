@@ -1,10 +1,5 @@
-@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
-
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-
 plugins {
     id("convention.native64bit-library")
-    id("convention.android-library")
     id("convention.publish")
 }
 
@@ -17,13 +12,4 @@ java {
 
 kotlin {
     jvm()
-
-    applyDefaultHierarchyTemplate {
-        common {
-            group("jvmLike") {
-                withAndroidTarget()
-                withJvm()
-            }
-        }
-    }
 }
