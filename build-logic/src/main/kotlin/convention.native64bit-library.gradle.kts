@@ -8,8 +8,6 @@ kotlin {
     macosArm64()
     linuxX64()
     linuxArm64()
-    androidNativeX64()
-    androidNativeArm64()
 
     explicitApi()
 

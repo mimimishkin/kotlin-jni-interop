@@ -4,16 +4,14 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-%E2%89%A52.0.0-7F52FF)
 
 ![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-mingwX64-4287f5)
-![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-macosX64-f5d042)
-![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-macosArm64-f5d042)
-![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-linuxX64-f54242)
-![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-linuxArm64-f54242)
-![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-androidNativeX64-42b554)
-![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-androidNativeArm64-42b554)
+![Kotlin macosX64](https://img.shields.io/badge/Kotlin-macosX64-f5d042)
+![Kotlin macosArm64](https://img.shields.io/badge/Kotlin-macosArm64-f5d042)
+![Kotlin linuxX64](https://img.shields.io/badge/Kotlin-linuxX64-f54242)
+![Kotlin linuxArm64](https://img.shields.io/badge/Kotlin-linuxArm64-f54242)
 
 Ready-for-use, zero-cost (most of the time) K/Native binding to JNI for all platforms.
 
-No longer need to configure cinterop yourself and suffer with inconvenient C pointers and function calls. 
+No longer need to configure cinterop yourself and suffer with inconvenient C pointers and function calls.
 Just add 
 ```kotlin
 implementation("io.github.mimimishkin:jni-binding:1.0.1")

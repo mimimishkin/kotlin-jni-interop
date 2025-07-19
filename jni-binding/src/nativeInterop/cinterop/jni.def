@@ -1,11 +1,7 @@
 #headers = classfile_constants.h jdwpTransport.h jvmti.h jvmticmlr.h
-headers = jni.h jni_md.h jawt.h
-headers.linux = jawt_md.h
-headers.mingw = jawt_md.h
-headers.osx = jawt_md.h
+headers = jni.h jni_md.h jawt.h jawt_md.h
 
 compilerOpts = -I ./src/nativeInterop/cinterop/include
-compilerOpts.android = -I ./src/nativeInterop/cinterop/include/android
 compilerOpts.linux = -I ./src/nativeInterop/cinterop/include/linux
 compilerOpts.mingw = -I ./src/nativeInterop/cinterop/include/win32
 compilerOpts.osx = -I ./src/nativeInterop/cinterop/include/darwin
