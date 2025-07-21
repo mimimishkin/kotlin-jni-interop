@@ -8,7 +8,7 @@ package io.github.mimimishkin.jni.annotations
  * finalizer), the programmer should be conservative on using Java VM services and refrain from arbitrary Java
  * call-backs.
  *
- * Annotated function must have either receiver or single parameter of type `JavaVM`.
+ * Annotated function must be top-level and have no or single parameter of type `JavaVM`.
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
