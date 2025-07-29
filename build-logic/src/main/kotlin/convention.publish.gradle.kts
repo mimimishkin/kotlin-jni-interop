@@ -13,7 +13,7 @@ afterEvaluate {
             repositoryName in task.name && when {
                 "mingw" in task.publication.name -> hostIsMingw
                 "macos" in task.publication.name -> hostIsMac
-                else /* linux, android and kotlinMultiplatform */ -> hostIsLinux
+                else /* linux, android, jvm and kotlinMultiplatform */ -> hostIsLinux
             }
         }
 
@@ -36,7 +36,7 @@ mavenPublishing {
         name = project.name
         description = project.description
         inceptionYear = "2025"
-        url = "https://github.com/mimimishkin/${project.name}"
+        url = "https://github.com/mimimishkin/${rootProject.name}"
         licenses {
             license {
                 name = "MIT"
@@ -50,8 +50,8 @@ mavenPublishing {
             }
         }
         scm {
-            url = "https://github.com/mimimishkin/${project.name}"
-            connection = "scm:git:git://github.com/mimimishkin/${project.name}"
+            url = "https://github.com/mimimishkin/${rootProject.name}"
+            connection = "scm:git:git://github.com/mimimishkin/${rootProject.name}.git"
         }
     }
 }
