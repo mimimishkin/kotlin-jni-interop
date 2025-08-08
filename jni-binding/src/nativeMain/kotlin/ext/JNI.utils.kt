@@ -3,21 +3,30 @@
 package io.github.mimimishkin.jni.ext
 
 import io.github.mimimishkin.jni.*
+import io.github.mimimishkin.jni.ExceptionClear
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.CFunction
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.CValuesRef
+import kotlinx.cinterop.DoubleVar
+import kotlinx.cinterop.FloatVar
+import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.LongVar
 import kotlinx.cinterop.NativePlacement
+import kotlinx.cinterop.ShortVar
+import kotlinx.cinterop.UByteVar
+import kotlinx.cinterop.UShortVar
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.get
 import kotlinx.cinterop.ptr
+import kotlinx.cinterop.set
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.utf16
-import kotlinx.cinterop.utf8
 import kotlin.Boolean
 import kotlin.Byte
 import kotlin.Char
@@ -29,8 +38,6 @@ import kotlin.Short
 import kotlin.String
 import kotlin.Suppress
 import kotlin.Unit
-import kotlin.code
-import kotlin.toUShort
 
 /**
  * Special type that exposes [option] method to add VM options.
@@ -107,7 +114,7 @@ public inline fun javaVMInitArgs(
  * thrown.
  */
 context(memScope: NativePlacement)
-public inline fun <T> JavaVM.withEnv(version: JniVersion = JNI.lastVersion, block: JniEnv.() -> T): T {
+public inline fun <T> JavaVM.withEnv(version: JniVersion = JNI.lastVersion, block: context(JniEnv) () -> T): T {
     return with(GetEnv(version), block)
 }
 
@@ -116,17 +123,18 @@ public inline fun <T> JavaVM.withEnv(version: JniVersion = JNI.lastVersion, bloc
  * and then detaches the thread upon completion.
  *
  * @param version the requested JNI version to be used for attaching the current thread.
- * @param name the name of the thread.
- * @param group a global ref of a ThreadGroup object.
+ * @param name the name of the thread in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or
+ * **if you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
+ * @param group a global ref of a `ThreadGroup` object.
  */
 context(memScope: AutofreeScope)
 public inline fun <T> JavaVM.withEnvAttaching(
     version: JniVersion = JNI.lastVersion,
-    name: String? = null,
+    name: CValuesRef<ByteVar>? = null,
     group: JObject? = null,
-    block: JniEnv.() -> T
+    block: context(JniEnv) () -> T
 ): T {
-    val env = AttachCurrentThread(version, name?.modifiedUtf8, group)
+    val env = AttachCurrentThread(version, name, group)
     try {
         return with(env, block)
     } finally {
@@ -135,26 +143,26 @@ public inline fun <T> JavaVM.withEnvAttaching(
 }
 
 /**
- * Converts JVM string into Kotlin Native string.
+ * Converts JVM string into Kotlin string.
  *
  * @return converted string or `null` if fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
 public inline fun JString.toKString(): String? {
-    val (chars, _) = env.GetStringChars(this) ?: return null
+    val (chars, _) = GetStringChars(this) ?: return null
     val res = chars.toKString()
-    env.ReleaseStringChars(this, chars)
+    ReleaseStringChars(this, chars)
     return res
 }
 
 /**
- * Converts Kotlin Native string into JVM string.
+ * Converts Kotlin string into JVM string.
  *
  * @return converted string or `null` if fails.
  */
 context(env: JniEnv, memScope: AutofreeScope)
 public inline fun String.toJString(): JString? {
-    return env.NewString(utf16.getPointer(memScope), length)
+    return NewString(utf16.getPointer(memScope), length)
 }
 
 /**
@@ -177,7 +185,7 @@ public inline fun JArgumentsBuilder.byte(value: Byte): Unit = this { this.b = va
 /**
  * Add `char` value to arguments.
  */
-public inline fun JArgumentsBuilder.char(value: Char): Unit = this { this.c = value.code.toUShort() }
+public inline fun JArgumentsBuilder.char(value: Char): Unit = this { this.c = value.toJChar() }
 
 /**
  * Add `short` value to arguments.
@@ -256,7 +264,8 @@ public inline fun jArgs(count: Int, block: JArgumentsBuilder.() -> Unit): JArgum
  *
  * @since JDK/JRE 1.2
  */
-public inline fun <T> JniEnv.refFrame(capacity: Int, block: () -> T): T {
+context(env: JniEnv)
+public inline fun <T> refFrame(capacity: Int, block: () -> T): T {
     PushLocalFrame(capacity)
     try {
         return block()
@@ -306,8 +315,8 @@ public inline fun JNINativeMethodRegistry.register(name: CValuesRef<ByteVar>, si
  *
  * @throws NoSuchMethodError if a specified method cannot be found or if the method is not native.
  */
-context(memScope: AutofreeScope)
-public inline fun JniEnv.registerNativesFor(clazz: JClass, count: Int, block: JNINativeMethodRegistry.() -> Unit) {
+context(env: JniEnv, memScope: AutofreeScope)
+public inline fun registerNativesFor(clazz: JClass, count: Int, block: JNINativeMethodRegistry.() -> Unit) {
     val methods = memScope.allocArray<JNINativeMethod>(count)
     var index = 0
     block { init ->
@@ -328,13 +337,14 @@ public inline val JniEnv.version: JniVersion get() = GetVersion()
  * The exception stays being thrown until either the native code calls [ExceptionClear], or the Java code handles the
  * exception.
  */
-public inline val JniEnv.exception: JThrowable? get() = ExceptionOccurred()
+public inline val JniEnv.pendingException: JThrowable? get() = ExceptionOccurred()
 
 /**
  * Executes [block] in case there is pending exception. Then clear the exception.
  */
-public inline fun JniEnv.handleException(block: (JThrowable) -> Unit) {
-    val throwable = exception
+context(env: JniEnv)
+public inline fun handleException(block: (JThrowable) -> Unit) {
+    val throwable = env.pendingException
     if (throwable != null) {
         block(throwable)
         ExceptionClear()
@@ -344,8 +354,9 @@ public inline fun JniEnv.handleException(block: (JThrowable) -> Unit) {
 /**
  * Executes [block] in case there is pending exception of a class [clazz]. Then clear the exception.
  */
-public inline fun JniEnv.handleException(clazz: JClass, block: (JThrowable) -> Unit) {
-    val throwable = exception
+context(env: JniEnv)
+public inline fun handleException(clazz: JClass, block: (JThrowable) -> Unit) {
+    val throwable = env.pendingException
     if (throwable != null && IsInstanceOf(throwable, clazz)) {
         block(throwable)
         ExceptionClear()
@@ -362,3 +373,196 @@ public inline val JniEnv.isExceptionThrown: Boolean get() = ExceptionCheck()
  */
 context(memScope: NativePlacement)
 public inline val JniEnv.virtualMachine: JavaVM get() = GetJavaVM()
+
+/**
+ * Alias for safely retrieving a string's chars via [GetStringChars] and [ReleaseStringChars].
+ *
+ * @return The result of the [block], or `null` if [GetStringChars] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JString.modifyStringChars(block: (chars: CArrayPointer<UShortVar>, isCopy: Boolean) -> T): T? {
+    val (chars, isCopy) = GetStringChars(this) ?: return null
+    try {
+        return block(chars, isCopy)
+    } finally {
+        ReleaseStringChars(this, chars)
+    }
+}
+
+/**
+ * Alias for safely retrieving a string's chars via [GetStringCritical] and [ReleaseStringCritical].
+ *
+ * @return The result of the [block], or `null` if [GetStringCritical] fails.
+ *
+ * @since JDK/JRE 1.2
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JString.modifyStringCritical(block: (chars: CArrayPointer<UShortVar>, isCopy: Boolean) -> T): T? {
+    val (chars, isCopy) = GetStringCritical(this) ?: return null
+    try {
+        return block(chars, isCopy)
+    } finally {
+        ReleaseStringCritical(this, chars)
+    }
+}
+
+/**
+ * Alias for safely retrieving a string's chars via [GetStringUTFChars] and [ReleaseStringUTFChars].
+ *
+ * @return The result of the [block], or `null` if [GetStringUTFChars] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JString.modifyStringUTFChars(block: (chars: CArrayPointer<ByteVar>, isCopy: Boolean) -> T): T? {
+    val (chars, isCopy) = GetStringUTFChars(this) ?: return null
+    try {
+        return block(chars, isCopy)
+    } finally {
+        ReleaseStringUTFChars(this, chars)
+    }
+}
+
+/**
+ * Special type that exposes methods [commit], [finalize] and [abort] to simplify working with arrays.
+ */
+public typealias ModifyingArrayScope = (ApplyChangesMode) -> Unit
+
+/**
+ * Alias for releasing an array with [ApplyChangesMode.Commit].
+ */
+public inline fun ModifyingArrayScope.commit(): Unit = this(ApplyChangesMode.Commit)
+
+/**
+ * Alias for releasing an array with [ApplyChangesMode.Commit].
+ */
+public inline fun ModifyingArrayScope.finalize(): Unit = this(ApplyChangesMode.FinalCommit)
+
+/**
+ * Alias for releasing an array with [ApplyChangesMode.Commit].
+ */
+public inline fun ModifyingArrayScope.abort(): Unit = this(ApplyChangesMode.Abort)
+
+/**
+ * Alias for working with `boolean` array's elements via [GetBooleanArrayElements] and releasing it with
+ * [ReleaseBooleanArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetBooleanArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyBooleanArray(block: ModifyingArrayScope.(carray: CArrayPointer<UByteVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetBooleanArrayElements(this) ?: return null
+    return block({ mode -> ReleaseBooleanArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with `byte` array's elements via [GetByteArrayElements] and releasing it with
+ * [ReleaseByteArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetByteArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyByteArray(block: ModifyingArrayScope.(carray: CArrayPointer<ByteVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetByteArrayElements(this) ?: return null
+    return block({ mode -> ReleaseByteArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with `char` array's elements via [GetCharArrayElements] and releasing it with
+ * [ReleaseCharArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetCharArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyCharArray(block: ModifyingArrayScope.(carray: CArrayPointer<UShortVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetCharArrayElements(this) ?: return null
+    return block({ mode -> ReleaseCharArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with  `short` array's elements via [GetShortArrayElements] and releasing it with
+ * [ReleaseShortArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetShortArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyShortArray(block: ModifyingArrayScope.(carray: CArrayPointer<ShortVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetShortArrayElements(this) ?: return null
+    return block({ mode -> ReleaseShortArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with  `int` array's elements via [GetIntArrayElements] and releasing it with
+ * [ReleaseIntArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetIntArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyIntArray(block: ModifyingArrayScope.(carray: CArrayPointer<IntVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetIntArrayElements(this) ?: return null
+    return block({ mode -> ReleaseIntArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with `long` array's elements via [GetLongArrayElements] and releasing it with
+ * [ReleaseLongArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetLongArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyLongArray(block: ModifyingArrayScope.(carray: CArrayPointer<LongVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetLongArrayElements(this) ?: return null
+    return block({ mode -> ReleaseLongArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with `float` array's elements via [GetFloatArrayElements] and releasing it with
+ * [ReleaseFloatArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetFloatArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyFloatArray(block: ModifyingArrayScope.(carray: CArrayPointer<FloatVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetFloatArrayElements(this) ?: return null
+    return block({ mode -> ReleaseFloatArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with `double` array's elements via [GetDoubleArrayElements] and releasing it with
+ * [ReleaseDoubleArrayElements].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetDoubleArrayElements] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyDoubleArray(block: ModifyingArrayScope.(carray: CArrayPointer<DoubleVar>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetDoubleArrayElements(this) ?: return null
+    return block({ mode -> ReleaseDoubleArrayElements(this, carray, mode) }, carray, isCopy)
+}
+
+/**
+ * Alias for working with primitive array's elements via [GetPrimitiveArrayCritical] and releasing it with
+ * [ReleasePrimitiveArrayCritical].
+ *
+ * You can access [commit], [finalize] and [abort] methods inside [block].
+ *
+ * @return The result of the [block], or `null` if [GetPrimitiveArrayCritical] fails.
+ */
+context(env: JniEnv, memScope: NativePlacement)
+public inline fun <T> JArray.modifyPrimitiveArrayCritical(block: ModifyingArrayScope.(carray: CArrayPointer<*>, isCopy: Boolean) -> T): T? {
+    val (carray, isCopy) = GetPrimitiveArrayCritical(this) ?: return null
+    return block({ mode -> ReleasePrimitiveArrayCritical(this, carray, mode) }, carray, isCopy)
+}

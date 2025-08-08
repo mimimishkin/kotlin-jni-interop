@@ -1,8 +1,6 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
-import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
-import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier.Private
-import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier.Public
+import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier.*
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux

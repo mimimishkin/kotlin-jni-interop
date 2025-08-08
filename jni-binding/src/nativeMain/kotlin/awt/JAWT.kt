@@ -11,6 +11,7 @@ import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.MemScope
+import kotlinx.cinterop.NativePlacement
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.get
 import kotlinx.cinterop.invoke
@@ -94,7 +95,7 @@ public inline val JAWT.LOCK_SURFACE_CHANGED: Int get() = JAWT_LOCK_SURFACE_CHANG
 /**
  * Get the AWT native structure.
  */
-context(memScope: MemScope)
+context(memScope: NativePlacement)
 public fun JniEnv.GetAwt(version: AwtVersion = JAWT.lastVersion): Awt? {
     val awt = memScope.alloc<jawt> {
         this.version = version
