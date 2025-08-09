@@ -1,7 +1,7 @@
 # Kotlin Native JNI interop
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.mimimishkin/jni-binding.svg)](https://central.sonatype.org/artifact/io.github.mimimishkin/jni-binding)
-![Kotlin](https://img.shields.io/badge/Kotlin-%E2%89%A52.0.0-7F52FF)
+![Kotlin](https://img.shields.io/badge/Kotlin-%E2%89%A52.2.0-7F52FF)
 
 ![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-mingwX64-4287f5)
 ![Kotlin macosX64](https://img.shields.io/badge/Kotlin-macosX64-f5d042)
@@ -9,7 +9,7 @@
 ![Kotlin linuxX64](https://img.shields.io/badge/Kotlin-linuxX64-f54242)
 ![Kotlin linuxArm64](https://img.shields.io/badge/Kotlin-linuxArm64-f54242)
 
-Ready-for-use, zero-cost (most of the time) K/Native binding to JNI for all platforms.
+Ready-to-use K/Native binding to JNI for all platforms.
 
 No longer need to configure cinterop yourself and suffer with inconvenient C pointers and function calls.
 Just add 
@@ -20,7 +20,8 @@ to project dependencies.
 
 ## Advantages over cinterop
 
-First and foremost, you don't need to configure cinterop, which would be a pain in a multiplatform project.
+First and foremost, you don't need to configure cinterop, which would be a pain in a multiplatform project. Also, you 
+don't need to wait until cinterop will be generated.
 
 Secondly, this library contains only four non-inline declarations — a function to check what error the JNI function 
 returned, `String.modifiedUtf8` to pass valid strings to JNI, and two empty objects for convenience (which the compiler 
@@ -36,8 +37,7 @@ And of coerce, documentation.
 ## Functions naming rules and parameters
 
 Most of the JNI functions have the same name as the original ones. For example, if in C you write 
-`(*env)->FindClass(env, "com/example/Main")` then in Kotlin its equivalent is `env.FindClass("com/example/Main".utf8)`.
-As you noticed, there is no need to duplicate `env` in the parameters.
+`(*env)->FindClass(env, "com/example/Main")` then in Kotlin its equivalent is `FindClass("com/example/Main".utf8)`.
 
 Some functions and constants have `JNI_` prefix. They have been grouped into a `JNI` object. The same if true for
 declarations with `JAWT_` prefix.
