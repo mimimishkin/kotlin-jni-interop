@@ -1,0 +1,27 @@
+package io.github.mimimishkin.jni.binding.plugin
+
+public enum class JavaType {
+    Boolean,
+    Byte,
+    Char,
+    Short,
+    Int,
+    Long,
+    Float,
+    Double,
+    Object,
+    Class,
+    Throwable,
+    String,
+    Array,
+    BooleanArray,
+    ByteArray,
+    CharArray,
+    ShortArray,
+    IntArray,
+    LongArray,
+    FloatArray,
+    DoubleArray,
+    ObjectArray,
+    Void,
+}

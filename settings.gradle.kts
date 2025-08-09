@@ -18,3 +18,4 @@ rootProject.name = "kotlin-jni-interop"
 
 include(":jni-binding")
 include(":jni-binding-annotations")
+include(":jni-binding-plugins")
