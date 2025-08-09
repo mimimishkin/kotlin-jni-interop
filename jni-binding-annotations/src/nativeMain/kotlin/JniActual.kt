@@ -9,7 +9,7 @@ package io.github.mimimishkin.jni.annotations
  * 1. All functions marked with `JniExpect` have an implementation with this annotation.
  * 2. Each pair of `JniExpect` and [JniActual] functions has the same parameters.
  *
- * So you don't need to worry about [UnsatisfiedLinkError].
+ * So you don't need to worry about `UnsatisfiedLinkError`.
  *
  * Should be applied to functions that:
  * - are top-level
