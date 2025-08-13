@@ -3,6 +3,8 @@ package io.github.mimimishkin.jni.binding.annotation
 /**
  * Adds information about jvm signature for functions annotated with [JniActual].
  *
+ * If is used together with [WithJvmType], this annotation will override it.
+ *
  * Note: this annotation is [Repeatable] for internal usage, if you apply it multiple times, only the first one will be
  * used.
  *
