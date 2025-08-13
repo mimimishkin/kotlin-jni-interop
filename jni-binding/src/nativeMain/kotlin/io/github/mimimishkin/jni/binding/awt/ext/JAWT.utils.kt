@@ -45,9 +45,7 @@ public inline fun <T> Awt.withLock(block: () -> T): T {
  */
 context(env: JniEnv)
 public inline fun <T> Awt.useDrawingSurface(target: JObject, block: (DrawingSurface) -> T): T {
-    val surface = GetDrawingSurface(target)
-    if (surface == null)
-        throw IllegalStateException("DrawingSurface not found")
+    val surface = checkNotNull(GetDrawingSurface(target)) { "DrawingSurface not found" }
 
     try {
         return block(surface)
@@ -63,8 +61,7 @@ public inline fun <T> Awt.useDrawingSurface(target: JObject, block: (DrawingSurf
  */
 public inline fun <T> DrawingSurface.withLock(block: context(JniEnv) () -> T): T {
     val res = Lock()
-    if (res and JAWT.LOCK_ERROR != 0)
-        throw IllegalStateException("Error locking surface")
+    check(res and JAWT.LOCK_ERROR == 0) { "Error locking surface" }
 
     try {
         return block(env)
@@ -79,9 +76,7 @@ public inline fun <T> DrawingSurface.withLock(block: context(JniEnv) () -> T): T
  * Throw [IllegalStateException] if [GetDrawingSurfaceInfo] fails.
  */
 public inline fun <T> DrawingSurface.useInfo(block: (DrawingSurfaceInfo) -> T): T {
-    val info = GetDrawingSurfaceInfo()
-    if (info == null)
-        throw IllegalStateException("Error getting surface info")
+    val info = checkNotNull(GetDrawingSurfaceInfo()) { "Error getting surface info" }
 
     try {
         return block(info)

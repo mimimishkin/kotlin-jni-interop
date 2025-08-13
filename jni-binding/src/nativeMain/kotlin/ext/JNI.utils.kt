@@ -24,7 +24,6 @@ import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.get
 import kotlinx.cinterop.ptr
-import kotlinx.cinterop.set
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.utf16
 import kotlin.Boolean
@@ -115,7 +114,7 @@ public inline fun javaVMInitArgs(
  */
 context(memScope: NativePlacement)
 public inline fun <T> JavaVM.withEnv(version: JniVersion = JNI.lastVersion, block: context(JniEnv) () -> T): T {
-    return with(GetEnv(version), block)
+    return context(GetEnv(version), block)
 }
 
 /**
@@ -136,7 +135,7 @@ public inline fun <T> JavaVM.withEnvAttaching(
 ): T {
     val env = AttachCurrentThread(version, name, group)
     try {
-        return with(env, block)
+        return context(env, block)
     } finally {
         DetachCurrentThread()
     }
@@ -277,10 +276,10 @@ public inline fun <T> refFrame(capacity: Int, block: () -> T): T {
 /**
  * Type that exposes method [JNINativeMethodRegistry.register] to register native methods.
  */
-public typealias JNINativeMethodRegistry = (JNINativeMethod.() -> Unit) -> Unit
+public typealias JNINativeMethodRegistry = (JniNativeMethod.() -> Unit) -> Unit
 
 /**
- * Register new [JNINativeMethod] with specified [name], [signature] and [functionPointer].
+ * Register new [JniNativeMethod] with specified [name], [signature] and [functionPointer].
  *
  * Name and signature must be in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it, or **if you
  * are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
@@ -317,7 +316,7 @@ public inline fun JNINativeMethodRegistry.register(name: CValuesRef<ByteVar>, si
  */
 context(env: JniEnv, memScope: AutofreeScope)
 public inline fun registerNativesFor(clazz: JClass, count: Int, block: JNINativeMethodRegistry.() -> Unit) {
-    val methods = memScope.allocArray<JNINativeMethod>(count)
+    val methods = memScope.allocArray<JniNativeMethod>(count)
     var index = 0
     block { init ->
         methods[index++].init()

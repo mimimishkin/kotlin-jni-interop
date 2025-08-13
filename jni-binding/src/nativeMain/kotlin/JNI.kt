@@ -2,6 +2,7 @@
 
 package io.github.mimimishkin.jni
 
+import io.github.mimimishkin.jni.annotations.WithJvmType
 import io.github.mimimishkin.jni.internal.raw.*
 import kotlinx.cinterop.*
 import kotlinx.cinterop.ByteVar
@@ -288,6 +289,7 @@ public val String.modifiedUtf8: CValues<ByteVar> get() {
 /**
  * JVM interprets `boolean` values as unsigned byte.
  */
+@WithJvmType("boolean")
 public typealias JBoolean = UByte
 
 /**
@@ -303,11 +305,13 @@ public inline fun JBoolean.toKBoolean(): Boolean = this == JNI_TRUE.toUByte()
 /**
  * JVM interprets `byte` values the same way as Kotlin.
  */
+@WithJvmType("byte")
 public typealias JByte = Byte
 
 /**
  * JVM interprets `char` values as unsigned short.
  */
+@WithJvmType("char")
 public typealias JChar = UShort
 
 /**
@@ -323,52 +327,62 @@ public inline fun JChar.toKChar(): Char = Char(this)
 /**
  * JVM interprets `short` values the same way as Kotlin.
  */
+@WithJvmType("short")
 public typealias JShort = Short
 
 /**
  * JVM interprets `int` values the same way as Kotlin.
  */
+@WithJvmType("int")
 public typealias JInt = Int
 
 /**
  * JVM interprets `long` values the same way as Kotlin.
  */
+@WithJvmType("long")
 public typealias JLong = Long
 
 /**
  * JVM interprets `float` values the same way as Kotlin.
  */
+@WithJvmType("float")
 public typealias JFloat = Float
 
 /**
  * JVM interprets `double` values the same way as Kotlin.
  */
+@WithJvmType("double")
 public typealias JDouble = Double
 
 /**
  * Allows explicitly specifying that a function doesn't return any value in the same way as if it returned something and
  * we've used [JBoolean], [JByte], [JChar] or others.
  */
+@WithJvmType("void")
 public typealias JVoid = Unit
 
 /**
  * Pointer to `java.lang.Object`.
  */
+@WithJvmType("java.lang.Object")
 public typealias JObject = CPointer<_jobject>
 
 /**
- * Pointer to `java.lang.reflect.Class`.
+ * Pointer to `java.lang.Class`.
  */
+@WithJvmType("java.lang.Class")
 public typealias JClass = JObject
 
 /**
  * Pointer to `java.lang.Throwable`.
  */
+@WithJvmType("java.lang.Throwable")
 public typealias JThrowable = JObject
 
 /**
  * Pointer to `java.lang.String`.
  */
+@WithJvmType("java.lang.String")
 public typealias JString = JObject
 
 /**
@@ -379,46 +393,55 @@ public typealias JArray = JObject
 /**
  * Pointer to a boolean[] object.
  */
+@WithJvmType("boolean[]")
 public typealias JBooleanArray = JArray
 
 /**
  * Pointer to a byte[] object.
  */
+@WithJvmType("byte[]")
 public typealias JByteArray = JArray
 
 /**
  * Pointer to a char[] object.
  */
+@WithJvmType("char[]")
 public typealias JCharArray = JArray
 
 /**
  * Pointer to a short[] object.
  */
+@WithJvmType("short[]")
 public typealias JShortArray = JArray
 
 /**
  * Pointer to an int[] object.
  */
+@WithJvmType("int[]")
 public typealias JIntArray = JArray
 
 /**
  * Pointer to a long[] object.
  */
+@WithJvmType("long[]")
 public typealias JLongArray = JArray
 
 /**
  * Pointer to a float[] object.
  */
+@WithJvmType("float[]")
 public typealias JFloatArray = JArray
 
 /**
  * Pointer to a double[] object.
  */
+@WithJvmType("double[]")
 public typealias JDoubleArray = JArray
 
 /**
  * Pointer to an array of an object type.
  */
+@WithJvmType("java.lang.Object[]")
 public typealias JObjectArray = JArray
 
 /**
@@ -436,13 +459,11 @@ public typealias JValue = jvalue
  *
  * Example:
  * ```
- * with(env) {
- *     val clazz = FindClass("path/to/Class")!!
- *     val method = GetMethodID(clazz, "myMethod", "(Ljava/lang/String;I)Ljava/lang/String;")!!
- *     val javaString = "Meow".toJString()
- *     val javaRes = CallStaticObjectMethod(clazz, method, jArgs { ref(javaString); int(42) })
- *     val res = javaRes?.toKString()
- * }
+ * val clazz = FindClass("path/to/Class")!!
+ * val method = GetMethodID(clazz, "myMethod", "(Ljava/lang/String;I)Ljava/lang/String;")!!
+ * val javaString = "Meow".toJString()
+ * val javaRes = CallStaticObjectMethod(clazz, method, jArgs { ref(javaString); int(42) })
+ * val res = javaRes?.toKString()
  * ```
  *
  * @see io.github.mimimishkin.jni.ext.jArgs
@@ -2819,7 +2840,7 @@ public inline fun SetDoubleArrayRegion(array: JDoubleArray, start: Int, len: Int
 /**
  * A struct of name, signature and function pointer.
  */
-public typealias JNINativeMethod = io.github.mimimishkin.jni.internal.raw.JNINativeMethod
+public typealias JniNativeMethod = io.github.mimimishkin.jni.internal.raw.JNINativeMethod
 
 /**
  * Registers native methods with the class specified by the [clazz] argument.
@@ -2839,8 +2860,8 @@ public typealias JNINativeMethod = io.github.mimimishkin.jni.internal.raw.JNINat
  *
  * @see io.github.mimimishkin.jni.ext.registerNativesFor
  */
-context(env: JniEnv, memScope: NativePlacement)
-public inline fun RegisterNatives(clazz: JClass, methods: CArrayPointer<JNINativeMethod>, methodsCount: Int) {
+context(env: JniEnv)
+public inline fun RegisterNatives(clazz: JClass, methods: CArrayPointer<JniNativeMethod>, methodsCount: Int) {
     JNI.safeCall {
         env.pointed!!.RegisterNatives!!(env.ptr, clazz, methods, methodsCount)
     }
