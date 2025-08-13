@@ -292,8 +292,7 @@ public val String.modifiedUtf8: CValues<ByteVar> get() {
 /**
  * JVM interprets `boolean` values as unsigned byte.
  */
-@WithJvmType("boolean")
-public typealias JBoolean = UByte
+public typealias JBoolean = @WithJvmType("boolean") UByte
 
 /**
  * Converts Kotlin `boolean` to JVM `boolean`.
@@ -308,14 +307,12 @@ public inline fun JBoolean.toKBoolean(): Boolean = this == JNI_TRUE.toUByte()
 /**
  * JVM interprets `byte` values the same way as Kotlin.
  */
-@WithJvmType("byte")
-public typealias JByte = Byte
+public typealias JByte = @WithJvmType("byte") Byte
 
 /**
  * JVM interprets `char` values as unsigned short.
  */
-@WithJvmType("char")
-public typealias JChar = UShort
+public typealias JChar = @WithJvmType("char") UShort
 
 /**
  * Converts Kotlin `char` to JVM `char`.
@@ -330,63 +327,53 @@ public inline fun JChar.toKChar(): Char = Char(this)
 /**
  * JVM interprets `short` values the same way as Kotlin.
  */
-@WithJvmType("short")
-public typealias JShort = Short
+public typealias JShort = @WithJvmType("short") Short
 
 /**
  * JVM interprets `int` values the same way as Kotlin.
  */
-@WithJvmType("int")
-public typealias JInt = Int
+public typealias JInt = @WithJvmType("int") Int
 
 /**
  * JVM interprets `long` values the same way as Kotlin.
  */
-@WithJvmType("long")
-public typealias JLong = Long
+public typealias JLong = @WithJvmType("long") Long
 
 /**
  * JVM interprets `float` values the same way as Kotlin.
  */
-@WithJvmType("float")
-public typealias JFloat = Float
+public typealias JFloat = @WithJvmType("float") Float
 
 /**
  * JVM interprets `double` values the same way as Kotlin.
  */
-@WithJvmType("double")
-public typealias JDouble = Double
+public typealias JDouble = @WithJvmType("double") Double
 
 /**
  * Allows explicitly specifying that a function doesn't return any value in the same way as if it returned something and
  * we've used [JBoolean], [JByte], [JChar] or others.
  */
-@WithJvmType("void")
-public typealias JVoid = Unit
+public typealias JVoid = @WithJvmType("void") Unit
 
 /**
  * Pointer to `java.lang.Object`.
  */
-@WithJvmType("java.lang.Object")
-public typealias JObject = CPointer<_jobject>
+public typealias JObject = @WithJvmType("java.lang.Object") CPointer<_jobject>
 
 /**
  * Pointer to `java.lang.Class`.
  */
-@WithJvmType("java.lang.Class")
-public typealias JClass = JObject
+public typealias JClass = @WithJvmType("java.lang.Class") JObject
 
 /**
  * Pointer to `java.lang.Throwable`.
  */
-@WithJvmType("java.lang.Throwable")
-public typealias JThrowable = JObject
+public typealias JThrowable = @WithJvmType("java.lang.Throwable") JObject
 
 /**
  * Pointer to `java.lang.String`.
  */
-@WithJvmType("java.lang.String")
-public typealias JString = JObject
+public typealias JString = @WithJvmType("java.lang.String") JObject
 
 /**
  * Pointer to an array.
@@ -396,56 +383,47 @@ public typealias JArray = JObject
 /**
  * Pointer to a boolean[] object.
  */
-@WithJvmType("boolean[]")
-public typealias JBooleanArray = JArray
+public typealias JBooleanArray = @WithJvmType("boolean[]") JArray
 
 /**
  * Pointer to a byte[] object.
  */
-@WithJvmType("byte[]")
-public typealias JByteArray = JArray
+public typealias JByteArray = @WithJvmType("byte[]") JArray
 
 /**
  * Pointer to a char[] object.
  */
-@WithJvmType("char[]")
-public typealias JCharArray = JArray
+public typealias JCharArray = @WithJvmType("char[]") JArray
 
 /**
  * Pointer to a short[] object.
  */
-@WithJvmType("short[]")
-public typealias JShortArray = JArray
+public typealias JShortArray = @WithJvmType("short[]") JArray
 
 /**
  * Pointer to an int[] object.
  */
-@WithJvmType("int[]")
-public typealias JIntArray = JArray
+public typealias JIntArray = @WithJvmType("int[]") JArray
 
 /**
  * Pointer to a long[] object.
  */
-@WithJvmType("long[]")
-public typealias JLongArray = JArray
+public typealias JLongArray = @WithJvmType("long[]") JArray
 
 /**
  * Pointer to a float[] object.
  */
-@WithJvmType("float[]")
-public typealias JFloatArray = JArray
+public typealias JFloatArray = @WithJvmType("float[]") JArray
 
 /**
  * Pointer to a double[] object.
  */
-@WithJvmType("double[]")
-public typealias JDoubleArray = JArray
+public typealias JDoubleArray = @WithJvmType("double[]") JArray
 
 /**
  * Pointer to an array of an object type.
  */
-@WithJvmType("java.lang.Object[]")
-public typealias JObjectArray = JArray
+public typealias JObjectArray = @WithJvmType("java.lang.Object[]") JArray
 
 /**
  * Pointer to `java.lang.Object` which is not counted by GC.
