@@ -1,16 +1,19 @@
 @file:Suppress("NOTHING_TO_INLINE", "FunctionName")
 
-package io.github.mimimishkin.jni
+package io.github.mimimishkin.jni.binding
 
-import io.github.mimimishkin.jni.annotations.WithJvmType
+import io.github.mimimishkin.jni.binding.annotation.WithJvmType
 import io.github.mimimishkin.jni.internal.raw.*
 import kotlinx.cinterop.*
 import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.get
+import kotlinx.cinterop.invoke
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlin.String
 import kotlin.collections.component1
 import kotlin.collections.component2
+import kotlin.text.iterator
 
 /**
  * Functions and utilities to work with JNI (Java Native Interface).
@@ -153,7 +156,7 @@ public inline fun JNI.GetDefaultJavaVMInitArgs(args: JavaVMInitArgs) {
  *
  * @return A pair of [JavaVM] and [JniEnv] of the main thread.
  *
- * @see io.github.mimimishkin.jni.ext.javaVMInitArgs
+ * @see io.github.mimimishkin.jni.binding.ext.javaVMInitArgs
  */
 context(memScope: NativePlacement)
 public inline fun JNI.CreateJavaVM(args: JavaVMInitArgs): Pair<JavaVM, JniEnv> {
@@ -466,7 +469,7 @@ public typealias JValue = jvalue
  * val res = javaRes?.toKString()
  * ```
  *
- * @see io.github.mimimishkin.jni.ext.jArgs
+ * @see io.github.mimimishkin.jni.binding.ext.jArgs
  */
 public typealias JArguments = CArrayPointer<JValue>
 
@@ -2840,7 +2843,7 @@ public inline fun SetDoubleArrayRegion(array: JDoubleArray, start: Int, len: Int
 /**
  * A struct of name, signature and function pointer.
  */
-public typealias JniNativeMethod = io.github.mimimishkin.jni.internal.raw.JNINativeMethod
+public typealias JniNativeMethod = JNINativeMethod
 
 /**
  * Registers native methods with the class specified by the [clazz] argument.
@@ -2858,7 +2861,7 @@ public typealias JniNativeMethod = io.github.mimimishkin.jni.internal.raw.JNINat
  *
  * @throws NoSuchMethodError if a specified method cannot be found or if the method is not native.
  *
- * @see io.github.mimimishkin.jni.ext.registerNativesFor
+ * @see io.github.mimimishkin.jni.binding.ext.registerNativesFor
  */
 context(env: JniEnv)
 public inline fun RegisterNatives(clazz: JClass, methods: CArrayPointer<JniNativeMethod>, methodsCount: Int) {

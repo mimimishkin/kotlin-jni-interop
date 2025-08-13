@@ -1,9 +1,8 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package io.github.mimimishkin.jni.ext
+package io.github.mimimishkin.jni.binding.ext
 
-import io.github.mimimishkin.jni.*
-import io.github.mimimishkin.jni.ExceptionClear
+import io.github.mimimishkin.jni.binding.*
 import kotlinx.cinterop.AutofreeScope
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CArrayPointer

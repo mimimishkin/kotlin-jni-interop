@@ -1,4 +1,4 @@
-package io.github.mimimishkin.jni.annotations
+package io.github.mimimishkin.jni.binding.annotation
 
 /**
  * The function annotated with this annotation will be called when the native library is loaded (for example, through

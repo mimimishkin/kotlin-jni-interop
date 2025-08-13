@@ -1,4 +1,4 @@
-package io.github.mimimishkin.jni.annotations
+package io.github.mimimishkin.jni.binding.annotation
 
 /**
  * Adds information about jvm signature for functions annotated with [JniActual].

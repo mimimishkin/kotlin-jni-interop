@@ -1,4 +1,4 @@
-package io.github.mimimishkin.jni.annotations
+package io.github.mimimishkin.jni.binding.annotation
 
 /**
  * Instead of duplicating the `className` parameter in each [JniActual] annotation, you can use this one.

@@ -1,4 +1,4 @@
-package io.github.mimimishkin.jni.annotations
+package io.github.mimimishkin.jni.binding.annotation
 
 /**
  * Indicates that a function is the actual implementation of a function expected to be provided through JNI.

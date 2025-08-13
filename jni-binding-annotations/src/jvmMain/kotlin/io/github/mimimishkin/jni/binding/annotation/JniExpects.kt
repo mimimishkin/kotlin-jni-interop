@@ -1,4 +1,4 @@
-package io.github.mimimishkin.jni.annotations
+package io.github.mimimishkin.jni.binding.annotation
 
 /**
  * Instead of repeating the [JniExpect] annotation, you can apply this annotation to the entire class, object or file.

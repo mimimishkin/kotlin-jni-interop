@@ -1,16 +1,15 @@
 @file:Suppress("NOTHING_TO_INLINE", "FunctionName")
 
-package io.github.mimimishkin.jni.awt
+package io.github.mimimishkin.jni.binding.awt
 
-import io.github.mimimishkin.jni.JObject
-import io.github.mimimishkin.jni.JniEnv
+import io.github.mimimishkin.jni.binding.JObject
+import io.github.mimimishkin.jni.binding.JniEnv
 import io.github.mimimishkin.jni.internal.raw.*
-import io.github.mimimishkin.jni.toJBoolean
-import io.github.mimimishkin.jni.toKBoolean
+import io.github.mimimishkin.jni.binding.toJBoolean
+import io.github.mimimishkin.jni.binding.toKBoolean
 import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.CPointer
-import kotlinx.cinterop.MemScope
 import kotlinx.cinterop.NativePlacement
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.get
