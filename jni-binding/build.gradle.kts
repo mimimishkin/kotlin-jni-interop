@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 
 plugins {
     id("convention.native64bit-library")
+    alias(libs.plugins.dokka)
     id("convention.publish")
 }
 
@@ -37,6 +38,13 @@ kotlin {
 
 dokka {
     dokkaSourceSets.configureEach {
+        includes.from("Module.md")
+
+        sourceLink {
+            localDirectory = rootDir
+            remoteUrl = uri("https://github.com/mimimishkin/${rootProject.name}/tree/master")
+        }
+
         // Dokka does not include the Cinterop package.
         // So we create a file with a stub and include it in docs to at least document this package.
         perPackageOption {
@@ -44,4 +52,8 @@ dokka {
             documentedVisibilities = setOf(Public, Private)
         }
     }
+}
+
+rootProject.dependencies {
+    dokka(project)
 }

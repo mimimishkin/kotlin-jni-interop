@@ -1,5 +1,6 @@
 plugins {
     id("convention.native64bit-library")
+    alias(libs.plugins.dokka)
     id("convention.publish")
 }
 
@@ -12,4 +13,19 @@ java {
 
 kotlin {
     jvm()
+}
+
+dokka {
+    dokkaSourceSets.configureEach {
+        includes.from("Module.md")
+
+        sourceLink {
+            localDirectory = rootDir
+            remoteUrl = uri("https://github.com/mimimishkin/${rootProject.name}/tree/master")
+        }
+    }
+}
+
+rootProject.dependencies {
+    dokka(project)
 }

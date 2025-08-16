@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
-    id("convention.dokka")
+    alias(libs.plugins.dokka)
     id("convention.publish") apply false
 }
 
