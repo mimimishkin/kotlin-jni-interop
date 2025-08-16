@@ -1,6 +1,6 @@
 @file:Suppress("NOTHING_TO_INLINE")
 
-package io.github.mimimishkin.jni.awt
+package io.github.mimimishkin.jni.binding.awt
 
 import io.github.mimimishkin.jni.internal.raw.jawt_Win32DrawingSurfaceInfo
 import kotlinx.cinterop.COpaquePointer
