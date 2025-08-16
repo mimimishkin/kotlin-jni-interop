@@ -1,27 +1,29 @@
 package io.github.mimimishkin.jni.binding.plugin.producer
 
-import io.github.mimimishkin.jni.binding.plugin.JniBindingFilter
-import io.github.mimimishkin.jni.binding.plugin.MachineDependent
-import io.github.mimimishkin.jni.binding.plugin.machineIndependent
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.the
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.HasProject
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBinary
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsMingw
 import java.io.File
 import javax.inject.Inject
 
-public class JniLibProducerConfig @Inject constructor(project: Project) : HasProject {
-    override var project: Project = project
-        internal set
-
+/**
+ * Configuration for [JniLibProducerPlugin].
+ */
+public class JniLibProducerConfig @Inject constructor(override val project: Project) : HasProject {
     /**
      * JNI of this Java version will be available inside JNI functions.
      * If not specified, will be obtained from the `java.toolchain`.
@@ -40,9 +42,12 @@ public class JniLibProducerConfig @Inject constructor(project: Project) : HasPro
     )
 
     /**
-     * The SDK/JRE location that will be used to automatically link native binaries if [linkJVM] is true.
+     * The SDK/JRE location that will be used to link native binaries with.
      *
      * By default, Java obtained from Gradle Toolchain API will be used.
+     *
+     * @see linkJVM
+     * @see addJvmToLinkerOpts
      */
     public val javaHome: DirectoryProperty = project.objects.directoryProperty().convention(
         jniVersion.flatMap { jniVersion ->
@@ -55,20 +60,11 @@ public class JniLibProducerConfig @Inject constructor(project: Project) : HasPro
     )
 
     /**
-     * Controls how functions annotated with `@JniActual` and `@JniOnLoad`/`@JniOnUnload` should look.
-     *
-     * The default value is [SignatureTypes.CorrectlyNamed].
+     * Information about configured interop with JNI.
+     * Every function annotated with `@JniActual`, `@JniOnLoad`, and `@JniOnUnload` should have signature described in
+     * this property.
      */
-    public val signatureTypes: Property<SignatureTypes> = project.objects.property<SignatureTypes>()
-        .convention(SignatureTypes.CorrectlyNamed)
-
-    /**
-     * Weather to generate `JNI_OnLoad` and `JNI_OnUnload`. You may disable it if you have some problems.
-     *
-     * The default value is `true`. Note that if you disable it, you need to expose `JNI_OnLoad` by yourself to access
-     * JNI environment of latest versions.
-     */
-    public val generateHooks: Property<Boolean> = project.objects.property<Boolean>().convention(true)
+    public val interopConfig: Property<JniInteropConfig> = project.objects.property<JniInteropConfig>()
 
     /**
      * By default, only one function annotated with `@JniOnLoad` is allowed. The same with `@JniOnUnload`.
@@ -81,11 +77,28 @@ public class JniLibProducerConfig @Inject constructor(project: Project) : HasPro
      * 1. Expose functions with names like Java_some_package_ClassName_methodName.
      * 2. Use `RegisterNative` inside a `JNI_OnLoad`.
      *
-     * See details about it on [JniExportMethod.ExposeFunctions] and [JniExportMethod.BindOnLoad]
+     * See details about it on [JniExportMethod.ExposeFunctions] and [JniExportMethod.BindOnLoad].
      */
-    public val exportMethod: Property<JniExportMethod> = project.objects.property<JniExportMethod>().convention(
-        JniExportMethod.ExposeFunctions
-    )
+    public val exportMethod: Property<JniExportMethod> = project.objects.property<JniExportMethod>()
+        .convention(JniExportMethod.ExposeFunctions)
+
+    /**
+     * Information about functions that are expected to be presented in the JNI library.
+     *
+     * If empty, all `@JniActual` functions are considered expected.
+     */
+    public val expectations: SetProperty<JniExpectInfo> = project.objects.setProperty<JniExpectInfo>()
+
+    /**
+     * If `true`, then all functions annotated with `@JniActual` will be exported to JVM.
+     * If `false`, then all functions annotated with `@JniActual` that are not expected will be reported as an error.
+     *
+     * Default value is `false`.
+     *
+     * @see expectations
+     */
+    public val allowExtraActuals: Property<Boolean> = project.objects.property<Boolean>()
+        .convention(expectations.map { it.isEmpty() })
 
     /**
      * Sets conventions for all properties of this configuration by values from the provided [config].
@@ -93,34 +106,40 @@ public class JniLibProducerConfig @Inject constructor(project: Project) : HasPro
     public fun setConventions(config: JniLibProducerConfig) {
         jniVersion.convention(config.jniVersion)
         javaHome.convention(config.javaHome)
-        signatureTypes.convention(config.signatureTypes)
-        generateHooks.convention(config.generateHooks)
+        interopConfig.convention(config.interopConfig)
         allowSeveralHooks.convention(config.allowSeveralHooks)
         exportMethod.convention(config.exportMethod)
-    }
-}
-
-/**
- * Immediately adds JVM native libraries to the linker options of all non-android native binaries.
- */
-public fun JniLibProducerConfig.linkJVMImmediately() {
-    val jniVersion = jniVersion.get()
-    val javaHome = javaHome.get().asFile
-    checkJavaVersion(javaHome, jniVersion)
-
-    val lib = javaHome.resolve("lib").absolutePath
-    val javaOptions = if (hostIsMingw) {
-        listOf("-L", lib, "-l", "jvm", "-l", "jawt")
-    } else {
-        listOf("-L", "$lib/server", "-l", "jvm", "-L", lib, "-l", "jawt")
+        expectations.convention(config.expectations)
+        allowExtraActuals.convention(config.allowExtraActuals)
+        doAfterEvaluate += config.doAfterEvaluate
     }
 
-    project.the<KotlinMultiplatformExtension>().targets.withType<KotlinNativeTarget> {
-        binaries.configureEach {
-            if ("android" !in targetName) {
-                linkerOpts(javaOptions)
-            }
+    private val libDir: Provider<String> = javaHome.flatMap { home ->
+        val home = home.asFile
+        jniVersion.map { version ->
+            checkJavaVersion(home, version)
+            home.resolve("lib").absolutePath
         }
+    }
+
+    internal val doAfterEvaluate = mutableListOf<(Project) -> Unit>()
+
+    internal fun afterEvaluate(action: Project.() -> Unit) {
+        doAfterEvaluate += action
+    }
+
+    /**
+     * Adds JVM native libraries to the [NativeBinary] linker options.
+     */
+    public fun NativeBinary.addJvmToLinkerOpts() {
+        val lib = libDir.get()
+        val javaOptions = if (hostIsMingw) {
+            listOf("-L", lib, "-l", "jvm", "-l", "jawt")
+        } else {
+            listOf("-L", "$lib/server", "-l", "jvm", "-L", lib, "-l", "jawt")
+        }
+
+        linkerOpts(javaOptions)
     }
 }
 
@@ -128,24 +147,33 @@ public fun JniLibProducerConfig.linkJVMImmediately() {
  * Adds JVM native libraries to the linker options of all non-android native binaries after a project is evaluated.
  */
 public fun JniLibProducerConfig.linkJVM() {
-    project.afterEvaluate {
-        linkJVMImmediately()
+    afterEvaluate {
+        the<KotlinMultiplatformExtension>().targets.withType<KotlinNativeTarget> {
+            binaries.configureEach {
+                if ("android" !in targetName) {
+                    addJvmToLinkerOpts()
+                }
+            }
+        }
     }
 }
 
 /**
  * Automatically adds `jni-binding` library to the `nativeMain` source set dependencies and sets
- * [JniLibProducerConfig.signatureTypes] to [SignatureTypes.FromJniBindings].
+ * [JniLibProducerConfig.interopConfig].
  */
 public fun JniLibProducerConfig.useJniBindingLib() {
-    val sourceSets = project.the<KotlinMultiplatformExtension>().sourceSets
-    sourceSets.named("nativeMain") {
-        dependencies {
-            implementation("io.github.mimimishkin:jni-binding:1.0.1")
+    afterEvaluate {
+        val kotlin = the<KotlinMultiplatformExtension>()
+        kotlin.apply {
+            sourceSets {
+                nativeMain.dependencies {
+                    implementation("io.github.mimimishkin:jni-binding:1.0.2")
+                }
+            }
         }
     }
-
-    signatureTypes = SignatureTypes.FromJniBindings
+    interopConfig = JniInteropConfig.FromJniBinding
 }
 
 internal fun checkJavaVersion(javaHome: File, minVersion: Int) {

@@ -32,7 +32,7 @@ public class JniLibConsumerConfig @Inject constructor(override val project: Proj
      * This is convenient alias for [projectToBind] property.
      */
     public var projectToBindName: String
-        get() = projectToBind.map { it.name }.get()
+        get() = projectToBind.get().name
         set(value) { projectToBind = project.project(value) }
 
     /**

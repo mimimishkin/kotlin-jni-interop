@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    alias(libs.plugins.serialization)
     id("convention.plugin-publish")
 }
 
@@ -8,9 +9,6 @@ kotlin {
 }
 
 gradlePlugin {
-    website = "https://github.com/mimimishkin/${rootProject.name}"
-    vcsUrl = "https://github.com/mimimishkin/${rootProject.name}.git"
-
     plugins {
         create("jniLibProducer") {
             id = "io.github.mimimishkin.jni-binding-producer"
@@ -31,31 +29,8 @@ gradlePlugin {
 }
 
 dependencies {
+    implementation(libs.serialization.json)
     implementation(libs.kotlin.gradlePlugin)
-    implementation(libs.ksp.api)
-    implementation(libs.bundles.kotlinPoet)
+    implementation(libs.ksp.gradlePlugin)
     testImplementation(kotlin("test"))
 }
-
-// // Example of usage:
-//
-// kotlin {
-//     jvm {
-//         jniLibrary("native", projectToBind = ":native-part") {
-//             loadMethod = JniLoadMethod.ExtractFromRecourceAndLoad(
-//                 resource = machineDependend(failOnOther = true) { "jni/$os-$arch/$libName" },
-//                 extractTo = null // null means system default temp directory
-//             )
-//             expectsFilter = machineIndependent { ExpectsFilter.All }
-//             producerConfig {
-//                 jniVersion = 8 // Use JNI 1.8
-//                 actualsFilter = machineIndependent { ActualsFilter.All } // Export all actuals
-//                 javaHome = project.layout.projectDirectory.dir("java-home") // Use custom Java home
-//             }
-//             bindMethod = JniBindingMethod.JniFunctions
-//             linkNativeProject = true
-//         }
-//     }
-// }
-//
-//

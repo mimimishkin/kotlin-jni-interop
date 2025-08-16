@@ -14,7 +14,7 @@ Ready-to-use K/Native binding to JNI for all platforms.
 No longer need to configure cinterop yourself and suffer with inconvenient C pointers and function calls.
 Just add 
 ```kotlin
-implementation("io.github.mimimishkin:jni-binding:1.0.1")
+implementation("io.github.mimimishkin:jni-binding:1.0.2")
 ```
 to project dependencies.
 

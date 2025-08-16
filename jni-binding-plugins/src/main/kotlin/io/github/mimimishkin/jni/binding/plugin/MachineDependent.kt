@@ -1,6 +1,5 @@
 package io.github.mimimishkin.jni.binding.plugin
 
-import java.io.Serializable
 
 public data class MachineDependent<out T>(
     val forLinuxX64: T,
@@ -9,7 +8,7 @@ public data class MachineDependent<out T>(
     val forMacArm64: T,
     val forWindowsX64: T,
     val forWindowsArm64: T,
-) : Serializable {
+) {
     public constructor(
         forLinux: T,
         forMac: T,
@@ -36,43 +35,6 @@ public data class MachineDependent<out T>(
             forWindowsX64 = mapper(forWindowsX64),
             forWindowsArm64 = mapper(forWindowsArm64),
         )
-    }
-
-    override fun toString(): String {
-        return  "MachineDependent(\n" +
-                "    forLinuxX64=$forLinuxX64,\n" +
-                "    forLinuxArm64=$forLinuxArm64,\n" +
-                "    forMacX64=$forMacX64,\n" +
-                "    forMacArm64=$forMacArm64,\n" +
-                "    forWindowsX64=$forWindowsX64,\n" +
-                "    forWindowsArm64=$forWindowsArm64,\n" +
-                ")"
-    }
-
-    public companion object {
-        public fun <T> fromString(str: String, parse: (String) -> T): MachineDependent<T> {
-            val regex = Regex(  "MachineDependent(?:\\n" +
-                                " *forLinuxX64=(.*),\\n" +
-                                " *forLinuxArm64=(.*),\\n" +
-                                " *forMacX64=(.*),\\n" +
-                                " *forMacArm64=(.*),\\n" +
-                                " *forWindowsX64=(.*),\\n" +
-                                " *forWindowsArm64=(.*),\\n" +
-                                ")", RegexOption.MULTILINE)
-            val match = regex.matchEntire(str) ?: run {
-                runCatching { parse(str) }.onSuccess { return machineIndependent { it } }
-                throw IllegalArgumentException("Invalid MachineDependent string format: $str")
-            }
-            val (linuxX64, linuxArm64, macX64, macArm64, windowsX64, windowsArm64) = match.destructured
-            return MachineDependent(
-                forLinuxX64 = parse(linuxX64),
-                forLinuxArm64 = parse(linuxArm64),
-                forMacX64 = parse(macX64),
-                forMacArm64 = parse(macArm64),
-                forWindowsX64 = parse(windowsX64),
-                forWindowsArm64 = parse(windowsArm64),
-            )
-        }
     }
 }
 

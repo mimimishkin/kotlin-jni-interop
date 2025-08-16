@@ -23,12 +23,12 @@
             <option value="$PROJECT_DIR$/jni-binding" />
             <option value="$PROJECT_DIR$/jni-binding-annotations" />
             <option value="$PROJECT_DIR$/jni-binding-plugins" />
+            <option value="$PROJECT_DIR$/jni-binding-provider" />
           </set>
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/samples" />
-        <option name="gradleHome" value="" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/samples" />

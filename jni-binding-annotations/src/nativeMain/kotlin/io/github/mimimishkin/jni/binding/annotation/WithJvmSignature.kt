@@ -5,14 +5,10 @@ package io.github.mimimishkin.jni.binding.annotation
  *
  * If is used together with [WithJvmType], this annotation will override it.
  *
- * Note: this annotation is [Repeatable] for internal usage, if you apply it multiple times, only the first one will be
- * used.
- *
  * @property parameterTypes array of fully qualified class names of the function parameters without generics and in Java
  *           style (e.g., `"java.lang.String"`, `"int"`, `"long[][]"` etc.)
  * @property returnType fully qualified name of the function return type in Java style.
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
-@Repeatable
 public annotation class WithJvmSignature(val parameterTypes: Array<String>, val returnType: String)
