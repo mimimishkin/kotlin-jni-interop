@@ -6,12 +6,6 @@ plugins {
     kotlin("jvm") version "2.2.0"
 }
 
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-parameters")
-    }
-}
-
-tasks.getByName("build") {
-    dependsOn(":long-computation:native-part:build")
+tasks.named("jar") {
+    dependsOn("native-part:build")
 }

@@ -2,7 +2,9 @@
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
+import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsMac
+import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsMingw
+import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 
 plugins {
     kotlin("multiplatform")
@@ -11,21 +13,18 @@ plugins {
 kotlin {
     val javaHome = System.getProperty("java.home")
     val isX64 = Os.isArch("amd64") || Os.isArch("x86_64")
-    val isMac = Os.isFamily(Os.FAMILY_MAC)
-    val isWindows = Os.isFamily(Os.FAMILY_WINDOWS)
-    val isLinux = !isMac && Os.isFamily(Os.FAMILY_UNIX)
     listOfNotNull(
-        if (isWindows) mingwX64() else null,
-        if (isX64 && isMac) macosX64() else null,
-        if (!isX64 && isMac) macosArm64() else null,
-        if (isX64 && isLinux) linuxX64() else null,
-        if (!isX64 && isLinux) linuxArm64() else null
+        if (hostIsMingw) mingwX64() else null,
+        if (isX64 && hostIsMac) macosX64() else null,
+        if (!isX64 && hostIsMac) macosArm64() else null,
+        if (isX64 && hostIsLinux) linuxX64() else null,
+        if (!isX64 && hostIsLinux) linuxArm64() else null
     ).forEach { target ->
         target.binaries {
             sharedLib {
                 baseName = "computation"
 
-                if (isWindows) {
+                if (hostIsMingw) {
                     linkerOpts("-L$javaHome/lib", "-ljvm")
                 } else {
                     linkerOpts("-L$javaHome/lib/server", "-ljvm")
@@ -35,8 +34,8 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-            implementation("io.github.mimimishkin:jni-binding:1.0.1")
+        nativeMain.dependencies {
+            implementation("io.github.mimimishkin:jni-binding:1.0.2")
         }
 
         all {
@@ -51,15 +50,19 @@ kotlin {
 }
 
 tasks.register<Copy>("copyJniLib") {
-    val bins = layout.buildDirectory.dir("bin")
-    from(
-        fileTree(bins) {
-            include("**/release*/*.so", "**/release*/*.dll", "**/release*/*.dylib")
-        }.files
-    )
+    val files = fileTree(layout.buildDirectory.dir("bin")) {
+        include("**/release*/*.so", "**/release*/*.dll", "**/release*/*.dylib")
+    }
+    from(files.files) // inline file hierarchy
     into("../src/main/resources")
 }
 
 tasks.named("build") {
     finalizedBy("copyJniLib")
+}
+
+tasks.named("clean") {
+    doFirst {
+        delete("../src/main/resources")
+    }
 }

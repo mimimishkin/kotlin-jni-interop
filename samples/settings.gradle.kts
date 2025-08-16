@@ -8,4 +8,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "samples"
 
-include(":long-computation:native-part")
+include(":with-dependency", ":with-dependency:native-part")
+include(":with-ksp", ":with-ksp:native-part")

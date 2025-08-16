@@ -1,14 +1,14 @@
-package io.github.mimimishkin.samples.longcomputation
+package io.github.mimimishkin.samples.long_computation
 
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import kotlin.io.path.toPath
 import kotlin.time.measureTime
 
-object Main {
+object Главный {
     init {
         val name = System.mapLibraryName("computation")
-        val lib = Main::class.java.getResource("/$name").toURI().toPath()
+        val lib = Главный::class.java.getResource("/$name")!!.toURI().toPath()
         val file = Files.createTempFile(null, name)
         Files.copy(lib, file, REPLACE_EXISTING)
         System.load(file.toString())
@@ -26,6 +26,6 @@ object Main {
 
 fun main() {
     val count = 1_000_000_000
-    println("Java computation time on count=$count: " + measureTime { Main.crossPlatformComputation(count) })
-    println("Native computation time on count=$count: " + measureTime { Main.nativeComputation(count) })
+    println("Java computation time on count=$count: " + measureTime { Главный.crossPlatformComputation(count) })
+    println("Native computation time on count=$count: " + measureTime { Главный.nativeComputation(count) })
 }

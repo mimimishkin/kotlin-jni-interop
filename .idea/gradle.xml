@@ -32,8 +32,10 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/samples" />
-            <option value="$PROJECT_DIR$/samples/long-computation" />
-            <option value="$PROJECT_DIR$/samples/long-computation/native-part" />
+            <option value="$PROJECT_DIR$/samples/with-dependency" />
+            <option value="$PROJECT_DIR$/samples/with-dependency/native-part" />
+            <option value="$PROJECT_DIR$/samples/with-ksp" />
+            <option value="$PROJECT_DIR$/samples/with-ksp/native-part" />
           </set>
         </option>
       </GradleProjectSettings>
