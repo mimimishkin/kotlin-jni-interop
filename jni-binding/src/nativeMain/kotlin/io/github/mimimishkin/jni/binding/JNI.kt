@@ -57,7 +57,7 @@ public enum class ApplyChangesMode(public val nativeCode: Int) {
 
 /**
  * Represents the type of JNI reference.
- ** context(env: JniEnv)
+ *
  * @see [GetObjectRefType]
  */
 public enum class JObjectRefType {
@@ -2143,7 +2143,8 @@ public inline fun GetStringChars(string: JString): Pair<CArrayPointer<UShortVar>
 /**
  * Informs the VM that the native code no longer needs access to chars. The [chars] argument is a pointer obtained from
  * string using [GetStringChars].
- */ context(env: JniEnv)
+ */
+context(env: JniEnv)
 public inline fun ReleaseStringChars(string: JString, chars: CArrayPointer<UShortVar>) {
     env.pointed!!.ReleaseStringChars!!(env.ptr, string, chars)
 }
@@ -2640,7 +2641,8 @@ public inline fun GetShortArrayRegion(array: JShortArray, start: Int, len: Int, 
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
- */ context(env: JniEnv)
+ */
+context(env: JniEnv)
 public inline fun GetIntArrayRegion(array: JIntArray, start: Int, len: Int, buf: CPointer<IntVar>) {
     env.pointed!!.GetIntArrayRegion!!(env.ptr, array, start, len, buf)
 }
@@ -2655,7 +2657,8 @@ public inline fun GetIntArrayRegion(array: JIntArray, start: Int, len: Int, buf:
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
- */ context(env: JniEnv)
+ */
+context(env: JniEnv)
 public inline fun GetLongArrayRegion(array: JLongArray, start: Int, len: Int, buf: CPointer<LongVar>) {
     env.pointed!!.GetLongArrayRegion!!(env.ptr, array, start, len, buf)
 }
@@ -2670,7 +2673,8 @@ public inline fun GetLongArrayRegion(array: JLongArray, start: Int, len: Int, bu
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
- */ context(env: JniEnv)
+ */
+context(env: JniEnv)
 public inline fun GetFloatArrayRegion(array: JFloatArray, start: Int, len: Int, buf: CPointer<FloatVar>) {
     env.pointed!!.GetFloatArrayRegion!!(env.ptr, array, start, len, buf)
 }
@@ -2685,7 +2689,8 @@ public inline fun GetFloatArrayRegion(array: JFloatArray, start: Int, len: Int, 
  * @param buf the destination buffer.
  *
  * @throws ArrayIndexOutOfBoundsException if one of the indexes in the region is not valid.
- */ context(env: JniEnv)
+ */
+context(env: JniEnv)
 public inline fun GetDoubleArrayRegion(array: JDoubleArray, start: Int, len: Int, buf: CPointer<DoubleVar>) {
     env.pointed!!.GetDoubleArrayRegion!!(env.ptr, array, start, len, buf)
 }
@@ -2927,7 +2932,8 @@ public inline fun GetJavaVM(): JavaVM {
  * @throws StringIndexOutOfBoundsException on index overflow.
  *
  * @since JDK/JRE 1.2
- */ context(env: JniEnv)
+ */
+context(env: JniEnv)
 public inline fun GetStringRegion(str: JString, start: Int, len: Int, buf: CArrayPointer<UShortVar>) {
     env.pointed!!.GetStringRegion!!(env.ptr, str, start, len, buf)
 }

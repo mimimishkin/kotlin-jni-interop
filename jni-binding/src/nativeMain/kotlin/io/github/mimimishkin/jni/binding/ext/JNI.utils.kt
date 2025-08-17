@@ -448,7 +448,7 @@ public inline fun ModifyingArrayScope.abort(): Unit = this(ApplyChangesMode.Abor
  * @return The result of the [block], or `null` if [GetBooleanArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyBooleanArray(block: ModifyingArrayScope.(carray: CArrayPointer<UByteVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JBooleanArray.modifyBooleanArray(block: ModifyingArrayScope.(carray: CArrayPointer<UByteVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetBooleanArrayElements(this) ?: return null
     return block({ mode -> ReleaseBooleanArrayElements(this, carray, mode) }, carray, isCopy)
 }
@@ -462,7 +462,7 @@ public inline fun <T> JArray.modifyBooleanArray(block: ModifyingArrayScope.(carr
  * @return The result of the [block], or `null` if [GetByteArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyByteArray(block: ModifyingArrayScope.(carray: CArrayPointer<ByteVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JByteArray.modifyByteArray(block: ModifyingArrayScope.(carray: CArrayPointer<ByteVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetByteArrayElements(this) ?: return null
     return block({ mode -> ReleaseByteArrayElements(this, carray, mode) }, carray, isCopy)
 }
@@ -476,7 +476,7 @@ public inline fun <T> JArray.modifyByteArray(block: ModifyingArrayScope.(carray:
  * @return The result of the [block], or `null` if [GetCharArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyCharArray(block: ModifyingArrayScope.(carray: CArrayPointer<UShortVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JCharArray.modifyCharArray(block: ModifyingArrayScope.(carray: CArrayPointer<UShortVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetCharArrayElements(this) ?: return null
     return block({ mode -> ReleaseCharArrayElements(this, carray, mode) }, carray, isCopy)
 }
@@ -490,7 +490,7 @@ public inline fun <T> JArray.modifyCharArray(block: ModifyingArrayScope.(carray:
  * @return The result of the [block], or `null` if [GetShortArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyShortArray(block: ModifyingArrayScope.(carray: CArrayPointer<ShortVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JShortArray.modifyShortArray(block: ModifyingArrayScope.(carray: CArrayPointer<ShortVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetShortArrayElements(this) ?: return null
     return block({ mode -> ReleaseShortArrayElements(this, carray, mode) }, carray, isCopy)
 }
@@ -504,7 +504,7 @@ public inline fun <T> JArray.modifyShortArray(block: ModifyingArrayScope.(carray
  * @return The result of the [block], or `null` if [GetIntArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyIntArray(block: ModifyingArrayScope.(carray: CArrayPointer<IntVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JIntArray.modifyIntArray(block: ModifyingArrayScope.(carray: CArrayPointer<IntVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetIntArrayElements(this) ?: return null
     return block({ mode -> ReleaseIntArrayElements(this, carray, mode) }, carray, isCopy)
 }
@@ -518,7 +518,7 @@ public inline fun <T> JArray.modifyIntArray(block: ModifyingArrayScope.(carray: 
  * @return The result of the [block], or `null` if [GetLongArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyLongArray(block: ModifyingArrayScope.(carray: CArrayPointer<LongVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JLongArray.modifyLongArray(block: ModifyingArrayScope.(carray: CArrayPointer<LongVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetLongArrayElements(this) ?: return null
     return block({ mode -> ReleaseLongArrayElements(this, carray, mode) }, carray, isCopy)
 }
@@ -532,7 +532,7 @@ public inline fun <T> JArray.modifyLongArray(block: ModifyingArrayScope.(carray:
  * @return The result of the [block], or `null` if [GetFloatArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyFloatArray(block: ModifyingArrayScope.(carray: CArrayPointer<FloatVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JFloatArray.modifyFloatArray(block: ModifyingArrayScope.(carray: CArrayPointer<FloatVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetFloatArrayElements(this) ?: return null
     return block({ mode -> ReleaseFloatArrayElements(this, carray, mode) }, carray, isCopy)
 }
@@ -546,7 +546,7 @@ public inline fun <T> JArray.modifyFloatArray(block: ModifyingArrayScope.(carray
  * @return The result of the [block], or `null` if [GetDoubleArrayElements] fails.
  */
 context(env: JniEnv, memScope: NativePlacement)
-public inline fun <T> JArray.modifyDoubleArray(block: ModifyingArrayScope.(carray: CArrayPointer<DoubleVar>, isCopy: Boolean) -> T): T? {
+public inline fun <T> JDoubleArray.modifyDoubleArray(block: ModifyingArrayScope.(carray: CArrayPointer<DoubleVar>, isCopy: Boolean) -> T): T? {
     val (carray, isCopy) = GetDoubleArrayElements(this) ?: return null
     return block({ mode -> ReleaseDoubleArrayElements(this, carray, mode) }, carray, isCopy)
 }
