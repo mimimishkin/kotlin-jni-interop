@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 
 plugins {
     kotlin("multiplatform")
-    id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+    id("com.google.devtools.ksp") version "2.2.10-2.0.2"
 }
 
 val isX64 = Os.isArch("amd64") || Os.isArch("x86_64")
