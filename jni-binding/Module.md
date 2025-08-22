@@ -4,13 +4,12 @@ Kotlin Native bindings for the Java Native Interface (JNI) to simplify the inter
 
 ## Overview
 
-The `jni-binding` module offers a zero-cost, convenient Kotlin interface to JNI without requiring manual cinterop 
-configuration. It wraps the C-based JNI API with idiomatic Kotlin code, leveraging Kotlin's type system, null safety,
-and context parameters to make JNI programming safer and more ergonomic.
+The `jni-binding` module offers a convenient Kotlin interface to JNI without requiring manual cinterop configuration. 
+It wraps the C JNI API with idiomatic Kotlin code, leveraging Kotlin's type system, null safety, and context parameters
+to make JNI programming safer and more ergonomic.
 
 ## Features
 
-- **Zero-cost abstractions**: Most functions are inline and won't impact binary size or performance
 - **Kotlin-friendly API**: Uses null-safety, DSLs, and context parameters for a more idiomatic experience
 - **Comprehensive coverage**: Provides access to all JNI functions and features
 - **Cross-platform support**: Works on Windows, macOS, Linux, and Android Native

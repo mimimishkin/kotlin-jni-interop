@@ -1,3 +1,5 @@
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 pluginManagement {
     includeBuild("build-logic")
 
@@ -16,6 +18,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "kotlin-jni-interop"
 
+include(":jni-binding-raw")
 include(":jni-binding")
 include(":jni-binding-annotations")
 include(":jni-binding-provider")

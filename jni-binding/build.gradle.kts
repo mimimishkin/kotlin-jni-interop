@@ -1,9 +1,6 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
-import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier.*
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
-import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 
 plugins {
     id("convention.native64bit-library")
@@ -14,24 +11,30 @@ plugins {
 description = "JNI bingdings for Kotlin Native"
 
 kotlin {
-    targets.withType<KotlinNativeTarget> {
-        compilations.all {
-            cinterops.create("jni") {
-                packageName = "io.github.mimimishkin.jni.internal.raw"
+    applyHierarchyTemplate {
+        common {
+            group("native") {
+                group("intermideate") {
+                    group("mingw") {
+                        withMingwX64()
+                    }
+                    group("linux") {
+                        withLinuxX64()
+                        withLinuxArm64()
+                    }
+                    group("macos") {
+                        withMacosX64()
+                        withMacosArm64()
+                    }
+                }
             }
         }
     }
 
-    jvmToolchain(17)
-
-    if (hostIsLinux) {
-        // Cinterop generates enormous paths, so the build fails. Therefore, set the build directory to a short location
-        layout.buildDirectory = file("/tmp/12345")
-    }
-
     sourceSets {
         nativeMain.dependencies {
-            implementation(project(":jni-binding-annotations"))
+            implementation(projects.jniBindingRaw)
+            implementation(projects.jniBindingAnnotations)
         }
     }
 }
@@ -44,16 +47,5 @@ dokka {
             localDirectory = rootDir
             remoteUrl = uri("https://github.com/mimimishkin/${rootProject.name}/tree/master")
         }
-
-        // Dokka does not include the Cinterop package.
-        // So we create a file with a stub and include it in docs to at least document this package.
-        perPackageOption {
-            matchingRegex = ".*\\.internal\\.raw"
-            documentedVisibilities = setOf(Public, Private)
-        }
     }
-}
-
-rootProject.dependencies {
-    dokka(project)
 }

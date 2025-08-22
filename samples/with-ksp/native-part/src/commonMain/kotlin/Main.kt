@@ -1,6 +1,3 @@
-import io.github.mimimishkin.jni.binding.JInt
-import io.github.mimimishkin.jni.binding.JObject
-import io.github.mimimishkin.jni.binding.JniEnv
 import io.github.mimimishkin.jni.binding.annotation.JniActual
 import io.github.mimimishkin.jni.binding.annotation.JniOnLoad
 
@@ -10,7 +7,7 @@ import io.github.mimimishkin.jni.binding.annotation.JniOnLoad
 // Note that `className` will be mapped to the right form, no matter what characters are used in it.
 
 @JniActual(className = "io.github.mimimishkin.samples.long_computation.Главный")
-fun nativeComputation(count: JInt) {
+fun nativeComputation(count: Int) {
     val array = ByteArray(count)
     for ((index, b) in array.withIndex()) {
         array[index] = (b + index).toByte()

@@ -1,0 +1,1 @@
+// without this file no publications will be generated
