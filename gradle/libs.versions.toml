@@ -1,30 +1,54 @@
 [versions]
-kotlin = "2.2.10"
-ksp = "2.2.10-2.0.2"
-dokka = "2.0.0"
-mavenPublish = "0.34.0"
-kotlinPoet = "2.2.0"
-pluginPublish = "1.3.1"
-serialization = "1.9.0"
+# https://github.com/JetBrains/kotlin
+kotlin = "2.4.20"
+
+# https://github.com/gmazzo/gradle-buildconfig-plugin
+buildConfig = "6.0.10"
+
+# https://developer.android.com/studio/releases/gradle-plugin
+agp = "9.3.1"
+
+# https://github.com/google/auto/blob/main/service/README.md
 autoService = "1.1.1"
 
-[libraries]
-kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
-ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
-ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
-kotlinPoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinPoet" }
-kotlinPoet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinPoet" }
-autoService-annotations = { group = "com.google.auto.service", name = "auto-service-annotations", version.ref = "autoService" }
-autoService-processor = { group = "com.google.auto.service", name = "auto-service", version.ref = "autoService" }
+# https://github.com/google/ksp
+ksp = "2.3.12"
 
-[bundles]
-kotlinPoet = ["kotlinPoet", "kotlinPoet-ksp"]
+# https://github.com/ZacSweers/auto-service-ksp
+autoServiceKsp = "1.2.0"
+
+# https://plugins.gradle.org/plugin/com.gradle.plugin-publish
+pluginPublish = "2.2.1"
+
+# https://github.com/vanniktech/gradle-maven-publish-plugin
+mavenPublish = "0.37.0"
+
+# https://github.com/zacsweers/kotlin-compile-testing
+kct = "0.14.0"
+
+# https://github.com/kotlin/dokka
+dokka = "2.2.0"
+
+# https://github.com/kotlin/kotlinx.serialization
+serialization = "1.11.0"
+
+[libraries]
+kotlin-gradlePluginApi  = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin-api", version.ref = "kotlin" }
+kotlin-compiler = { group = "org.jetbrains.kotlin", name = "kotlin-compiler", version.ref = "kotlin" }
+kotlin-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-compiler-embeddable", version.ref = "kotlin" }
+autoService-annotations = { group = "com.google.auto.service", name = "auto-service-annotations", version.ref = "autoService" }
+zacsweers-autoServiceKsp = { group = "dev.zacsweers.autoservice", name = "auto-service-ksp", version.ref = "autoServiceKsp" }
+zacsweers-kctFork = { group = "dev.zacsweers.kctfork", name = "core", version.ref = "kct" }
+serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 
 [plugins]
-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-powerAssert = { id = "org.jetbrains.kotlin.plugin.power-assert", version.ref = "kotlin" }
+android-kmpLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+buildConfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildConfig" }
+pluginPublish = { id = "com.gradle.plugin-publish", version.ref = "pluginPublish" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-pluginPublish = { id = "com.gradle.plugin-publish", version.ref = "pluginPublish" }

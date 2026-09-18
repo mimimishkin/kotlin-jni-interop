@@ -16,26 +16,31 @@
           </compositeBuild>
         </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/build-logic" />
             <option value="$PROJECT_DIR$/jni-binding" />
             <option value="$PROJECT_DIR$/jni-binding-annotations" />
+            <option value="$PROJECT_DIR$/jni-binding-consumer" />
             <option value="$PROJECT_DIR$/jni-binding-plugins" />
-            <option value="$PROJECT_DIR$/jni-binding-provider" />
+            <option value="$PROJECT_DIR$/jni-binding-producer" />
+            <option value="$PROJECT_DIR$/jni-binding-raw" />
           </set>
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/samples" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/samples" />
-            <option value="$PROJECT_DIR$/samples/with-dependency" />
-            <option value="$PROJECT_DIR$/samples/with-dependency/native-part" />
-            <option value="$PROJECT_DIR$/samples/with-ksp" />
-            <option value="$PROJECT_DIR$/samples/with-ksp/native-part" />
+            <option value="$PROJECT_DIR$/samples/basic" />
+            <option value="$PROJECT_DIR$/samples/basic/helloNative" />
+            <option value="$PROJECT_DIR$/samples/basic/native" />
+            <option value="$PROJECT_DIR$/samples/windows-registry" />
+            <option value="$PROJECT_DIR$/samples/windows-registry/native" />
           </set>
         </option>
       </GradleProjectSettings>

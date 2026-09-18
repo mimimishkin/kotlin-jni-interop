@@ -1,13 +1,10 @@
-@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
-
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 
 plugins {
-    id("convention.native64bit-library")
+    alias(conventions.plugins.native64bitLibrary)
     alias(libs.plugins.dokka)
-    id("convention.publish")
+    alias(conventions.plugins.publish)
 }
 
 description = "Cinterop output for jni.h and related headers"
@@ -29,8 +26,4 @@ dokka {
     dokkaSourceSets.configureEach {
         includes.from("Module.md")
     }
-}
-
-rootProject.dependencies {
-    dokka(project)
 }

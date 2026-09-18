@@ -3,9 +3,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("convention.native64bit-library")
+    alias(conventions.plugins.native64bitLibrary)
     alias(libs.plugins.dokka)
-    id("convention.publish")
+    alias(conventions.plugins.publish)
 }
 
 description = "JNI bingdings for Kotlin Native"

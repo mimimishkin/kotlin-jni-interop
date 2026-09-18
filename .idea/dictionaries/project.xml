@@ -2,6 +2,11 @@
   <dictionary name="project">
     <words>
       <w>actuals</w>
+      <w>compilables</w>
+      <w>jvmti</w>
+      <w>konan</w>
+      <w>дебага</w>
+      <w>модификатороми</w>
     </words>
   </dictionary>
 </component>

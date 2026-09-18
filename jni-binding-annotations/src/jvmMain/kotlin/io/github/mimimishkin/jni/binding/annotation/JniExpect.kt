@@ -2,14 +2,15 @@ package io.github.mimimishkin.jni.binding.annotation
 
 /**
  * Indicates that a function is expected to have its implementation provided through JNI.
- * This is applied to functions that rely on platform-specific or native implementations.
  *
- * The following requirements must be applied at compile-time:
- * 1. All functions marked with this annotation have an implementation with `JniActual` annotation.
- * 2. Each pair of [JniExpect] and `JniActual` functions has the same parameters.
+ * May be applied to Kotlin `external` functions and properties. Applying both to getter/setter and property itself
+ * makes no effect.
  *
- * So you don't need to worry about [UnsatisfiedLinkError].
+ * @param targets The consumer plugin will check that every `JniExpect` has its `JniActual` pair, even if the
+ * annotatee will be used only on one platform. This param allows to shrink the search field to the specified
+ * target names (e.g. `"mingwX64"`). An empty list (the default) means all targets.
+ * This rule will be applied to all declarations
  */
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
 @Retention(AnnotationRetention.SOURCE)
-public annotation class JniExpect()
+public annotation class JniExpect(vararg val targets: String = [])

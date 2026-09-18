@@ -5,17 +5,9 @@ Library `jni-binding-raw` contains a raw output of Cinterop on all headers from 
 Also, much more convenient to use `jni-binding` library is available.
 
 *Raw* here means that it's not wrapped somehow. Just preprocessed cinterop for all desktop native targets:
-mingwX64, linuxX64, macosX64, linuxArm64, macosArm64.
+mingwX64, linuxX64, linuxArm64, macosArm64.
 
 All declarations can be found in `jni` package.
-
-## Usage
-
-Since Kotlin publications come without commonizer output, to use this library in intermediate source sets, you need to 
-enable cinterop commonization in `gradle.properties`:
-```properties
-kotlin.mpp.enableCInteropCommonization=true
-```
 
 ## Configuration notes
 

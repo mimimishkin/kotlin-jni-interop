@@ -1,46 +1,95 @@
 package io.github.mimimishkin.jni.binding.plugin.consumer
 
-import io.github.mimimishkin.jni.binding.plugin.producer.JniLibProducerConfig
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.the
+import io.github.mimimishkin.jni.binding.BuildConfig
+import io.github.mimimishkin.jni.binding.BuildConfig.ANNOTATIONS_ID
+import io.github.mimimishkin.jni.binding.plugin.disambiguateName
+import org.gradle.api.provider.Provider
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.androidJvm
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.jvm
+import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
+import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 
-public class JniLibConsumerPlugin : Plugin<Project> {
-    public companion object {
-        public const val GROUP: String = "jni binding"
-        public const val EXTENSION_NAME: String = "jniLibrary"
+/**
+ * Plugin for consuming JNI libraries.
+ */
+public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
+    override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean {
+        return kotlinCompilation.platformType in listOf(jvm, androidJvm) && kotlinCompilation.jniLibrariesProvider.isPresent
     }
 
-    override fun apply(consumer: Project) {
-        val config = consumer.extensions.create<JniLibConsumerConfig>(EXTENSION_NAME)
-
-        consumer.afterEvaluate {
-            val producer = config.projectToBind.get()
-            producer.apply(plugin = "io.github.mimimishkin.jni-binding-producer")
-
-            val producerConfig = producer.the<JniLibProducerConfig>().apply { setConventions(config.producerConfig) }
-            val afterEvaluate =  {
-                val usedJVMVersion = consumer.the<JavaPluginExtension>().toolchain.languageVersion.get().asInt()
-                val usedJNIVersion = producerConfig.jniVersion.get()
-                if (usedJVMVersion < usedJNIVersion) {
-                    consumer.logger.warn("Toolchain version ($usedJVMVersion) used by this project is less than the " +
-                            "required JNI version ($usedJNIVersion). This will lead to runtime error if your " +
-                            "application will be run under Java version less than $usedJNIVersion.")
-                }
-
-                producerConfig.doAfterEvaluate.forEach { it.invoke(producer) }
-            }
-
-            if (producer.state.executed) {
-                afterEvaluate()
-            } else {
-                producer.afterEvaluate { afterEvaluate() }
-            }
+    override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
+        kotlinCompilation.defaultSourceSet.dependencies {
+            compileOnly(ANNOTATIONS_ID)
         }
 
-        TODO("Not yet implemented")
+        val project = kotlinCompilation.project
+
+        // Aggregate import task for this compilation. It depends on every library's `importJniLib*`, whose
+        // resolution of the producer's artifacts triggers the producer's `exportJniBinding` (the producer declares
+        // it as `builtBy` of its artifacts). No direct consumer -> producer task dependency is declared, so this
+        // also works for isolated/included builds.
+        val importTaskName = kotlinCompilation.disambiguateName("importJniBinding")
+        val importTaskProvider = project.tasks.register(importTaskName) { task ->
+            task.group = "jni interop"
+            task.description = "Imports JNI bindings of this compilation, running the producers' exportJniBinding"
+            task.dependsOn(kotlinCompilation.jniLibrariesProvider.map { container ->
+                container.map { it.importLibTaskProvider }
+            })
+        }
+
+        // Make the JVM compilation depend on importing the bindings, and track the resolved producers'
+        // actuals files as inputs. When a native module changes, `exportJniBinding` regenerates the actuals,
+        // their hash changes, and the consumer recompiles.
+        kotlinCompilation.compileTaskProvider.configure { compileTask ->
+            compileTask.dependsOn(importTaskProvider)
+            compileTask.inputs.files(
+                project.provider {
+                    kotlinCompilation.jniLibrariesProvider.orNull.orEmpty().flatMap { it.actualsFiles.files }
+                }
+            )
+        }
+
+        return project.provider {
+            val container = kotlinCompilation.jniLibrariesProvider.orNull.orEmpty()
+            if (container.isEmpty()) {
+                listOf(SubpluginOption("enabled", "false"))
+            } else {
+                buildList {
+                    add(SubpluginOption("enabled", "true"))
+
+                    // Aggregate allowExtraActuals – if any library permits extra actuals, allow it globally.
+                    val allowExtra = container.any { it.allowExtraActuals.get() }
+                    add(SubpluginOption("allowExtraActuals", allowExtra.toString()))
+
+                    // Emit one "actualsFile" option per target, valued "<target>:<path>"
+                    for (library in container) {
+                        for (target in library.targets) {
+                            val source = if (target.source.isPresent) target.source.get() else null
+                            val actualsFile = try {
+                                source?.actualsFile(kotlinCompilation.compilationName)
+                            } catch (e: Exception) {
+                                if (library.allowAbsentBindings.get()) null else throw e
+                            }
+
+                            if (actualsFile != null) {
+                                add(SubpluginOption("actualsFile", "${target.name}:${actualsFile.path}"))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun getCompilerPluginId(): String = BuildConfig.CONSUMER_ARTIFACT
+
+    override fun getPluginArtifact(): SubpluginArtifact {
+        return SubpluginArtifact(
+            groupId = BuildConfig.GROUP,
+            artifactId = BuildConfig.CONSUMER_ARTIFACT,
+            version = BuildConfig.VERSION
+        )
     }
 }

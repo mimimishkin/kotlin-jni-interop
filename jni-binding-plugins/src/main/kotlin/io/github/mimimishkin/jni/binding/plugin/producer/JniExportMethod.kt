@@ -18,5 +18,5 @@ public enum class JniExportMethod {
      * In this case, if your library contains native methods for several classes, it can be loaded one time in any
      * class of the same class loader.
      */
-    BindOnLoad,
+    RegisterNatives,
 }

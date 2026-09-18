@@ -1,19 +1,11 @@
 plugins {
-    id("convention.native64bit-library")
+    alias(conventions.plugins.native64bitLibrary)
+    alias(conventions.plugins.jvmLikeLibrary)
     alias(libs.plugins.dokka)
-    id("convention.publish")
+    alias(conventions.plugins.publish)
 }
 
 description = "Annotations for kotlin-jni-interop project"
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_1_1
-}
-
-kotlin {
-    jvm()
-}
 
 dokka {
     dokkaSourceSets.configureEach {
@@ -24,8 +16,4 @@ dokka {
             remoteUrl = uri("https://github.com/mimimishkin/${rootProject.name}/tree/master")
         }
     }
-}
-
-rootProject.dependencies {
-    dokka(project)
 }

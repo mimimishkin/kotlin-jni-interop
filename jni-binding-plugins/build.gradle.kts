@@ -1,16 +1,13 @@
 plugins {
-    `kotlin-dsl`
+    alias(conventions.plugins.jvmLibrary)
     alias(libs.plugins.serialization)
-    id("convention.plugin-publish")
-}
-
-kotlin {
-    explicitApi()
+    alias(libs.plugins.dokka)
+    alias(conventions.plugins.pluginPublish)
 }
 
 gradlePlugin {
     plugins {
-        create("jniLibProducer") {
+        create("jni-binding-producer") {
             id = "io.github.mimimishkin.jni-binding-producer"
             displayName = "JNI Binding (Producer part)"
             description = "Gradle plugin that simplifies writing JNI code and linking native binary"
@@ -18,7 +15,7 @@ gradlePlugin {
             implementationClass = "io.github.mimimishkin.jni.binding.plugin.producer.JniLibProducerPlugin"
         }
 
-        create("jniLibConsumer") {
+        create("jni-binding-consumer") {
             id = "io.github.mimimishkin.jni-binding-consumer"
             displayName = "JNI Binding (Consumer part)"
             description = "Gradle plugin that simplifies wiring JVM module with JNI library"
@@ -30,7 +27,16 @@ gradlePlugin {
 
 dependencies {
     implementation(libs.serialization.json)
-    implementation(libs.kotlin.gradlePlugin)
-    implementation(libs.ksp.gradlePlugin)
-    testImplementation(kotlin("test"))
+    implementation(gradleKotlinDsl())
+    implementation(kotlin("gradle-plugin"))
+}
+
+dokka {
+    dokkaSourceSets {
+        named("main") {
+            includes.from("Module.md")
+//            skipEmptyPackages = false
+//            sourceRoots.setFrom(/* nothing */) // disable documenting sources
+        }
+    }
 }
