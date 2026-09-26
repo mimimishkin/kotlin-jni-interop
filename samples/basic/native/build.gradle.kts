@@ -12,9 +12,9 @@ kotlin {
 
     listOf(
         mingwX64(),
-//        linuxX64(),
-//        linuxArm64(),
-//        macosArm64()
+        linuxX64(),
+        linuxArm64(),
+        macosArm64()
     ).forEach {
         it.binaries {
             if (it.konanTarget == HostManager.host) sharedLib("native") {

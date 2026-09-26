@@ -10,9 +10,12 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Sync
 import org.gradle.kotlin.dsl.*
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.FilesSubpluginOption
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
@@ -38,6 +41,11 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
         }
 
         target.extensions.create<JniLibProducerExtension>(EXTENSION_NAME)
+
+        // JNI binding dependencies must end up in a source set shared by the native compilations this plugin is
+        // applied to. The KMP target/source-set model (dependsOn graph) is fully linked only after the project is
+        // configured, so resolve the target source set lazily.
+        target.afterEvaluate { it.addJniLibrariesAsDependencies() }
     }
 
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean =
@@ -47,20 +55,6 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
         val compilation = kotlinCompilation as KotlinNativeCompilation
         val project = compilation.project
         val config = project.the<JniLibProducerExtension>()
-
-        compilation.defaultSourceSet.dependencies {
-            implementation(BuildConfig.WRAPPER_ID)
-            compileOnly(BuildConfig.ANNOTATIONS_ID)
-            if (compilation.compilationName == KotlinCompilation.MAIN_COMPILATION_NAME) {
-                // Using compileOnly dependencies in these targets is not currently supported, because compileOnly
-                // dependencies must be present during the compilation of projects that depend on this project.
-                // To ensure consistent compilation behavior, compileOnly dependencies should be exposed as api
-                // dependencies.
-                api(BuildConfig.ANNOTATIONS_ID)
-            } else {
-                implementation(BuildConfig.ANNOTATIONS_ID)
-            }
-        }
 
         val buildDir = project.layout.buildDirectory
         val target = compilation.target.name
@@ -138,5 +132,82 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
             artifactId = BuildConfig.PRODUCER_ARTIFACT,
             version = BuildConfig.VERSION
         )
+    }
+
+    private fun Project.addJniLibrariesAsDependencies() {
+        val kotlin = extensions.findByType<KotlinMultiplatformExtension>() ?: return
+        val nativeCompilations = kotlin.targets.asSequence()
+            .flatMap { it.compilations.asSequence() }
+            .filterIsInstance<KotlinNativeCompilation>()
+            .toList()
+        if (nativeCompilations.isEmpty()) return
+
+        for (compilationName in setOf(KotlinCompilation.MAIN_COMPILATION_NAME, KotlinCompilation.TEST_COMPILATION_NAME)) {
+            val sourceSet = mostCommonSourceSet(kotlin, nativeCompilations, compilationName) ?: continue
+            sourceSet.dependencies {
+                implementation(BuildConfig.WRAPPER_ID)
+                compileOnly(BuildConfig.ANNOTATIONS_ID)
+                if (compilationName == KotlinCompilation.MAIN_COMPILATION_NAME) {
+                    // Using compileOnly dependencies in these targets is not currently supported, because compileOnly
+                    // dependencies must be present during the compilation of projects that depend on this project.
+                    // To ensure consistent compilation behavior, compileOnly dependencies should be exposed as api
+                    // dependencies.
+                    api(BuildConfig.ANNOTATIONS_ID)
+                } else {
+                    implementation(BuildConfig.ANNOTATIONS_ID)
+                }
+            }
+        }
+    }
+
+    /**
+     * The most common source set shared by all the native compilations of the given kind.
+     *
+     * When all targets are native (the `metadata` target and the native targets, `platformType == COMMON`/`NATIVE`),
+     * the most common source set is `commonMain`/`commonTest` — JNI bindings become available in every source set.
+     *
+     * Otherwise the plugin must not leak native-only dependencies into non-native compilations, so we only lift them
+     * to the most common *native* source set (e.g. `nativeMain`), i.e. the lowest common ancestor of the native
+     * default source sets.
+     */
+    private fun mostCommonSourceSet(
+        kotlin: KotlinMultiplatformExtension,
+        nativeCompilations: List<KotlinNativeCompilation>,
+        compilationName: String,
+    ): KotlinSourceSet? {
+        val nativeSourceSets = nativeCompilations
+            .filter { it.compilationName == compilationName }
+            .map { it.defaultSourceSet }
+            .distinct()
+
+        if (nativeSourceSets.isEmpty()) return null
+        if (nativeSourceSets.size == 1) return nativeSourceSets.single()
+
+        val allTargetsAreNative = kotlin.targets.none {
+            it.platformType != KotlinPlatformType.native && it.platformType != KotlinPlatformType.common
+        }
+        if (allTargetsAreNative) {
+            val commonName = if (compilationName == KotlinCompilation.MAIN_COMPILATION_NAME) {
+                KotlinSourceSet.COMMON_MAIN_SOURCE_SET_NAME
+            } else {
+                KotlinSourceSet.COMMON_TEST_SOURCE_SET_NAME
+            }
+            kotlin.sourceSets.findByName(commonName)?.let { return it }
+        }
+
+        val commonAncestors = nativeSourceSets
+            .map { ancestorsOf(it) }
+            .reduce { acc, ancestors -> acc intersect ancestors }
+        return commonAncestors.maxByOrNull { ancestorsOf(it).size }
+    }
+
+    private fun ancestorsOf(sourceSet: KotlinSourceSet): Set<KotlinSourceSet> {
+        val ancestors = linkedSetOf<KotlinSourceSet>()
+        fun visit(current: KotlinSourceSet) {
+            if (!ancestors.add(current)) return
+            current.dependsOn.forEach { visit(it) }
+        }
+        visit(sourceSet)
+        return ancestors
     }
 }
