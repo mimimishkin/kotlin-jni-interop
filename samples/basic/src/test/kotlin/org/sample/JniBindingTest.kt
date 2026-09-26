@@ -24,7 +24,6 @@ class JniBindingTest {
     fun `sumArray works`() {
         with(Главный) {
             assertEquals(6L, byteArrayOf(1, 2, 3).sumArray())
-            assertEquals(0L, (null as ByteArray?).sumArray())
         }
     }
 

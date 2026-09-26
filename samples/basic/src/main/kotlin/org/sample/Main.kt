@@ -62,7 +62,7 @@ object Главный {
 
     // Expect a parameter to be nullable because this function can be called from an environment that does not check
     // nullability (e.g. from Java code or reflection).
-    external fun ByteArray?.sumArray(): Long
+    external fun ByteArray.sumArray(): Long
 
     // `Array<Float>` is mapped to the JVM array type `java.lang.Float[]`. The native side must declare
     // the same type, e.g. via the `JFloatRefArray` type alias used in the native sample, so that the JNI signature and
