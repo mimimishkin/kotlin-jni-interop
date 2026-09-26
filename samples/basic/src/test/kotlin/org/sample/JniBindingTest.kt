@@ -52,4 +52,19 @@ class JniBindingTest {
     fun `outerFun works`() {
         assert(outerFun().startsWith("Hello from "))
     }
+
+    @Test
+    fun `hello library platform-specific function works`() {
+        // Unlike `native`, each platform of the `hello` library exports a *different* function, so only the one
+        // matching the current host can be called at runtime.
+        HelloNative.load()
+        val osName = System.getProperty("os.name").lowercase()
+        val arch = System.getProperty("os.arch").lowercase()
+        val result = when {
+            osName.contains("win") -> windowsHello()
+            arch in listOf("aarch64", "arm64") -> linuxArm64Hello()
+            else -> linuxX64Hello()
+        }
+        assert(result.startsWith("Hello from "))
+    }
 }

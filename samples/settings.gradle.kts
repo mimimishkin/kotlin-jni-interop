@@ -21,5 +21,5 @@ rootProject.name = "samples"
 
 // All parent directories are included as projects when specifying a path to a subproject
 include(":basic:native")
-include(":basic:helloNative")
+include(":basic:nativeHello")
 include(":windows-registry:native")
