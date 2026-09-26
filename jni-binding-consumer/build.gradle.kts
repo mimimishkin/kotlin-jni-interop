@@ -23,21 +23,3 @@ dependencies {
 
     testImplementation(project(":jni-binding-annotations"))
 }
-
-// Kotlin compiler plugins are loaded by the compiler from a single artifact without transitive dependencies
-// (`kotlinCompilerPluginClasspath`), so the serialization runtime must be bundled into the plugin jar itself.
-tasks.jar {
-    from(configurations.runtimeClasspath.map { classpath ->
-        classpath.map { file -> if (file.isDirectory) file else project.zipTree(file) }
-    })
-    exclude(
-        "module-info.class",
-        "META-INF/*.SF",
-        "META-INF/*.DSA",
-        "META-INF/*.RSA",
-        "META-INF/versions/**/module-info.class",
-        // The stdlib is provided by the compiler; bundling it risks classloader clashes.
-        "kotlin/**",
-    )
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}

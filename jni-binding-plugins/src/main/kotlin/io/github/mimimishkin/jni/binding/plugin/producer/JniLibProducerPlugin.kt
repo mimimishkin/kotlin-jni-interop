@@ -2,6 +2,7 @@ package io.github.mimimishkin.jni.binding.plugin.producer
 
 import io.github.mimimishkin.jni.binding.BuildConfig
 import io.github.mimimishkin.jni.binding.plugin.JniBindingAttributes
+import io.github.mimimishkin.jni.binding.plugin.camelCase
 import io.github.mimimishkin.jni.binding.plugin.finalName
 import io.github.mimimishkin.jni.binding.plugin.producer.JniExportMethod.RegisterNatives
 import org.gradle.api.Project
@@ -66,6 +67,16 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
         val flavor = compilation.compilationName
         val binariesDir = buildDir.dir("jniBindings/binaries/$target/$flavor")
         val actualsInfoDir = buildDir.dir("jniBindings/actualsInfo/$target/$flavor")
+
+        // Work around KGP's native plugin classpath being non-transitive (KT-53477).
+        val pluginClasspathConfiguration = camelCase(
+            "kotlinCompilerPluginClasspath",
+            compilation.target.disambiguationClassifier ?: target,
+            flavor,
+        )
+        project.configurations.named(pluginClasspathConfiguration) {
+            it.isTransitive = true
+        }
 
         val actualsFile = actualsInfoDir.map { it.file("actuals.json") }
         project.artifacts.add("jniLibrariesElements", actualsFile) {
