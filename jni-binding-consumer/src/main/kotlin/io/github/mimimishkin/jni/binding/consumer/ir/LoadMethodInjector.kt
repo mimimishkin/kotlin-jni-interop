@@ -136,7 +136,12 @@ internal class LoadMethodInjector(private val pluginContext: IrPluginContext) {
                 null
             } else {
                 val illegal = fn.parameters.filter { param ->
-                    param.kind != IrParameterKind.Regular || param.name !in Symbols.loadMethodParameters
+                    // The member `this` (IrParameterKind.DispatchReceiver) is fine: the injector fills it via the
+                    // object/class receiver.
+                    // Only out-of-scope value parameters and extension/context receivers are not.
+                    (param.kind == IrParameterKind.Regular && param.name !in Symbols.loadMethodParameters) ||
+                        param.kind == IrParameterKind.ExtensionReceiver ||
+                        param.kind == IrParameterKind.Context
                 }
                 if (illegal.isNotEmpty()) {
                     reportIllegalParameters(fn, illegal)
