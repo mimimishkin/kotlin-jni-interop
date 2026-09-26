@@ -81,20 +81,6 @@ public abstract class JniLibProducerExtension @Inject constructor(override val p
     public val jniVersion: Property<Int> = project.objects.property<Int>()
 
     /**
-     * The SDK/JRE location that will be used to link native binaries with when [linkJVM]
-     * is called.
-     *
-     * By default, Java obtained from Gradle Toolchain API will be used.
-     */
-    public val javaHome: DirectoryProperty = project.objects.directoryProperty().convention(
-        project.serviceOf<JavaToolchainService>()
-            .launcherFor { config ->
-                config.languageVersion.set(jniVersion.map { JavaLanguageVersion.of(it) })
-            }
-            .map { it.metadata.installationPath }
-    )
-
-    /**
      * By default, only one function annotated with `@JniOnLoad` is allowed. The same with `@JniOnUnload`.
      * Set this to `true` to allow multimple load listeners and finalizers.
      */

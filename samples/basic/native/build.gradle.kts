@@ -1,5 +1,5 @@
 import io.github.mimimishkin.jni.binding.plugin.producer.JniExportMethod
-import io.github.mimimishkin.jni.binding.plugin.producer.linkJVM
+import io.github.mimimishkin.jni.binding.plugin.producer.linkJvm
 import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
@@ -18,7 +18,7 @@ kotlin {
     ).forEach {
         it.binaries {
             if (it.konanTarget == HostManager.host) sharedLib("native") {
-                linkJVM()
+                linkJvm()
             }
         }
     }
