@@ -1,3 +1,5 @@
+import org.gradle.internal.os.OperatingSystem
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -22,4 +24,8 @@ rootProject.name = "samples"
 // All parent directories are included as projects when specifying a path to a subproject
 include(":basic:native")
 include(":basic:nativeHello")
-include(":windows-registry:native")
+
+val host = OperatingSystem.current()!!
+if (host.isWindows) {
+    include(":windows-registry:native")
+}
