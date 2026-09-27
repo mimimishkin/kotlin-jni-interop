@@ -277,7 +277,11 @@ public class JniLibraryConfig internal constructor(
         dependsOn(resolvableConfig)
 
         val destDir = project.layout.buildDirectory.dir("generated/resources")
+        // A `Copy` without any source is reported NO-SOURCE and its actions never run, so every target must
+        // contribute a source; destinations are relative to this one, per target.
+        into(destDir)
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        outputs.dir(destDir)
 
         val bindingInfoFiles = project.files(project.provider {
             resolveBindingInfoFiles()
@@ -286,30 +290,42 @@ public class JniLibraryConfig internal constructor(
 
         doFirst { validateBindingInfoFiles(bindingInfoFiles) }
 
-        targets.configureEach { target ->
-            from(project.provider {
-                val source = target.source
-                if (!source.isPresent) {
-                    if (allowAbsentBindings.get()) return@provider null
-                    else error("source not configured for ${target.name}")
-                }
-
-                try {
-                    source.get().binaryFile()
-                } catch (e: Exception) {
-                    if (allowAbsentBindings.get()) null else throw e
-                }
-            }) {
-                into(destDir.zip(target.resourceDir) { dir, path ->
-                    dir.file(path)
-                })
-            }
-        }
-
         // Resolving the actuals info through the producer configuration schedules the producer's
         // exportJniBinding (declared as `builtBy` of its artifacts), so a change in the native module
         // is picked up by this task rather than by the compiler alone.
         inputs.files(actualsFiles)
+
+        // Resolving the binaries schedules the producers' exportJniBinding tasks as well, so the files
+        // are guaranteed to exist on disk when this task executes.
+        inputs.files(
+            project.files(project.provider { resolveBinaries() })
+        )
+
+        targets.configureEach { target ->
+            // `project.files` is used instead of a bare provider: an absent binding resolves to an empty
+            // list, while a `File?` provider would make Gradle query a `null` value while computing the
+            // task dependencies and fail with "no value available".
+            //
+            // The child spec is taken as a lambda parameter on purpose: a Kotlin lambda passed to a Java
+            // SAM parameter has no receiver, so a bare `into(...)` here would silently configure the
+            // destination of the whole task instead of this spec.
+            from(project.files(project.provider { resolveBinaries(target) })) { spec ->
+                // Deferred: `configureEach` runs before the target is configured, so `resourceDir` may not have
+                // a value yet. The path is relative to the destination set above.
+                spec.into(project.provider { target.resourceDir.get() })
+            }
+        }
+    }
+
+    private fun resolveBinaries(): List<File> = targets.mapNotNull(::resolveBinary)
+
+    private fun resolveBinaries(target: JniBindingTarget): List<File> =
+        resolveBinary(target)?.let { listOf(it) } ?: emptyList()
+
+    private fun resolveBinary(target: JniBindingTarget): File? = try {
+        if (target.source.isPresent) target.source.get().binaryFile() else null
+    } catch (e: Exception) {
+        if (allowAbsentBindings.get()) null else throw e
     }
 
     /**
@@ -343,8 +359,13 @@ public class JniLibraryConfig internal constructor(
      * Libraries are copied to [JniBindingTarget.resourceDir].
      */
     public fun copyToResources() {
+        val resources = consumerCompilation.defaultSourceSet.resources
         val resourcesDir = project.layout.buildDirectory.dir("generated/resources")
-        consumerCompilation.defaultSourceSet.resources.srcDir(resourcesDir)
+        // Every library of a compilation shares the same directory, so it must be registered only once: adding
+        // it twice makes `processResources` visit every file twice and fail with a duplicate entry error.
+        if (resources.srcDirs.none { it == resourcesDir.get().asFile }) {
+            resources.srcDir(resourcesDir)
+        }
 
         val processResources = if (project.extensions.findByType<KotlinMultiplatformExtension>() != null) {
             consumerCompilation.disambiguateName("processResources")

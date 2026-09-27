@@ -63,7 +63,8 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                     val allowExtra = container.any { it.allowExtraActuals.get() }
                     add(SubpluginOption("allowExtraActuals", allowExtra.toString()))
 
-                    // Emit one "actualsFile" option per target, valued "<target>:<path>"
+                    // Emit one "actualsFile" option per target, valued "<target>:<path>". The compiler plugin
+                    // accumulates the options for a target, since several libraries can bind the same platform.
                     for (library in container) {
                         for (target in library.targets) {
                             val source = if (target.source.isPresent) target.source.get() else null
@@ -73,8 +74,13 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                                 if (library.allowAbsentBindings.get()) null else throw e
                             }
 
-                            if (actualsFile != null) {
+                            if (actualsFile != null && actualsFile.exists()) {
                                 add(SubpluginOption("actualsFile", "${target.name}:${actualsFile.path}"))
+                            } else if (actualsFile != null && !library.allowAbsentBindings.get()) {
+                                error(
+                                    "No JniActuals info for target ${target.name} at ${actualsFile.path}. " +
+                                        "Run the producer's exportJniBinding, or copy prebuilt bindings there."
+                                )
                             }
                         }
                     }

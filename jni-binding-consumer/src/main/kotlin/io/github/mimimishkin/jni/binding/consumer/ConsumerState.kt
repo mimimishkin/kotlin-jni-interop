@@ -21,12 +21,14 @@ import java.io.File
  * target as soon as its remaining-expect set becomes empty.
  */
 internal class ConsumerState(
-    actualsByTarget: Map<String, File>,
+    actualFiles: Map<String, List<File>>,
     val allowExtraActuals: Boolean,
     val reportMessage: (factory: KtSourcelessDiagnosticFactory, message: String) -> Unit,
 ) {
     val actualsByTarget: Map<String, MutableList<JniActualInfo>> by lazy {
-        actualsByTarget.mapValues { (_, file) -> Json.decodeFromString(file.readText()) }
+        actualFiles.mapValues { (_, files) ->
+            files.flatMap { file -> Json.decodeFromString<List<JniActualInfo>>(file.readText()) }.toMutableList()
+        }
     }
 
     /** Set by the IR phase */

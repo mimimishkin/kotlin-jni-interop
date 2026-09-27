@@ -23,7 +23,7 @@ import java.io.File
 
 internal object Keys {
     val ENABLED = CompilerConfigurationKey<Boolean>("Enable plugin")
-    val ACTUALS = CompilerConfigurationKey<Map<String, File>>("actuals.json files, one entry per target")
+    val ACTUALS = CompilerConfigurationKey<Map<String, List<File>>>("actuals.json files, one entry per target")
     val ALLOW_EXTRA_ACTUALS = CompilerConfigurationKey<Boolean>("Allow extra @JniActuals")
 }
 
@@ -66,7 +66,13 @@ public class JniBindingConsumerCommandLineProcessor : CommandLineProcessor {
             enabledOption -> configuration.put(Keys.ENABLED, value.toBoolean())
             actualsFileOption -> {
                 val (target, path) = value.split(':', limit = 2)
-                configuration.put(Keys.ACTUALS, target, File(path))
+                // Several libraries can provide bindings for the same target, so accumulate the files instead of
+                // replacing the previous provider of this target.
+                configuration.put(
+                    Keys.ACTUALS,
+                    target,
+                    configuration.getMap(Keys.ACTUALS)[target].orEmpty() + File(path)
+                )
             }
             allowExtraActualsOption -> configuration.put(Keys.ALLOW_EXTRA_ACTUALS, value.toBoolean())
         }
@@ -86,7 +92,7 @@ public class JniBindingConsumerRegistrar : CompilerPluginRegistrar() {
         val actualFiles = configuration.getMap(Keys.ACTUALS)
         val allowExtraActuals = configuration.getBoolean(Keys.ALLOW_EXTRA_ACTUALS)
         val state = ConsumerState(
-            actualsByTarget = actualFiles,
+            actualFiles = actualFiles,
             allowExtraActuals = allowExtraActuals,
             reportMessage = { factory, message -> configuration.report(factory, message) }
         )
