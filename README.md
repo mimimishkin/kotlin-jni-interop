@@ -1,7 +1,7 @@
 # Kotlin Native JNI interop
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.mimimishkin/jni-binding.svg)](https://central.sonatype.org/artifact/io.github.mimimishkin/jni-binding)
-![Kotlin](https://img.shields.io/badge/Kotlin-%E2%89%A52.2.0-7F52FF)
+![Kotlin](https://img.shields.io/badge/Kotlin-%E2%89%A52.4.20-7F52FF)
 
 ![Kotlin mingwX64](https://img.shields.io/badge/Kotlin-mingwX64-4287f5)
 ![Kotlin macosArm64](https://img.shields.io/badge/Kotlin-macosArm64-f5d042)
@@ -16,7 +16,8 @@ single line of C.
 - the **consumer** compiler plugin (`jni-binding-consumer`) checks that every `@JniExpect` on the JVM side has its
   real implementation and packages the binary into resources;
 - `jni-binding` / `jni-binding-raw` provide the JNI API for the native side, `jni-binding-annotations` the shared
-  annotations, and `jni-binding-plugins` the Gradle plugins (see [Repository layout](#repository-layout));
+  annotations, `jawt-binding` the JAWT (AWT native interface) bindings, and `jni-binding-plugins` the Gradle plugins
+  (see [Repository layout](#repository-layout));
 - [`samples/basic`](samples/basic) shows every feature in a very simple way, and
   [`samples/windows-registry`](samples/windows-registry) is a real-world type-safe wrapper over the Windows Registry.
 
@@ -199,6 +200,12 @@ cinterop configuration: JNI error codes become Kotlin exceptions, types are null
 For direct low-level access there is **`jni-binding-raw`** — the raw cinterop of the JDK headers (`jni.h`, `jawt.h`,
 ...), all in the `jni` package.
 
+The AWT native interface lives in a separate **`jawt-binding`** module:
+`implementation("io.github.mimimishkin:jawt-binding:1.0.2")`. It wraps `jawt.h` into
+`io.github.mimimishkin.jni.binding.awt` — [Awt], `DrawingSurface`/`DrawingSurfaceInfo` and the platform-specific
+members (`hwnd`/`hdc`/... on Windows, X11 info on Linux, `CALayer` on macOS). Add the `libjawt` linker option with
+`linkJAwt()` of the producer plugin.
+
 ## Requirements
 
 - Kotlin ≥ 2.4.20.
@@ -208,6 +215,7 @@ For direct low-level access there is **`jni-binding-raw`** — the raw cinterop 
 ```
 jni-binding-raw/         raw cinterop bindings
 jni-binding/             idiomatic Kotlin JNI wrapper
+jawt-binding/            idiomatic Kotlin JAWT (AWT native interface) bindings
 jni-binding-annotations/ JVM + native annotations
 jni-binding-producer/    Kotlin compiler plugin (native side)
 jni-binding-consumer/    Kotlin compiler plugin (JVM side)

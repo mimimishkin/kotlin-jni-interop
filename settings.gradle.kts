@@ -26,6 +26,7 @@ rootProject.name = "kotlin-jni-interop"
 
 include(":jni-binding-raw")
 include(":jni-binding")
+include(":jawt-binding")
 include(":jni-binding-annotations")
 include(":jni-binding-producer", ":jni-binding-consumer")
 include(":jni-binding-plugins")

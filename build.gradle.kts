@@ -24,6 +24,7 @@ dokka {
 dependencies {
     dokka(projects.jniBindingRaw)
     dokka(projects.jniBinding)
+    dokka(projects.jawtBinding)
     dokka(projects.jniBindingAnnotations)
     dokka(projects.jniBindingPlugins)
 //    dokka(projects.jniBindingConsumer)
