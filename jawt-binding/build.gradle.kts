@@ -23,7 +23,6 @@ kotlin {
                         withLinuxArm64()
                     }
                     group("macos") {
-                        withMacosX64()
                         withMacosArm64()
                     }
                 }

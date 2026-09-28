@@ -7,9 +7,7 @@ import kotlinx.cinterop.interpretObjCPointer
 import kotlinx.cinterop.pointed
 import platform.QuartzCore.CALayer
 
-public typealias SurfaceLayersProtocol = JAWT_SurfaceLayersProtocol
-
-internal inline val DrawingSurfaceInfo.surfaceLayers: SurfaceLayersProtocol
+internal inline val DrawingSurfaceInfo.surfaceLayers: JAWT_SurfaceLayersProtocol
     get() = interpretObjCPointer(pointed.platformInfo!!.rawValue)
 
 public var DrawingSurfaceInfo.layer: CALayer

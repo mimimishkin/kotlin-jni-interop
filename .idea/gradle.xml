@@ -16,11 +16,11 @@
           </compositeBuild>
         </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/build-logic" />
+            <option value="$PROJECT_DIR$/jawt-binding" />
             <option value="$PROJECT_DIR$/jni-binding" />
             <option value="$PROJECT_DIR$/jni-binding-annotations" />
             <option value="$PROJECT_DIR$/jni-binding-consumer" />
@@ -29,10 +29,10 @@
             <option value="$PROJECT_DIR$/jni-binding-raw" />
           </set>
         </option>
+        <option name="resolveExternalAnnotations" value="true" />
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/samples" />
-        <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/samples" />
@@ -43,6 +43,7 @@
             <option value="$PROJECT_DIR$/samples/windows-registry/native" />
           </set>
         </option>
+        <option name="resolveExternalAnnotations" value="true" />
       </GradleProjectSettings>
     </option>
   </component>
