@@ -142,16 +142,7 @@ internal class JniExpectMatcher(
 
             for (target in state.targetsFor(expect.targets)) {
                 val actuals = state.actualsByTarget[target]!!
-                val match = actuals.firstOrNull { JniExpects.matches(expect, it, state.reporter) }
-                if (match == null) {
-                    state.reporter.at(source).report(
-                        JniBindingConsumerErrors.MISSING_JNI_ACTUAL,
-                        target to expect.methodName,
-                        expect.parameterTypes,
-                    )
-                } else {
-                    actuals.remove(match)
-                }
+                matchAgainst(expect, actuals, target)
 
                 // Once every expect that applies to this target has been processed, the matching actuals are removed
                 // and whatever remains is genuinely extra for this target. The expect is removed from the remaining
@@ -193,5 +184,175 @@ internal class JniExpectMatcher(
             currentClassName = name.replace('/', '.')
             delegate.defineClass(version, access, name, signature, superName, interfaces)
         }
+    }
+
+    //   Matching
+
+    /**
+     * The concrete reason a candidate actual fails to implement an expect, or [SignatureDiff.None] when it does.
+     */
+    private sealed interface SignatureDiff {
+        data object None : SignatureDiff
+
+        data class Stasis(val expectIsStatic: Boolean, val actualIsStatic: Boolean) : SignatureDiff
+
+        data class ReturnType(val expect: JavaType, val actual: JavaType) : SignatureDiff
+
+        data class ParameterCount(val expect: Int, val actual: Int) : SignatureDiff
+
+        data class ParameterType(
+            val index: Int,
+            val expect: JavaType,
+            val actual: JavaType,
+        ) : SignatureDiff
+
+        /**
+         * How well this diff explains the failure, lowest first. Used only to choose which candidate to report when
+         * several actuals share the expect's method name; with a single candidate — the usual case — it has no effect.
+         * A parameter-type mismatch ranks first because it means the arity lined up and most parameters matched
+         * positionally, which is the strongest evidence this is the actual the user meant.
+         */
+        val distance: Int
+            get() = when (this) {
+                is None -> 0
+                is ParameterType -> 1
+                is ReturnType -> 2
+                is ParameterCount -> 3
+                is Stasis -> 4
+            }
+    }
+
+    /**
+     * Finds the actual in [actuals] that implements [expect], reporting whatever is wrong with the match.
+     *
+     * Reporting lives here rather than at the call site because the failure modes are not equally informative: naming
+     * the concrete cause (`STASIS_MISMATCH`, a wrong parameter type, ...) is worth far more than the generic
+     * "no corresponding @JniActual" message. The generic message is therefore only a fallback, for when no actual of
+     * this method exists at all and there is no specific cause to point at.
+     *
+     * Nothing is reported until it is known that no candidate matches: a target may carry several actuals for the same
+     * method, and reporting the first one that fails would condemn a match the second one satisfies.
+     */
+    private fun matchAgainst(expect: JniExpectInfo, actuals: MutableList<JniActualInfo>, target: String) {
+        fun JavaType.matchesNullable(actual: JavaType): Boolean = !nullable || actual.nullable
+
+        val candidates = actuals.filter { it.className == expect.className && it.methodName == expect.methodName }
+
+        val diffs = candidates.map { it to diff(expect, it) }
+        val matched = diffs.firstOrNull { it.second == SignatureDiff.None }?.first
+        if (matched != null) {
+            actuals.remove(matched)
+
+            // Parameters flow JVM -> native: the expect (the JVM caller's contract) may hand `null` to a native whose
+            // declared parameter is non-null, so the mismatch to flag is "expect nullable, actual not".
+            matched.parameterTypes.zip(expect.parametersWithTypes) { actualParam, (irParam, expectParam) ->
+                if (!expectParam.matchesNullable(actualParam)) {
+                    state.reporter.at(irParam)
+                        .report(JniBindingConsumerErrors.NULLABILITY_MISMATCH, expectParam, actualParam)
+                }
+            }
+
+            // The return value flows native -> JVM: the native may hand `null` where the expect (the JVM caller's
+            // contract) promises it never sees one, so the mismatch to flag is "actual nullable, expect not".
+            val expectReturns = expect.returnType
+            if (!matched.returnType.matchesNullable(expectReturns)) {
+                state.reporter.at(expect.source)
+                    .report(JniBindingConsumerErrors.NULLABILITY_MISMATCH, expectReturns, matched.returnType)
+            }
+
+            return
+        }
+
+        // Nothing matched. Every actual that IS this expect's method is already accounted for by the diagnostics below,
+        // so take it out of the pool instead of letting it resurface as a leftover "extra" actual.
+        actuals.removeAll(candidates.toSet())
+
+        val closest = diffs.minByOrNull { it.second.distance }?.second ?: SignatureDiff.None
+        report(expect, target, closest)
+    }
+
+    /**
+     * Reports [diff] against the expect, pinpointing the offending declaration where one can be identified. A [diff] of
+     * [SignatureDiff.None] means no actual of this method was declared at all, so there is no specific cause to name
+     * and the generic "missing" message is the fallback.
+     */
+    private fun report(expect: JniExpectInfo, target: String, diff: SignatureDiff) {
+        fun staticStatus(isStatic: Boolean?): String = when (isStatic) {
+            true -> "static"
+            false -> "instance"
+            null -> "doesn't matter"
+        }
+
+        when (diff) {
+            is SignatureDiff.None -> state.reporter.at(expect.source).report(
+                JniBindingConsumerErrors.MISSING_JNI_ACTUAL,
+                target to expect.methodName,
+                expect.parameterTypes,
+            )
+            is SignatureDiff.Stasis -> state.reporter.at(expect.source).report(
+                JniBindingConsumerErrors.STASIS_MISMATCH,
+                staticStatus(diff.expectIsStatic),
+                staticStatus(diff.actualIsStatic),
+            )
+            is SignatureDiff.ReturnType -> state.reporter.at(expect.source).report(
+                JniBindingConsumerErrors.RETURN_TYPE_MISMATCH,
+                diff.expect,
+                diff.actual,
+            )
+            is SignatureDiff.ParameterCount -> state.reporter.at(expect.source).report(
+                JniBindingConsumerErrors.PARAMETER_COUNT_MISMATCH,
+                diff.expect,
+                diff.actual,
+            )
+            is SignatureDiff.ParameterType -> {
+                val irParam = expect.parametersWithTypes.getOrNull(diff.index)?.first
+                if (irParam != null) {
+                    state.reporter.at(irParam).report(
+                        JniBindingConsumerErrors.PARAMETER_TYPE_MISMATCH,
+                        diff.index,
+                        diff.expect,
+                        diff.actual,
+                    )
+                } else {
+                    state.reporter.at(expect.source).report(
+                        JniBindingConsumerErrors.PARAMETER_TYPE_MISMATCH,
+                        diff.index,
+                        diff.expect,
+                        diff.actual,
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Compares [expect] against a candidate [actual] that is already known to be the same method by name, and returns
+     * the concrete reason it does not implement the expect. Pure: it reports nothing.
+     *
+     * Checks run cheapest-and-most-specific first, so the returned diff is the most actionable one.
+     */
+    private fun diff(expect: JniExpectInfo, actual: JniActualInfo): SignatureDiff {
+        if (actual.isStasisValuable() && actual.isStatic != expect.isStatic) {
+            return SignatureDiff.Stasis(expect.isStatic, actual.isStatic!!)
+        }
+
+        val expectReturns = expect.returnType
+        val actualReturns = actual.returnType
+        if (actualReturns.type != expectReturns.type) return SignatureDiff.ReturnType(expectReturns, actualReturns)
+
+        if (actual.parameterTypes.size != expect.parameterTypes.size) {
+            return SignatureDiff.ParameterCount(expect.parameterTypes.size, actual.parameterTypes.size)
+        }
+        // Walk the parameters to the first one that differs: naming one wrong parameter is more useful than reporting
+        // every one of them, and the arity already lined up.
+        for ((index, pair) in expect.parametersWithTypes.withIndex()) {
+            val expectParam = pair.second
+            val actualParam = actual.parameterTypes[index]
+            if (actualParam.type != expectParam.type) {
+                return SignatureDiff.ParameterType(index, expectParam, actualParam)
+            }
+        }
+
+        return SignatureDiff.None
     }
 }
