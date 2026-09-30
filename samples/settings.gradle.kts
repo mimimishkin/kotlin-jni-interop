@@ -27,5 +27,5 @@ include(":basic:nativeHello")
 
 val host = OperatingSystem.current()!!
 if (host.isWindows) {
-    include(":windows-registry:native")
+    include(":windows-registry")
 }

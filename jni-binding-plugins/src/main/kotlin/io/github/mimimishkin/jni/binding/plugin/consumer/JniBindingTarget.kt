@@ -104,6 +104,11 @@ public interface JniBindingTarget : Named, HasProject {
  */
 public interface JniLibrarySource {
     /**
+     * Whether this build produces the bindings, as opposed to reading them from files that already exist.
+     */
+    public val producedByThisBuild: Boolean
+
+    /**
      * Returns the file(s) of the compiled native library.
      *
      * @param compilationName name of the producer compilation, `"main"` by default.
@@ -111,7 +116,7 @@ public interface JniLibrarySource {
     public fun binaries(compilationName: String = "main"): FileCollection
 
     /**
-     * Returns the JSON file(s) describing `@JniActual` functions exported by the native library.
+     * Returns the JSON file describing `@JniActual` functions exported by the native library.
      *
      * @param compilationName name of the producer compilation, `"main"` by default.
      */

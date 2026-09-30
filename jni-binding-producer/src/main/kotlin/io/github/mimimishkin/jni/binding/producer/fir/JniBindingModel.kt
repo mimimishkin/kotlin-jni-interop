@@ -125,13 +125,13 @@ internal fun jniActualArguments(fn: FirFunctionSymbol<*>): JniTarget? {
     return JniTarget(className = className, methodName = defaultMethodName)
 }
 
-/**
- * The `String` value of the annotation argument [name] from the resolved argument mapping. Reading the mapping
- * resolves the annotation's arguments against its value parameters on demand, so positional and named arguments
- * both land under their parameter name and the value is reachable regardless of the current compiler pass.
- */
 internal fun FirAnnotationCall.argumentValue(name: String): String? =
     argumentMapping.mapping[name.ident()]?.literalStringValue()
+        ?: argumentList.arguments
+            .filterIsInstance<FirNamedArgumentExpression>()
+            .firstOrNull { it.name.asString() == name }
+            ?.expression
+            ?.literalStringValue()
 
 /**
  * The literal `String` value of this expression when statically known: unwraps named-argument

@@ -3,10 +3,10 @@
 kotlin = "2.4.20"
 
 # https://github.com/gmazzo/gradle-buildconfig-plugin
-buildConfig = "6.0.10"
+buildConfig = "6.1.2"
 
 # https://developer.android.com/studio/releases/gradle-plugin
-agp = "9.3.1"
+agp = "9.3.3"
 
 # https://github.com/google/auto/blob/main/service/README.md
 autoService = "1.1.1"
@@ -32,6 +32,15 @@ dokka = "2.2.0"
 # https://github.com/kotlin/kotlinx.serialization
 serialization = "1.11.0"
 
+# https://github.com/palantir/gradle-jdks
+gradleJdks = "0.82.0"
+
+# https://github.com/palantir/gradle-utils
+palantirPlatform = "0.29.0"
+
+# https://commons.apache.org/proper/commons-compress/
+commonsCompress = "1.28.0"
+
 [libraries]
 kotlin-gradlePluginApi  = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin-api", version.ref = "kotlin" }
 kotlin-compiler = { group = "org.jetbrains.kotlin", name = "kotlin-compiler", version.ref = "kotlin" }
@@ -40,6 +49,10 @@ autoService-annotations = { group = "com.google.auto.service", name = "auto-serv
 zacsweers-autoServiceKsp = { group = "dev.zacsweers.autoservice", name = "auto-service-ksp", version.ref = "autoServiceKsp" }
 zacsweers-kctFork = { group = "dev.zacsweers.kctfork", name = "core", version.ref = "kct" }
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+palantir-gradle-jdks = { group = "com.palantir.gradle.jdks", name = "gradle-jdks", version.ref = "gradleJdks" }
+palantir-gradle-jdks-setup-common = { group = "com.palantir.gradle.jdks", name = "gradle-jdks-setup-common", version.ref = "gradleJdks" }
+palantir-platform = { group = "com.palantir.gradle.utils", name = "platform", version.ref = "palantirPlatform" }
+commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commonsCompress" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

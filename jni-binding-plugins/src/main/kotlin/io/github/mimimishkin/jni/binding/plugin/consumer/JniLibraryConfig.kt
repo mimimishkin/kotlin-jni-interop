@@ -1,6 +1,7 @@
 package io.github.mimimishkin.jni.binding.plugin.consumer
 
 import io.github.mimimishkin.jni.binding.plugin.JniBindingAttributes
+import io.github.mimimishkin.jni.binding.plugin.producer.JniLibProducerExtension
 import io.github.mimimishkin.jni.binding.plugin.camelCase
 import io.github.mimimishkin.jni.binding.plugin.disambiguateName
 import io.github.mimimishkin.jni.binding.plugin.targetJVM
@@ -117,9 +118,12 @@ public class JniLibraryConfig internal constructor(
             override val producerProject: Property<Project> = project.objects.property()
 
             override fun fromProducer(project: Project) {
-                this.project.dependencies.add(dependencyScope.name, project)
+                val isSelf = project == this.project
+                if (!isSelf) {
+                    this.project.dependencies.add(dependencyScope.name, project)
+                }
                 producerProject.set(project)
-                source.set(producerSource(name))
+                source.set(if (isSelf) selfProducerSource(name) else producerSource(name))
             }
 
             override fun fromProducer(projectPath: String) {
@@ -153,6 +157,8 @@ public class JniLibraryConfig internal constructor(
         bindingsDir: Provider<Directory>,
         targetName: String
     ): JniLibrarySource = object : JniLibrarySource {
+        override val producedByThisBuild: Boolean = false
+
         override fun binaries(compilationName: String): FileCollection {
             val dir = bindingsDir.get().asFile.resolve("binaries/$targetName/$compilationName")
             val binaries = dir.listFiles()?.asList().orEmpty()
@@ -172,6 +178,8 @@ public class JniLibraryConfig internal constructor(
      * added to the dependency-scope configuration.
      */
     private fun producerSource(targetName: String): JniLibrarySource = object : JniLibrarySource {
+        override val producedByThisBuild: Boolean = true
+
         override fun binaries(compilationName: String): FileCollection =
             producerArtifacts(JniBindingAttributes.ARTIFACT_TYPE_JNI_LIBRARY, "binaries", targetName, compilationName)
 
@@ -196,6 +204,27 @@ public class JniLibraryConfig internal constructor(
         val path = "/jniBindings/$directory/$targetName/$compilationName/"
         return producerArtifactFiles(artifactType)
             .filter { path in it.absolutePath.replace('\\', '/') }
+    }
+
+    private fun selfProducerSource(targetName: String): JniLibrarySource = object : JniLibrarySource {
+        override val producedByThisBuild: Boolean = true
+
+        override fun binaries(compilationName: String): FileCollection =
+            selfProduced("binaries", targetName, compilationName)
+
+        override fun actuals(compilationName: String): FileCollection =
+            selfProduced("actualsInfo", targetName, compilationName)
+    }
+
+    private fun selfProduced(directory: String, targetName: String, compilationName: String): FileCollection {
+        val dir = project.layout.buildDirectory.dir("$PRODUCER_OUTPUT_DIR/$directory/$targetName/$compilationName")
+        val files = project.objects.fileCollection()
+        // Listed rather than named, because the producer `Sync`s exactly one file into each of these directories and
+        // its name is platform-specific (`native.dll`, `libnative.so`, ...).
+        files.from(project.provider { dir.get().asFile.listFiles()?.toList().orEmpty() })
+        project.extensions.findByType<JniLibProducerExtension>()
+            ?.let { files.builtBy(it.exportJniBindingTaskProvider) }
+        return files
     }
 
     /**
@@ -348,6 +377,9 @@ public class JniLibraryConfig internal constructor(
  * Checks each producer `info.properties` against the project's target JVM: the requested JNI version must be
  * no newer than the target JDK.
  */
+/** The directory, under a producer's build directory, that `JniLibProducerPlugin` writes its output into. */
+private const val PRODUCER_OUTPUT_DIR = "jniBindings"
+
 private fun validateBindingInfoFiles(files: FileCollection, targetJvmMajor: Int) {
     if (targetJvmMajor <= 0) return
     for (file in files) {

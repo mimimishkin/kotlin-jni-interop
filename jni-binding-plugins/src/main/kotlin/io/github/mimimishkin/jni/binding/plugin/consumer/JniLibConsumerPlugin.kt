@@ -141,7 +141,16 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                                 if (library.allowAbsentBindings.get()) null else throw e
                             }
 
-                            if (actualsFile != null) {
+                            // A target is skipped only when it is out of scope by request: bindings read from
+                            // files that no task in this build will ever produce, missing, and `allowAbsentBindings`
+                            // set. A producer's bindings are never skipped for being missing, because the build
+                            // produces them - the compiler reads the file once the tasks have run, and reports
+                            // what it finds there.
+                            val outOfScope = actualsFile != null &&
+                                !actualsFile.exists() &&
+                                source?.producedByThisBuild == false &&
+                                library.allowAbsentBindings.get()
+                            if (actualsFile != null && !outOfScope) {
                                 add(SubpluginOption("actualsFile", "${target.name}:${actualsFile.path}"))
                             }
                         }
