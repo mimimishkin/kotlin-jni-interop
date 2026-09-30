@@ -3,6 +3,7 @@ package io.github.mimimishkin.jni.binding.plugin.consumer
 import org.gradle.api.Named
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.HasProject
@@ -42,6 +43,12 @@ public interface JniBindingTarget : Named, HasProject {
      * Must be configured with [fromProducer] or [fromPrebuiltBinding].
      */
     public val source: Property<JniLibrarySource>
+
+    /**
+     * The producer project this target takes its binding from, or unset when the binding is taken from prebuilt
+     * bindings.
+     */
+    public val producerProject: Property<Project>
 
     /**
      * Takes the binding from a producer project that applies [io.github.mimimishkin.jni.binding.plugin.producer.JniLibProducerPlugin].
@@ -94,21 +101,19 @@ public interface JniBindingTarget : Named, HasProject {
 
 /**
  * Provides paths to binding artifacts of a single [platform target][JniBindingTarget].
- *
- * Note that it can be not safe to call its methods during configuration.
  */
 public interface JniLibrarySource {
     /**
-     * Returns the file of the compiled native library.
+     * Returns the file(s) of the compiled native library.
      *
      * @param compilationName name of the producer compilation, `"main"` by default.
      */
-    public fun binaryFile(compilationName: String = "main"): File
+    public fun binaries(compilationName: String = "main"): FileCollection
 
     /**
-     * Returns the JSON file describing `@JniActual` functions exported by the native library.
+     * Returns the JSON file(s) describing `@JniActual` functions exported by the native library.
      *
      * @param compilationName name of the producer compilation, `"main"` by default.
      */
-    public fun actualsFile(compilationName: String = "main"): File
+    public fun actuals(compilationName: String = "main"): FileCollection
 }

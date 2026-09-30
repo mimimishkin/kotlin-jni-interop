@@ -17,7 +17,7 @@ class JniActualInfoSerializationTest {
             source = "Main.kt",
         )
 
-        val text = Json.encodeToString(JniActualInfo.serializer(), info)
-        assertEquals(info, Json.decodeFromString(JniActualInfo.serializer(), text))
+        val text = Json.encodeToString(info)
+        assertEquals(info, Json.decodeFromString(text))
     }
 }

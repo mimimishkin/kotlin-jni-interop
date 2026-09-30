@@ -3,7 +3,9 @@ package io.github.mimimishkin.jni.binding.plugin.producer
 import io.github.mimimishkin.jni.binding.BuildConfig
 import io.github.mimimishkin.jni.binding.plugin.JniBindingAttributes
 import io.github.mimimishkin.jni.binding.plugin.camelCase
+import io.github.mimimishkin.jni.binding.plugin.commonSourceSet
 import io.github.mimimishkin.jni.binding.plugin.finalName
+import io.github.mimimishkin.jni.binding.plugin.mostCommonSourceSet
 import io.github.mimimishkin.jni.binding.plugin.producer.JniExportMethod.RegisterNatives
 import org.gradle.api.Project
 import org.gradle.api.attributes.Usage
@@ -15,7 +17,6 @@ import org.jetbrains.kotlin.gradle.plugin.FilesSubpluginOption
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
@@ -73,6 +74,21 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
         }
 
         val actualsFile = actualsInfoDir.map { it.file("actuals.json") }
+
+        // The compiler fills `actuals.json` while it runs, but a compilation with no sources is skipped as
+        // `NO-SOURCE` and never runs it. Create an empty contract in that case, so a consumer that binds this
+        // producer sees "no @JniActual declared" instead of a missing file it cannot act on.
+        config.exportJniBindingTaskProvider.configure { task ->
+            task.dependsOn(compilation.compileTaskProvider)
+            task.doLast {
+                val file = actualsFile.get().asFile
+                if (!file.isFile) {
+                    file.parentFile?.mkdirs()
+                    file.writeText("[]")
+                }
+            }
+        }
+
         project.artifacts.add("jniLibrariesElements", actualsFile) {
             // Resolving this artifact in a consumer must run the whole `exportJniBinding` build so bindings
             // are always up to date. This is `builtBy`-based (working for included/isolated builds), not a
@@ -86,8 +102,8 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
             if (binary.compilation != compilation) return@configureEach
             if (binary.buildType != NativeBuildType.RELEASE) return@configureEach
 
-            // use `Sync` instead of `Copy` to ensure that the binary is the only one file in dir
-            val exportBinary = project.tasks.register<Sync>(binary.name + "JniLibrary") {
+            // Use `Sync` instead of `Copy` to ensure that the binary is the only one file in dir.
+            val exportBinary = project.tasks.register<Sync>(camelCase(binary.baseName, target, "JniLibrary")) {
                 group = null
                 description = "Copies ${binary.finalName} to $target/$flavor binding directory"
 
@@ -142,8 +158,19 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
             .toList()
         if (nativeCompilations.isEmpty()) return
 
+        // `commonMain`/`commonTest` is only shared by these dependencies if nothing else compiles against it: with a
+        // JVM target next to the native ones, those dependencies must not reach that target's compilation. The lowest
+        // common ancestor of the native source sets (e.g. `nativeMain`) is the fallback, and the one used in a
+        // project of native targets only.
+        val allTargetsAreNative = kotlin.targets.none {
+            it.platformType != KotlinPlatformType.native && it.platformType != KotlinPlatformType.common
+        }
+
         for (compilationName in setOf(KotlinCompilation.MAIN_COMPILATION_NAME, KotlinCompilation.TEST_COMPILATION_NAME)) {
-            val sourceSet = mostCommonSourceSet(kotlin, nativeCompilations, compilationName) ?: continue
+            val sourceSet = mostCommonSourceSet(
+                compilations = nativeCompilations.filter { it.compilationName == compilationName },
+                common = if (allTargetsAreNative) commonSourceSet(kotlin, compilationName) else null,
+            ) ?: continue
             sourceSet.dependencies {
                 implementation(BuildConfig.WRAPPER_ID)
                 compileOnly(BuildConfig.ANNOTATIONS_ID)
@@ -158,56 +185,5 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
                 }
             }
         }
-    }
-
-    /**
-     * The most common source set shared by all the native compilations of the given kind.
-     *
-     * When all targets are native (the `metadata` target and the native targets, `platformType == COMMON`/`NATIVE`),
-     * the most common source set is `commonMain`/`commonTest` — JNI bindings become available in every source set.
-     *
-     * Otherwise the plugin must not leak native-only dependencies into non-native compilations, so we only lift them
-     * to the most common *native* source set (e.g. `nativeMain`), i.e. the lowest common ancestor of the native
-     * default source sets.
-     */
-    private fun mostCommonSourceSet(
-        kotlin: KotlinMultiplatformExtension,
-        nativeCompilations: List<KotlinNativeCompilation>,
-        compilationName: String,
-    ): KotlinSourceSet? {
-        val nativeSourceSets = nativeCompilations
-            .filter { it.compilationName == compilationName }
-            .map { it.defaultSourceSet }
-            .distinct()
-
-        if (nativeSourceSets.isEmpty()) return null
-        if (nativeSourceSets.size == 1) return nativeSourceSets.single()
-
-        val allTargetsAreNative = kotlin.targets.none {
-            it.platformType != KotlinPlatformType.native && it.platformType != KotlinPlatformType.common
-        }
-        if (allTargetsAreNative) {
-            val commonName = if (compilationName == KotlinCompilation.MAIN_COMPILATION_NAME) {
-                KotlinSourceSet.COMMON_MAIN_SOURCE_SET_NAME
-            } else {
-                KotlinSourceSet.COMMON_TEST_SOURCE_SET_NAME
-            }
-            kotlin.sourceSets.findByName(commonName)?.let { return it }
-        }
-
-        val commonAncestors = nativeSourceSets
-            .map { ancestorsOf(it) }
-            .reduce { acc, ancestors -> acc intersect ancestors }
-        return commonAncestors.maxByOrNull { ancestorsOf(it).size }
-    }
-
-    private fun ancestorsOf(sourceSet: KotlinSourceSet): Set<KotlinSourceSet> {
-        val ancestors = linkedSetOf<KotlinSourceSet>()
-        fun visit(current: KotlinSourceSet) {
-            if (!ancestors.add(current)) return
-            current.dependsOn.forEach { visit(it) }
-        }
-        visit(sourceSet)
-        return ancestors
     }
 }

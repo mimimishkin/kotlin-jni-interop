@@ -2,7 +2,6 @@ package io.github.mimimishkin.jni.binding.consumer
 
 import io.github.mimimishkin.jni.binding.consumer.model.JniActualInfo
 import io.github.mimimishkin.jni.binding.consumer.model.JniExpectDeclaration
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlin.diagnostics.KtSourcelessDiagnosticFactory
 import org.jetbrains.kotlin.ir.IrDiagnosticReporter
@@ -25,22 +24,30 @@ import java.io.File
  */
 internal class ConsumerState(
     actualFiles: Map<String, List<File>>,
-    expectsFile: File?,
+    expectsFile: File,
     val allowExtraActuals: Boolean,
     val reportMessage: (factory: KtSourcelessDiagnosticFactory, message: String) -> Unit,
 ) {
+    /**
+     * The `@JniActual` declarations of every target, as its `actuals.json` records them.
+     *
+     * A file that is not there is read as an empty list rather than as a failure: it is what a producer that has not
+     * been built yet looks like, and the diagnostics below then name every `@JniExpect` that therefore has no
+     * implementation - which is the same answer as for a producer that was built and declares nothing.
+     */
     val actualsByTarget: Map<String, MutableList<JniActualInfo>> by lazy {
         actualFiles.mapValues { (_, files) ->
-            files.flatMap { file -> Json.decodeFromString<List<JniActualInfo>>(file.readText()) }.toMutableList()
+            files.filter(File::isFile)
+                .flatMap { file -> Json.decodeFromString<List<JniActualInfo>>(file.readText()) }
+                .toMutableList()
         }
     }
 
     /**
-     * The `expects.json` being built, or `null` when the contract file was not requested. Reset on construction, the
-     * way the producer resets its `actuals.json`: a stale contract from a previous run would otherwise leak
-     * declarations that no longer exist into the generated stubs.
+     * The `expects.json` being built, emptied on construction the way the producer empties its `actuals.json`: a stale
+     * contract from a previous run would otherwise leak declarations that no longer exist into the generated stubs.
      */
-    private val expectsFile: File? = expectsFile?.also {
+    private val expectsFile: File = expectsFile.also {
         it.parentFile?.mkdirs()
         it.writeText("[]")
     }
@@ -85,7 +92,6 @@ internal class ConsumerState(
      * it had not reached yet.
      */
     fun recordExpect(expect: JniExpectDeclaration) {
-        val file = expectsFile ?: return
         val key = expect.signatureKey
         val previous = expects[key]
         // Two expects of the same JVM method (one restricted to some targets, one to others) collapse into a single
@@ -97,7 +103,7 @@ internal class ConsumerState(
         }
         if (merged == previous) return
         expects[key] = merged
-        file.writeText(expectsJson.encodeToString(ListSerializer(JniExpectDeclaration.serializer()), expects.values.toList()))
+        expectsFile.writeText(expectsJson.encodeToString(expects.values.toList()))
     }
 
     /**

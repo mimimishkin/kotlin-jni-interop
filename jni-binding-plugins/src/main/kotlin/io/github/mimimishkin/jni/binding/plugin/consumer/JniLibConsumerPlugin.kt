@@ -2,29 +2,89 @@ package io.github.mimimishkin.jni.binding.plugin.consumer
 
 import io.github.mimimishkin.jni.binding.BuildConfig
 import io.github.mimimishkin.jni.binding.BuildConfig.ANNOTATIONS_ID
+import io.github.mimimishkin.jni.binding.plugin.commonSourceSet
 import io.github.mimimishkin.jni.binding.plugin.disambiguateName
+import io.github.mimimishkin.jni.binding.plugin.mostCommonSourceSet
+import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.register
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.androidJvm
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.jvm
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 
 /**
+ * The platform types a JNI library can be consumed from, and therefore the ones the annotations belong in.
+ */
+private val CONSUMABLE_PLATFORMS = listOf(jvm, androidJvm)
+
+/**
  * Plugin for consuming JNI libraries.
  */
 public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean {
-        return kotlinCompilation.platformType in listOf(jvm, androidJvm) && kotlinCompilation.jniLibrariesProvider.isPresent
+        return kotlinCompilation.platformType in CONSUMABLE_PLATFORMS && kotlinCompilation.jniLibrariesProvider.isPresent
+    }
+
+    /**
+     * The annotations are added per project, once the build script has configured every compilation.
+     */
+    override fun apply(target: Project) {
+        target.afterEvaluate { it.addAnnotationsAsDependency() }
+    }
+
+    /**
+     * Puts `jni-binding-annotations` to the source set all the applicable compilations have in common.
+     */
+    private fun Project.addAnnotationsAsDependency() {
+        val compilations = jniLibrariesCompilations() ?: return
+
+        val kotlin = extensions.findByType<KotlinMultiplatformExtension>()
+        // Absent for a plain JVM project, which has a single compilation kind and no common source set to leak into.
+        val allTargetsAreConsumable = kotlin?.targets.orEmpty().all {
+            it.platformType == jvm || it.platformType == androidJvm || it.platformType == KotlinPlatformType.common
+        }
+
+        for (compilationName in compilations.map { it.compilationName }.toSet()) {
+            val sourceSet = mostCommonSourceSet(
+                compilations = compilations.filter { it.compilationName == compilationName },
+                common = if (allTargetsAreConsumable) kotlin?.let { commonSourceSet(it, compilationName) } else null,
+            ) ?: continue
+            sourceSet.dependencies {
+                compileOnly(ANNOTATIONS_ID)
+            }
+        }
+    }
+
+    /**
+     * Every compilation of this project this plugin is wired to, or `null` if the project has none.
+     */
+    private fun Project.jniLibrariesCompilations(): List<KotlinCompilation<*>>? {
+        val all = extensions.findByType<KotlinMultiplatformExtension>()
+            ?.targets
+            ?.flatMap { target -> target.compilations }
+            ?: extensions.findByType<KotlinJvmProjectExtension>()
+                ?.target
+                ?.compilations
+                ?.toList()
+            ?: return null
+
+        return all
+            .filter { it.platformType in CONSUMABLE_PLATFORMS && it.jniLibrariesProvider.isPresent }
+            .ifEmpty { null }
     }
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
-        kotlinCompilation.defaultSourceSet.dependencies {
-            compileOnly(ANNOTATIONS_ID)
-        }
-
         val project = kotlinCompilation.project
+
+        val expectsContract = project.layout.buildDirectory
+            .file("jniBindings/expectsInfo/${kotlinCompilation.compilationName}/expects.json")
 
         // Aggregate import task for this compilation. It depends on every library's `importJniLib*`, whose
         // resolution of the producer's artifacts triggers the producer's `exportJniBinding` (the producer declares
@@ -39,24 +99,31 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
             })
         }
 
+        project.tasks.register<GenerateJniActualsTask>(kotlinCompilation.disambiguateName("generateJniActuals")) {
+            description = "Generates @JniActual stubs for the @JniExpects of this compilation"
+            expectsFile.set(expectsContract)
+            producers.set(project.provider { producerProjectsOf(kotlinCompilation) })
+        }
+
         // Make the JVM compilation depend on importing the bindings, and track the resolved producers'
         // actuals files as inputs. When a native module changes, `exportJniBinding` regenerates the actuals,
         // their hash changes, and the consumer recompiles.
         kotlinCompilation.compileTaskProvider.configure { compileTask ->
             compileTask.dependsOn(importTaskProvider)
             compileTask.inputs.files(
-                project.provider {
+                project.files(
                     kotlinCompilation.jniLibrariesProvider.orNull.orEmpty().flatMap { it.actualsFiles.files }
-                }
+                )
             )
         }
 
         return project.provider {
             val container = kotlinCompilation.jniLibrariesProvider.orNull.orEmpty()
-            if (container.isEmpty()) {
-                listOf(SubpluginOption("enabled", "false"))
-            } else {
-                buildList {
+            buildList {
+                if (container.isEmpty()) {
+                    add(SubpluginOption("enabled", "false"))
+                } else {
+                    add(SubpluginOption("expectsFile", expectsContract.get().asFile.path))
                     add(SubpluginOption("enabled", "true"))
 
                     // Aggregate allowExtraActuals – if any library permits extra actuals, allow it globally.
@@ -69,18 +136,13 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                         for (target in library.targets) {
                             val source = if (target.source.isPresent) target.source.get() else null
                             val actualsFile = try {
-                                source?.actualsFile(kotlinCompilation.compilationName)
+                                source?.actuals(kotlinCompilation.compilationName)?.singleOrNull()
                             } catch (e: Exception) {
                                 if (library.allowAbsentBindings.get()) null else throw e
                             }
 
-                            if (actualsFile != null && actualsFile.exists()) {
+                            if (actualsFile != null) {
                                 add(SubpluginOption("actualsFile", "${target.name}:${actualsFile.path}"))
-                            } else if (actualsFile != null && !library.allowAbsentBindings.get()) {
-                                error(
-                                    "No JniActuals info for target ${target.name} at ${actualsFile.path}. " +
-                                        "Run the producer's exportJniBinding, or copy prebuilt bindings there."
-                                )
                             }
                         }
                     }
@@ -97,5 +159,38 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
             artifactId = BuildConfig.CONSUMER_ARTIFACT,
             version = BuildConfig.VERSION
         )
+    }
+
+    /**
+     * The producer projects of [compilation]'s libraries, each with the `actuals.json` artifacts its targets publish.
+     *
+     * The artifacts are handed over unresolved, so this adds no dependency on the producers' `exportJniBinding`. That
+     * matters: the task has to work before they were ever built, which is the state a new binding starts from.
+     */
+    private fun producerProjectsOf(compilation: KotlinCompilation<*>): List<JniActualsProducer> {
+        val compilationName = compilation.compilationName
+        val consumerProject = compilation.project
+        val byProducer = compilation.jniLibrariesProvider.orNull.orEmpty()
+            .flatMap { it.targets }
+            .mapNotNull { target ->
+                val producer = target.producerProject.orNull ?: return@mapNotNull null
+                val source = target.source.orNull
+                producer to source
+            }
+
+        return byProducer
+            .distinctBy { (producer, _) -> producer.path }
+            .map { (producer, _) ->
+                val sources = byProducer.filter { it.first.path == producer.path }.map { it.second }
+                JniActualsProducer(
+                    path = producer.path,
+                    projectDir = producer.projectDir,
+                    actuals = consumerProject.objects.fileCollection().apply {
+                        sources.forEach { source ->
+                            from(consumerProject.provider { source?.actuals(compilationName) ?: consumerProject.files() })
+                        }
+                    },
+                )
+            }
     }
 }

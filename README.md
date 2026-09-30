@@ -24,7 +24,7 @@ are matched, built, checked and packaged for you. No C, no handwritten JNI signa
 - [Quick start](#quick-start) — a complete native + JVM pair
 - [Configuration reference](#configuration-reference) — every DSL option of both plugins
 - [Annotations reference](#annotations-reference) — the ten annotations and what they do
-- [Libraries](#libraries) — `jni-binding`, `jni-binding-raw`, `jawt-binding`
+- [Libraries](#libraries) — `jni-binding-raw`, `jni-binding`, `jawt-binding`
 - [Samples](#samples) — runnable examples
 - [Repository layout](#repository-layout)
 
@@ -56,10 +56,11 @@ Step by step:
 Two additional considerations:
 
 - **Producer and consumer are independent modules.** They can live in the same build or in different ones, and a JVM
-  module can consume binaries built on another machine (see
-  [prebuilt bindings](#consumer-side-jnilibrariescreate)).
+  module can consume binaries built on another machine (see [prebuilt bindings](#consumer-side-jnilibrariescreate)).
 - **Only the host target can be linked.** A build produces a shared library for the platform it runs on, so the
   usual setup builds the host target from source and takes the others from a prebuilt folder.
+- **Both plugins are compatible with 
+  [Isolated Projects](https://docs.gradle.org/current/userguide/isolated_projects.html) and the configuration cache.**
 
 ## Quick start
 
@@ -82,7 +83,12 @@ kotlin {
 
     // A binary can only be linked for the host, so all supported targets are declared
     // and only the current one is linked.
-    listOf(mingwX64(), linuxX64(), linuxArm64(), macosArm64()).forEach { target ->
+    listOf(
+        mingwX64(),
+        linuxX64(), 
+        linuxArm64(), 
+        macosArm64()
+    ).forEach { target ->
         target.binaries {
             if (target.konanTarget == HostManager.host) {
                 sharedLib("native") { // the shared library base name
@@ -94,9 +100,9 @@ kotlin {
 }
 
 jniLibraries {
-    jniVersion = 17                      // JDK the native library is built against
+    jniVersion = 17                                 // JDK the native library is built against
     exportMethod = JniExportMethod.RegisterNatives  // or ExposeFunctions, see below
-    allowSeveralHooks = false            // allow several @JniOnLoad/@JniOnUnload in one library
+    allowSeveralHooks = false                       // allow several @JniOnLoad/@JniOnUnload in one library
 }
 ```
 
@@ -221,8 +227,8 @@ One `create` call per native library, on a JVM or Android JVM compilation:
 |----------------------------|---------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | `copyToResources()`        | function            | not called          | Package the binaries of every configured target into the jar. Without it nothing is packaged and the library must be loaded explicitly. |
 | `resourceDir` (per target) | `Property<String>`  | `natives/$os-$arch` | Path inside the jar the binary is placed at.                                                                                            |
-| `allowExtraActuals`        | `Property<Boolean>` | false               | Forbid a native `@JniActual` that has no `@JniExpect` counterpart.                                                                      |
-| `allowAbsentBindings`      | `Property<Boolean>` | false               | Skip a target whose bindings are not available instead of failing.                                                                      |
+| `allowExtraActuals`        | `Property<Boolean>` | `false`             | Forbid a native `@JniActual` that has no `@JniExpect` counterpart.                                                                      |
+| `allowAbsentBindings`      | `Property<Boolean>` | `false`             | Skip a target whose bindings are not available instead of failing.                                                                      |
 
 Per target, the source of the bindings is selected as follows:
 
@@ -252,6 +258,33 @@ listOf(
 
 The consumer plugin recompiles the JVM side whenever a native module changes, checks that the JNI version matches
 the JDK the JVM module is compiled against, and reports missing or mismatched bindings as compile errors.
+
+### Generating the `@JniActual` stubs
+
+Writing a binding starts on the JVM side: you declare the `@JniExpect` you want, and the build fails until the native
+side implements it. The `generateJniActuals` task writes those missing `@JniActual` stubs into the producer for you:
+
+```
+./gradlew :consumer:compileKotlin        # fails, listing the @JniExpects that have no @JniActual yet
+./gradlew :consumer:generateJniActuals   # writes the stubs into the producer
+./gradlew :consumer:compileKotlin        # compiles; the stubs now have bodies to fill in
+```
+
+One file per JVM class is written into the producer's `src/nativeMain/kotlin`, each stub carrying the names and
+signature that make it implement that exact JVM method:
+
+```kotlin
+@JniActual(className = "org.sample.MainKt", methodName = "hello")
+@WithJvmSignature(
+    parameterTypes = [],
+    returnType = "java.lang.String",
+)
+context(env: JniEnv)
+fun JClass.hello(): JString = TODO()
+```
+
+Filling in the bodies is the remaining work. Nothing that is already implemented or already declared is touched, so the 
+task is safe to re-run.
 
 ### Export methods
 

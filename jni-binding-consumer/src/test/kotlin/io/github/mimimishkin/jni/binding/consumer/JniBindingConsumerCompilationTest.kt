@@ -7,7 +7,6 @@ import com.tschuchort.compiletesting.PluginOption
 import com.tschuchort.compiletesting.SourceFile
 import io.github.mimimishkin.jni.binding.consumer.model.JavaType
 import io.github.mimimishkin.jni.binding.consumer.model.JniExpectDeclaration
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import java.io.File
@@ -30,27 +29,33 @@ class JniBindingConsumerCompilationTest {
         vararg sources: SourceFile,
         actualsJson: String,
         allowExtraActuals: Boolean = false,
+        expectsFile: File = File.createTempFile("jni-binding-expects", ".json"),
+        actualsAbsent: Boolean = false,
     ): KotlinCompilation =
         KotlinCompilation().apply {
             val actualsFile = File.createTempFile("jni-binding-actuals", ".json")
-            actualsFile.writeText(actualsJson)
+            if (!actualsAbsent) actualsFile.writeText(actualsJson) else actualsFile.delete()
             this.sources = sources.toList()
             compilerPluginRegistrars = listOf(JniBindingConsumerRegistrar())
             commandLineProcessors = listOf(JniBindingConsumerCommandLineProcessor())
+            // `expectsFile` is required, so every compilation gets one, exactly as the Gradle plugin does.
             pluginOptions = listOf(
                 PluginOption("jni-binding-consumer", "enabled", "true"),
                 PluginOption("jni-binding-consumer", "actualsFile", "test:$actualsFile"),
                 PluginOption("jni-binding-consumer", "allowExtraActuals", allowExtraActuals.toString()),
+                PluginOption("jni-binding-consumer", "expectsFile", expectsFile.path),
             )
             inheritClassPath = true
         }
 
     private val EMPTY_ACTUALS = "[]"
 
+    private fun readExpects(expectsFile: File): List<JniExpectDeclaration> =
+        Json.decodeFromString(expectsFile.readText())
+
     private fun actuals(vararg actuals: String): String =
         actuals.joinToString(prefix = "[", postfix = "]", separator = ",")
 
-    /** Renders the comma-separated [parameterTypes] of [actual] as the JSON array `actuals.json` expects. */
     private fun parameterTypesJson(parameterTypes: String): String =
         parameterTypes.split(',')
             .map { it.trim() }
@@ -391,11 +396,114 @@ class JniBindingConsumerCompilationTest {
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
         assertTrue(result.messages.contains("doesn't have a corresponding @JniActual implementation"), result.messages)
         assertTrue(result.messages.contains("for name 'foo' in target 'test' with parameters"), result.messages)
+        // Naming the task that writes the declaration is what turns this from a dead end into a next step.
+        assertTrue(result.messages.contains("generateJniActuals"), result.messages)
     }
 
     @Test
-    fun `extra actuals are reported once all expects are matched`() {
-        val result = compile(
+    fun `a producer that was never built reports the expects as missing`() {
+        val result = compile(WRAP_FUNCTION_SOURCE, actualsJson = EMPTY_ACTUALS, actualsAbsent = true).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(result.messages.contains("for name 'foo' in target 'test'"), result.messages)
+    }
+
+    // ── expects.json ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `the expect is recorded with the JVM names the backend emitted`() {
+        val expectsFile = File.createTempFile("jni-binding-expects", ".json")
+        compile(WRAP_FUNCTION_SOURCE, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+
+        val expect = readExpects(expectsFile).single()
+        assertEquals("test.Wrap", expect.className)
+        assertEquals("foo", expect.methodName)
+        assertEquals(false, expect.isStatic)
+        assertEquals(listOf(JavaType("java.lang.String", nullable = false)), expect.parameterTypes)
+        assertEquals(JavaType("int", nullable = false), expect.returnType)
+        assertEquals(listOf("test"), expect.targets)
+    }
+
+    @Test
+    fun `the contract is written even though the compilation fails on the missing actual`() {
+        // This is the whole point of writing it from the matcher rather than at the end of a successful build: the
+        // `generateJniActuals` task exists to bootstrap exactly the state this compilation is failing in.
+        val expectsFile = File.createTempFile("jni-binding-expects", ".json")
+        val result = compile(WRAP_FUNCTION_SOURCE, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertEquals(1, readExpects(expectsFile).size)
+    }
+
+    @Test
+    fun `a static expect is recorded as static, under the file class it compiles to`() {
+        val expectsFile = File.createTempFile("jni-binding-expects", ".json")
+        compile(STATIC_EXPECT_SOURCE, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+
+        val expect = readExpects(expectsFile).single()
+        assertEquals("test.WrapKt", expect.className)
+        assertEquals(true, expect.isStatic)
+    }
+
+    @Test
+    fun `the contract is reset instead of accumulating the declarations of an earlier compilation`() {
+        val expectsFile = File.createTempFile("jni-binding-expects", ".json")
+        compile(WRAP_FUNCTION_SOURCE, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+        assertEquals(1, readExpects(expectsFile).size)
+
+        // A stale declaration would generate a stub for something that no longer exists.
+        compile(STATIC_EXPECT_SOURCE, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+
+        assertEquals(listOf("test.WrapKt"), readExpects(expectsFile).map { it.className })
+    }
+
+    @Test
+    fun `every expect of a compilation is recorded, each under its own JVM class`() {
+        // A class and a top-level function in one file: the two shapes that end up as an instance and a static JVM
+        // method respectively, under two different JVM classes.
+        val otherSource = SourceFile.kotlin(
+            "Other.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            @JniExpect(targets = ["test"])
+            external fun topLevel(): Int
+
+            class Other {
+                @JniExpect(targets = ["test"])
+                external fun bar(): Int
+            }
+            """.trimIndent(),
+        )
+        val expectsFile = File.createTempFile("jni-binding-expects", ".json")
+        compile(WRAP_FUNCTION_SOURCE, otherSource, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+
+        // The order the backend hands the classes to the matcher in is not part of the contract.
+        assertEquals(
+            setOf("test.Wrap" to false, "test.OtherKt" to true, "test.Other" to false),
+            readExpects(expectsFile).mapTo(mutableSetOf()) { it.className to it.isStatic },
+        )
+    }
+
+    @Test
+    fun `a compilation without the expectsFile option is rejected by the plugin itself`() {
+        // The contract file is not optional: without it the compilation could neither report a missing actual
+        // usefully nor feed generateJniActuals, so the option is required rather than silently ignored.
+        val compilation = compile(WRAP_FUNCTION_SOURCE, actualsJson = EMPTY_ACTUALS).apply {
+            pluginOptions = pluginOptions.filterNot { it.optionName == "expectsFile" }
+        }
+
+        val result = compilation.compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(result.messages.contains("Required plugin option not present"), result.messages)
+        assertTrue(result.messages.contains("expectsFile"), result.messages)
+    }
+
+    @Test
+    fun `extra actuals are reported once all expects are matched`() {        val result = compile(
             WRAP_FUNCTION_SOURCE,
             actualsJson = actuals(
                 actual(methodName = "foo", parameterTypes = "@NonNull java.lang.String"),
@@ -671,6 +779,14 @@ class JniBindingConsumerCompilationTest {
                     add(PluginOption("jni-binding-consumer", "actualsFile", "$target:$file"))
                 }
                 add(PluginOption("jni-binding-consumer", "allowExtraActuals", allowExtraActuals.toString()))
+                // `expectsFile` is required, so every compilation gets one, exactly as the Gradle plugin does.
+                add(
+                    PluginOption(
+                        "jni-binding-consumer",
+                        "expectsFile",
+                        File.createTempFile("jni-binding-expects", ".json").path,
+                    )
+                )
             }
             inheritClassPath = true
         }

@@ -54,9 +54,8 @@ class JniBindingTest {
 
     @Test
     fun `hello library platform-specific function works`() {
-        // Unlike `native`, each platform of the `hello` library exports a *different* function, so only the one
-        // matching the current host can be called at runtime.
-        HelloNative.load()
+        @Suppress("UnusedExpression") HelloNative // just access to cause library loading
+
         val osName = System.getProperty("os.name").lowercase()
         val arch = System.getProperty("os.arch").lowercase()
         val result = when {

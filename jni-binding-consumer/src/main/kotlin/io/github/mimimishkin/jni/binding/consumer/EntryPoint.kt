@@ -25,6 +25,7 @@ internal object Keys {
     val ENABLED = CompilerConfigurationKey<Boolean>("Enable plugin")
     val ACTUALS = CompilerConfigurationKey<Map<String, List<File>>>("actuals.json files, one entry per target")
     val ALLOW_EXTRA_ACTUALS = CompilerConfigurationKey<Boolean>("Allow extra @JniActuals")
+    val EXPECTS_FILE = CompilerConfigurationKey<File>("JSON file to write the expects into")
 }
 
 @OptIn(ExperimentalCompilerApi::class)
@@ -51,10 +52,17 @@ public class JniBindingConsumerCommandLineProcessor : CommandLineProcessor {
         description = "Whether to allow extra @JniActuals without corresponding @JniExpect.",
         required = false,
     )
+    private val expectsFileOption = CliOption(
+        optionName = "expectsFile",
+        valueDescription = "<path>",
+        description = "JSON file to write the expects into, read by the generateJniActuals task.",
+        required = true,
+    )
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         enabledOption,
         actualsFileOption,
         allowExtraActualsOption,
+        expectsFileOption,
     )
 
     override fun processOption(
@@ -75,6 +83,7 @@ public class JniBindingConsumerCommandLineProcessor : CommandLineProcessor {
                 )
             }
             allowExtraActualsOption -> configuration.put(Keys.ALLOW_EXTRA_ACTUALS, value.toBoolean())
+            expectsFileOption -> configuration.put(Keys.EXPECTS_FILE, File(value))
         }
     }
 }
@@ -93,6 +102,10 @@ public class JniBindingConsumerRegistrar : CompilerPluginRegistrar() {
         val allowExtraActuals = configuration.getBoolean(Keys.ALLOW_EXTRA_ACTUALS)
         val state = ConsumerState(
             actualFiles = actualFiles,
+            expectsFile = checkNotNull(configuration[Keys.EXPECTS_FILE]) {
+                "The 'expectsFile' plugin option is not set, but the plugin is enabled. The jni-binding consumer " +
+                    "plugin always has to be given one; pass 'enabled=false' when there is nothing to do."
+            },
             allowExtraActuals = allowExtraActuals,
             reportMessage = { factory, message -> configuration.report(factory, message) }
         )

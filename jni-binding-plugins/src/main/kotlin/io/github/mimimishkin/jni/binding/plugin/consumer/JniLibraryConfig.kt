@@ -5,11 +5,9 @@ import io.github.mimimishkin.jni.binding.plugin.camelCase
 import io.github.mimimishkin.jni.binding.plugin.disambiguateName
 import io.github.mimimishkin.jni.binding.plugin.targetJVM
 import org.gradle.api.Action
-import org.gradle.api.GradleException
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
-import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.Directory
@@ -116,8 +114,11 @@ public class JniLibraryConfig internal constructor(
 
             override val source: Property<JniLibrarySource> = project.objects.property()
 
+            override val producerProject: Property<Project> = project.objects.property()
+
             override fun fromProducer(project: Project) {
                 this.project.dependencies.add(dependencyScope.name, project)
+                producerProject.set(project)
                 source.set(producerSource(name))
             }
 
@@ -152,17 +153,17 @@ public class JniLibraryConfig internal constructor(
         bindingsDir: Provider<Directory>,
         targetName: String
     ): JniLibrarySource = object : JniLibrarySource {
-        override fun binaryFile(compilationName: String): File {
-            val bindings = bindingsDir.get().asFile
-            val dir = bindings.resolve("binaries/$targetName/$compilationName")
-            val binaries = dir.listFiles()!!.asList()
-            return binaries.singleOrNull() ?: error("Cannot find a single binary for $targetName in $binaries")
+        override fun binaries(compilationName: String): FileCollection {
+            val dir = bindingsDir.get().asFile.resolve("binaries/$targetName/$compilationName")
+            val binaries = dir.listFiles()?.asList().orEmpty()
+            return project.files(
+                binaries.singleOrNull() ?: error("Cannot find a single binary for $targetName in $binaries")
+            )
         }
 
-        override fun actualsFile(compilationName: String): File {
-            val bindings = bindingsDir.get().asFile
-            val dir = bindings.resolve("actualsInfo/$targetName/$compilationName")
-            return dir.resolve("actuals.json")
+        override fun actuals(compilationName: String): FileCollection {
+            val dir = bindingsDir.get().asFile.resolve("actualsInfo/$targetName/$compilationName")
+            return project.files(dir.resolve("actuals.json"))
         }
     }
 
@@ -171,86 +172,39 @@ public class JniLibraryConfig internal constructor(
      * added to the dependency-scope configuration.
      */
     private fun producerSource(targetName: String): JniLibrarySource = object : JniLibrarySource {
-        override fun binaryFile(compilationName: String): File =
-            resolveProducerArtifact(
-                artifactType = JniBindingAttributes.ARTIFACT_TYPE_JNI_LIBRARY,
-                targetName = targetName,
-                compilationName = compilationName,
-                preferRelease = true,
-            ).file
+        override fun binaries(compilationName: String): FileCollection =
+            producerArtifacts(JniBindingAttributes.ARTIFACT_TYPE_JNI_LIBRARY, "binaries", targetName, compilationName)
 
-        override fun actualsFile(compilationName: String): File =
-            resolveProducerArtifact(
-                artifactType = JniBindingAttributes.ARTIFACT_TYPE_ACTUALS_INFO,
-                targetName = targetName,
-                compilationName = compilationName,
-                preferRelease = false,
-            ).file
+        override fun actuals(compilationName: String): FileCollection =
+            producerArtifacts(JniBindingAttributes.ARTIFACT_TYPE_ACTUALS_INFO, "actualsInfo", targetName, compilationName)
     }
 
-    private fun resolveProducerArtifact(
+    /**
+     * All the producer artifacts of [artifactType], kept unresolved until a task actually needs them.
+     */
+    private fun producerArtifactFiles(artifactType: String): FileCollection =
+        resolvableConfig.get().incoming.artifactView { view ->
+            view.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, artifactType)
+        }.files
+
+    private fun producerArtifacts(
         artifactType: String,
+        directory: String,
         targetName: String,
         compilationName: String,
-        preferRelease: Boolean,
-    ): ResolvedArtifactResult {
-        val artifacts = resolvableConfig.get().incoming.artifactView { view ->
-            view.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, artifactType)
-        }.artifacts.filter { artifact ->
-            // for a reason I cannot understand, artifactView don't filter artifacts by artifactType,
-            // so we filter manually:
-            val path = artifact.file.absolutePath.replace('\\', '/')
-            when (artifactType) {
-                JniBindingAttributes.ARTIFACT_TYPE_JNI_LIBRARY ->
-                    "/jniBindings/binaries/$targetName/$compilationName/" in path
-
-                JniBindingAttributes.ARTIFACT_TYPE_ACTUALS_INFO ->
-                    "/jniBindings/actualsInfo/$targetName/$compilationName/" in path
-
-                else -> false
-            }
-        }
-
-        if (preferRelease) {
-            artifacts.find { "release" in it.variant.displayName.lowercase() }?.let { return it }
-        }
-
-        return artifacts.singleOrNull()
-            ?: error(
-                "Cannot find a single $artifactType artifact for $targetName in ${artifacts.map { it.file.name }}"
-            )
+    ): FileCollection {
+        val path = "/jniBindings/$directory/$targetName/$compilationName/"
+        return producerArtifactFiles(artifactType)
+            .filter { path in it.absolutePath.replace('\\', '/') }
     }
 
     /**
      * The producers' `info.properties` files describing binding configuration, resolved as artifacts so a change
      * in them is picked up by [importLibTaskProvider] (like `actuals.json` are in [actualsFiles]).
      */
-    private fun resolveBindingInfoFiles(): List<File> =
-        resolvableConfig.get().incoming.artifactView { view ->
-            view.attributes.attribute(ARTIFACT_TYPE_ATTRIBUTE, JniBindingAttributes.ARTIFACT_TYPE_BINDING_INFO)
-        }.artifacts.map { it.file }.filter { file ->
-            file.absolutePath.replace('\\', '/').endsWith("/jniBindings/info.properties")
-        }
-
-    /**
-     * Checks each producer `info.properties` against the project's target JVM: the requested JNI version must be
-     * no newer than the target JDK. The generated `JNI_OnLoad` reports that version, and a JVM rejects a native
-     * library that requests a JNI version newer than it supports, so a too-new binding would fail at runtime.
-     */
-    private fun validateBindingInfoFiles(files: FileCollection) {
-        val targetJvmMajor = project.targetJVM.orNull?.asInt() ?: return
-        for (file in files) {
-            val props = Properties().apply { file.inputStream().use { load(it) } }
-            val jniVersion = props.getProperty("jniVersion")?.toIntOrNull() ?: continue
-            if (targetJvmMajor < jniVersion) {
-                error(
-                    "The binding $file requests JNI version $jniVersion, which needs JDK $jniVersion or newer, " +
-                        "but the project's target JVM is $targetJvmMajor. Lower `jniLibraries.jniVersion` in the " +
-                        "producer or increase `jvmToolchain` in the consumer."
-                )
-            }
-        }
-    }
+    private fun bindingInfoFiles(): FileCollection =
+        producerArtifactFiles(JniBindingAttributes.ARTIFACT_TYPE_BINDING_INFO)
+            .filter { it.absolutePath.replace('\\', '/').endsWith("/jniBindings/info.properties") }
 
     /**
      * Suppresses the error when binding files (native binary) are missing.
@@ -274,7 +228,13 @@ public class JniLibraryConfig internal constructor(
         group = "jni interop"
         description = "Copies binaries of $libraryName to the resource directory."
 
-        dependsOn(resolvableConfig)
+        val targetJvmMajor = project.targetJVM.orNull?.asInt() ?: 0
+
+        // The producer's tasks come from the artifacts themselves: every file collection below is backed by an
+        // artifact view, and the `exportJniBinding` the producer declares as `builtBy` of them rides along with it.
+        // That is why nothing here declares a dependency on the producer's configuration: a `Configuration` is not
+        // a serializable task dependency, and passing one is what the configuration cache rejects.
+        val compilationName = consumerCompilation.compilationName
 
         val destDir = project.layout.buildDirectory.dir("generated/resources")
         // A `Copy` without any source is reported NO-SOURCE and its actions never run, so every target must
@@ -283,12 +243,10 @@ public class JniLibraryConfig internal constructor(
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         outputs.dir(destDir)
 
-        val bindingInfoFiles = project.files(project.provider {
-            resolveBindingInfoFiles()
-        })
-        inputs.files(bindingInfoFiles)
+        val infoFiles = bindingInfoFiles()
+        inputs.files(infoFiles)
 
-        doFirst { validateBindingInfoFiles(bindingInfoFiles) }
+        doFirst { validateBindingInfoFiles(infoFiles, targetJvmMajor) }
 
         // Resolving the actuals info through the producer configuration schedules the producer's
         // exportJniBinding (declared as `builtBy` of its artifacts), so a change in the native module
@@ -297,61 +255,66 @@ public class JniLibraryConfig internal constructor(
 
         // Resolving the binaries schedules the producers' exportJniBinding tasks as well, so the files
         // are guaranteed to exist on disk when this task executes.
-        inputs.files(
-            project.files(project.provider { resolveBinaries() })
-        )
+        inputs.files(allBinaries)
 
         targets.configureEach { target ->
-            // `project.files` is used instead of a bare provider: an absent binding resolves to an empty
-            // list, while a `File?` provider would make Gradle query a `null` value while computing the
-            // task dependencies and fail with "no value available".
+            // `from` is given a file collection rather than a resolved list of files, so that the dependencies
+            // the producer attached to its artifacts are kept. It has to stay deferred: `configureEach` runs
+            // before the user's configuration lambda, so `source` is not set yet at this point.
             //
             // The child spec is taken as a lambda parameter on purpose: a Kotlin lambda passed to a Java
             // SAM parameter has no receiver, so a bare `into(...)` here would silently configure the
             // destination of the whole task instead of this spec.
-            from(project.files(project.provider { resolveBinaries(target) })) { spec ->
-                // Deferred: `configureEach` runs before the target is configured, so `resourceDir` may not have
-                // a value yet. The path is relative to the destination set above.
-                spec.into(project.provider { target.resourceDir.get() })
+            from(binariesOf(target, compilationName)) { spec ->
+                // The path is relative to the destination set above.
+                spec.into(target.resourceDir)
             }
         }
     }
 
-    private fun resolveBinaries(): List<File> = targets.mapNotNull(::resolveBinary)
+    /**
+     * Every target's native binary, or an empty collection for a target whose binding is absent and
+     * [allowAbsentBindings] permits it.
+     */
+    private val allBinaries: FileCollection = project.objects.fileCollection().also { all ->
+        targets.configureEach { target ->
+            all.from(project.provider { binariesOf(target, consumerCompilation.compilationName) })
+        }
+    }
 
-    private fun resolveBinaries(target: JniBindingTarget): List<File> =
-        resolveBinary(target)?.let { listOf(it) } ?: emptyList()
-
-    private fun resolveBinary(target: JniBindingTarget): File? = try {
-        if (target.source.isPresent) target.source.get().binaryFile() else null
+    private fun binariesOf(target: JniBindingTarget, compilationName: String): FileCollection = try {
+        if (target.source.isPresent) target.source.get().binaries(compilationName) else project.files()
     } catch (e: Exception) {
-        if (allowAbsentBindings.get()) null else throw e
+        if (allowAbsentBindings.get()) project.files() else throw e
     }
 
     /**
      * Resolved producers' `actuals.json` files for every target of this library.
      *
      * Resolving them through the producer configuration runs the producers' `exportJniBinding`
-     * (declared as `builtBy` of the artifacts), keeping bindings up to date. Absent bindings resolve
-     * to `null` when [allowAbsentBindings] is set, so the collection may be empty.
+     * (declared as `builtBy` of the artifacts), keeping bindings up to date. Absent bindings contribute
+     * nothing when [allowAbsentBindings] is set, so the collection may be empty.
      */
-    public val actualsFiles: FileCollection = project.files(
-        project.provider {
-            targets.mapNotNull { target ->
-                val source = if (target.source.isPresent) target.source.get() else null
-                if (source == null) {
-                    if (allowAbsentBindings.get()) null
-                    else error("source not configured for ${target.name}")
-                } else {
-                    try {
-                        source.actualsFile(consumerCompilation.compilationName)
-                    } catch (e: Exception) {
-                        if (allowAbsentBindings.get()) null else throw e
+    public val actualsFiles: FileCollection = project.objects.fileCollection().also { all ->
+        val compilationName = consumerCompilation.compilationName
+        targets.configureEach { target ->
+            all.from(
+                project.provider {
+                    val source = if (target.source.isPresent) target.source.get() else null
+                    if (source == null) {
+                        if (allowAbsentBindings.get()) project.files()
+                        else error("source not configured for ${target.name}")
+                    } else {
+                        try {
+                            source.actuals(compilationName)
+                        } catch (e: Exception) {
+                            if (allowAbsentBindings.get()) project.files() else throw e
+                        }
                     }
                 }
-            }
+            )
         }
-    )
+    }
 
     /**
      * Makes `processResources` to copy the JNI library to the resources of the consumer compilation.
@@ -381,8 +344,27 @@ public class JniLibraryConfig internal constructor(
     }
 }
 
-    /**
-     * Registers the Windows mingwX64 target.
+/**
+ * Checks each producer `info.properties` against the project's target JVM: the requested JNI version must be
+ * no newer than the target JDK.
+ */
+private fun validateBindingInfoFiles(files: FileCollection, targetJvmMajor: Int) {
+    if (targetJvmMajor <= 0) return
+    for (file in files) {
+        val props = Properties().apply { file.inputStream().use { load(it) } }
+        val jniVersion = props.getProperty("jniVersion")?.toIntOrNull() ?: continue
+        if (targetJvmMajor < jniVersion) {
+            error(
+                "The binding $file requests JNI version $jniVersion, which needs JDK $jniVersion or newer, " +
+                    "but the project's target JVM is $targetJvmMajor. Lower `jniLibraries.jniVersion` in the " +
+                    "producer or increase `jvmToolchain` in the consumer."
+            )
+        }
+    }
+}
+
+/**
+ * Registers the Windows mingwX64 target.
  *
  * @param name name of the target in the producer.
  * @param configure additional configuration of the created target.

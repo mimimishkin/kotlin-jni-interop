@@ -6,6 +6,8 @@ import io.github.mimimishkin.jni.binding.consumer.ConsumerState
 import io.github.mimimishkin.jni.binding.consumer.JniBindingConsumerErrors
 import io.github.mimimishkin.jni.binding.consumer.Symbols
 import io.github.mimimishkin.jni.binding.consumer.model.JavaType
+import io.github.mimimishkin.jni.binding.consumer.model.JniActualInfo
+import io.github.mimimishkin.jni.binding.consumer.model.JniExpectDeclaration
 import io.github.mimimishkin.jni.binding.consumer.model.JniExpectInfo
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.backend.jvm.extensions.ClassGenerator
@@ -30,8 +32,10 @@ private fun IrAnnotationContainer.hasJniExpect() = hasAnnotation(jniExpectAnnota
  * `MethodSignatureMapper` during `JvmLowering`, so the consumer never has to re-derive them from annotations.
  *
  * For each `@JniExpect` function it builds the [JniExpectInfo] with those backend-resolved names, matches it against
- * the per-target `actuals.json`, reports missing actuals (and nullability mismatches), and reports leftover actuals
- * (`EXTRA_JNI_ACTUALS`) once every expect has been processed.
+ * the per-target `actuals.json`, reports whatever is wrong with the match (missing actual, stasis mismatch, nullability
+ * mismatch), and reports leftover actuals (`EXTRA_JNI_ACTUALS`) once every expect has been processed. Every expect it
+ * builds is also fed to the `expects.json` contract, which is what lets a missing actual be generated rather than only
+ * complained about.
  */
 internal class JniExpectMatcher(
     private val state: ConsumerState,
@@ -44,12 +48,11 @@ internal class JniExpectMatcher(
         // every class's declarations for the annotations.
         if (irClass !in state.expectContainers && (irClass.parent as? IrFile) !in state.expectFiles) return generator
 
-        return VerifyingDelegate(generator, state)
+        return VerifyingDelegate(generator)
     }
 
-    private class VerifyingDelegate(
+    private inner class VerifyingDelegate(
         private val delegate: ClassGenerator,
-        private val state: ConsumerState,
     ) : ClassGenerator by delegate {
 
         private var currentClassName: String? = null
@@ -88,8 +91,18 @@ internal class JniExpectMatcher(
             if (!expectPresent) return
 
             val expectInfo = function.describeJniExpect(className, asmMethodName, desc)
+            state.recordExpect(expectInfo.toDeclaration())
             actualize(expectInfo, function)
         }
+
+        private fun JniExpectInfo.toDeclaration() = JniExpectDeclaration(
+            className = className,
+            methodName = methodName,
+            isStatic = isStatic,
+            parameterTypes = parameterTypes,
+            returnType = returnType,
+            targets = targets,
+        )
 
         private fun IrSimpleFunction.describeJniExpect(className: String, methodName: String, desc: String): JniExpectInfo {
             val irParameters = nonDispatchParameters

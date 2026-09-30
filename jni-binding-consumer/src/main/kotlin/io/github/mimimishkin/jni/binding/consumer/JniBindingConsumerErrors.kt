@@ -3,6 +3,7 @@ package io.github.mimimishkin.jni.binding.consumer
 import io.github.mimimishkin.jni.binding.consumer.model.JavaType
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticsContainer
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactoryToRendererMap
+import org.jetbrains.kotlin.diagnostics.KtDiagnosticRenderers
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies.DECLARATION_NAME
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies.DECLARATION_RETURN_TYPE
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies.DECLARATION_SIGNATURE
@@ -21,7 +22,7 @@ internal object JniBindingConsumerErrors : KtDiagnosticsContainer() {
     override fun getRendererFactory(): BaseDiagnosticRendererFactory = renderer
     private val renderer = object : BaseDiagnosticRendererFactory() {
         private val parametersRenderer =
-            Renderer<List<JavaType>> { params -> params.joinToString(", ") { "''$it''" } }
+            Renderer<List<JavaType>> { params -> if (params.isEmpty()) "no params" else params.joinToString(", ") { "''$it''" } }
 
         private val nullabilityRenderer =
             Renderer<JavaType> { type -> if (type.nullable) "nullable" else "not null" }
@@ -30,14 +31,13 @@ internal object JniBindingConsumerErrors : KtDiagnosticsContainer() {
         private val typeRenderer =
             Renderer<JavaType> { type -> "'$type'" }
 
-        private val intRenderer =
-            Renderer<Int> { value -> value.toString() }
-
         override val MAP by KtDiagnosticFactoryToRendererMap("KT") { map ->
             map.put(
                 MISSING_JNI_ACTUAL,
                 "@JniExpect doesn''t have a corresponding @JniActual implementation.\n" +
-                        "Need to declare @JniActual {0} with parameters: {1}.",
+                        "Need to declare @JniActual {0} with parameters: {1}.\n" +
+                        "The `generateJniActuals` task of this Gradle module can write that declaration into the " +
+                        "producer for you.",
                 Renderer { (target, name): Pair<String, String> -> "for name '$name' in target '$target'" },
                 parametersRenderer
             )
@@ -57,14 +57,14 @@ internal object JniBindingConsumerErrors : KtDiagnosticsContainer() {
                 PARAMETER_COUNT_MISMATCH,
                 "Parameter count mismatch between @JniExpect and @JniActual: expected {0} parameter(s), " +
                         "actual {1} parameter(s).",
-                intRenderer,
-                intRenderer
+                KtDiagnosticRenderers.TO_STRING,
+                KtDiagnosticRenderers.TO_STRING
             )
             map.put(
                 PARAMETER_TYPE_MISMATCH,
                 "Parameter type mismatch between @JniExpect and @JniActual at index {0}: " +
                         "expected {1}, actual {2}.",
-                intRenderer,
+                KtDiagnosticRenderers.TO_STRING,
                 typeRenderer,
                 typeRenderer
             )

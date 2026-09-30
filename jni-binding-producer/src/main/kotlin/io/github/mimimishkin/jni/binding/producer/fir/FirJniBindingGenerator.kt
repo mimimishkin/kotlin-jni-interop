@@ -412,7 +412,7 @@ internal class FirJniBindingGenerator(
     // `actuals` JSON contract
     // ------------------------------------------------------------------
 
-    private val json = Json { prettyPrint = true }
+    private val prettyJson = Json { prettyPrint = true }
 
     private var actualsWritten: Boolean = false
 
@@ -447,13 +447,13 @@ internal class FirJniBindingGenerator(
         if (infos.isEmpty()) return
 
         val existing: List<JniActualInfo> = if (actualsFile.exists()) {
-            runCatching { json.decodeFromString<List<JniActualInfo>>(actualsFile.readText()) }.getOrDefault(emptyList())
+            runCatching { prettyJson.decodeFromString<List<JniActualInfo>>(actualsFile.readText()) }.getOrDefault(emptyList())
         } else {
             emptyList()
         }
 
         val merged = existing + infos
-        actualsFile.writeText(json.encodeToString(merged))
+        actualsFile.writeText(prettyJson.encodeToString(merged))
     }
 
     /**
