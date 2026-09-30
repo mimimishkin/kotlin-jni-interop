@@ -2,8 +2,8 @@ package io.github.mimimishkin.jni.binding.annotation
 
 /**
  * Annotates a function that loads the native library:
- * - In a companion object of an `@JniExpects` class. It will be called in the parent class's `<clinit>`.
- * - In an `object` annotated with `@JniExpects`. It will be called in the object's `<init>`.
+ * - In a companion object of a class. It will be called in the parent class's `<clinit>`.
+ * - In an `object`. It will be called in the object's `<init>`.
  *
  * It may optionally have the following String parameters: `os`, `arch`, and `vendor` of a `String` type:
  * - If the `os: String` parameter is present, the OS family will be passed in, or `System.getProperty("os.name")` if

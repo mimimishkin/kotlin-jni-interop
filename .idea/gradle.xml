@@ -40,7 +40,6 @@
             <option value="$PROJECT_DIR$/samples/basic/native" />
             <option value="$PROJECT_DIR$/samples/basic/nativeHello" />
             <option value="$PROJECT_DIR$/samples/windows-registry" />
-            <option value="$PROJECT_DIR$/samples/windows-registry/native" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="true" />

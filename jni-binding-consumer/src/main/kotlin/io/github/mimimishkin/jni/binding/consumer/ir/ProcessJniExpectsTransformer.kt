@@ -36,8 +36,10 @@ internal class ProcessJniExpectsTransformer(
 
     private val loadMethodInjector = LoadMethodInjector(pluginContext)
 
-    /** Classes that declare `@JniExpect` functions, into which the native library loading is injected. */
-    private val expectsClasses = mutableSetOf<IrClass>()
+    /**
+     * Containers that declare a `@LoadMethod`.
+     */
+    private val loadMethodClasses = mutableSetOf<IrClass>()
 
     override fun visitSimpleFunction(declaration: IrSimpleFunction): IrStatement {
         val parentClass = declaration.parent as? IrClass
@@ -47,8 +49,12 @@ internal class ProcessJniExpectsTransformer(
         val explicitJniExpect = declaration.hasJniExpect() ||
                 declaration.correspondingPropertySymbol?.owner?.hasJniExpect() == true
 
+        if (declaration.hasAnnotation(Symbols.LoadMethod.asSingleFqName())) {
+            val container = (parentClass?.parent as? IrClass) ?: parentClass
+            if (container != null) loadMethodClasses += container
+        }
+
         if (implicitJniExpect || explicitJniExpect) {
-            if (declaration.isExternal && parentClass != null) expectsClasses += parentClass
             // Accessors live under their property, so walk up through it to find the real container.
             val container = (declaration.parent as? IrProperty)?.parent ?: declaration.parent
             when (container) {
@@ -68,7 +74,7 @@ internal class ProcessJniExpectsTransformer(
             state.remainingExpectsByTarget.putIfAbsent(it, mutableSetOf())
         }
         val result = super.visitModuleFragment(declaration)
-        expectsClasses.forEach { loadMethodInjector.inject(it) }
+        loadMethodClasses.forEach { loadMethodInjector.inject(it) }
         return result
     }
 }
@@ -77,12 +83,16 @@ private fun IrAnnotationContainer.hasJniExpect() = hasAnnotation(jniExpectAnnota
 
 private fun IrAnnotationContainer.hasJniExpects() = hasAnnotation(jniExpectsAnnotation)
 
-/** The `@JniExpect` annotation driving this expect: the function's own or, for an accessor, its property's. */
+/**
+ * The `@JniExpect` annotation driving this expect: the function's own or, for an accessor, its property's.
+ */
 private fun IrSimpleFunction.expectAnnotation() =
     getAnnotation(jniExpectAnnotation) ?: correspondingPropertySymbol?.owner?.getAnnotation(jniExpectAnnotation)
 
-/** The effective `targetMachine` list of an expect, from its own `@JniExpect` (or its property's) or its container's
- * `@JniExpects`. */
+/**
+ * The effective `targetMachine` list of an expect, from its own `@JniExpect` (or its property's) or its container's
+ * `@JniExpects`.
+ */
 private fun IrSimpleFunction.effectiveTargetMachines(): List<String> =
     (expectAnnotation() ?: (parent as? IrAnnotationContainer)?.getAnnotation(jniExpectsAnnotation))
         ?.arguments

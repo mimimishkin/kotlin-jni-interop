@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class JniBindingTest {
     @Test
@@ -57,12 +58,12 @@ class JniBindingTest {
         @Suppress("UnusedExpression") HelloNative // just access to cause library loading
 
         val osName = System.getProperty("os.name").lowercase()
-        val arch = System.getProperty("os.arch").lowercase()
+        val archName = System.getProperty("os.arch").lowercase()
         val result = when {
             osName.contains("win") -> windowsHello()
-            arch in listOf("aarch64", "arm64") -> linuxArm64Hello()
+            archName in listOf("aarch64", "arm64") -> linuxArm64Hello()
             else -> linuxX64Hello()
         }
-        assert(result.startsWith("Hello from "))
+        assertTrue(result.startsWith("Hello from "), result)
     }
 }

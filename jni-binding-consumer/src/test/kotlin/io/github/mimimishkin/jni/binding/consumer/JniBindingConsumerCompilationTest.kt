@@ -10,9 +10,11 @@ import io.github.mimimishkin.jni.binding.consumer.model.JniExpectDeclaration
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import java.io.File
+import java.net.URLClassLoader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -406,6 +408,40 @@ class JniBindingConsumerCompilationTest {
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
         assertTrue(result.messages.contains("for name 'foo' in target 'test'"), result.messages)
+    }
+
+    // ── @LoadMethod ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `a LoadMethod in a plain object is injected without a JniExpects container`() {
+        // Whether a `@LoadMethod` gets called is a property of the function, not of what else its class declares:
+        // an object whose only job is to hold the load method is the normal way to load a library bound to
+        // top-level external functions, which have no container to inject into.
+        val source = SourceFile.kotlin(
+            "Loader.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.LoadMethod
+
+            object Loader {
+                @LoadMethod
+                fun load(os: String, arch: String) {
+                    loaded = "${'$'}os/${'$'}arch"
+                }
+
+                var loaded: String? = null
+            }
+            """.trimIndent(),
+        )
+
+        val result = compile(source, actualsJson = EMPTY_ACTUALS).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val loader = URLClassLoader(arrayOf(result.outputDirectory.toURI().toURL()), javaClass.classLoader)
+        val instance = loader.loadClass("test.Loader").getField("INSTANCE").get(null)
+        // Called during the object's initialization, with the host platform the plugin derives.
+        assertNotNull(instance.javaClass.getMethod("getLoaded").invoke(instance))
     }
 
     // ── expects.json ─────────────────────────────────────────────────────────
