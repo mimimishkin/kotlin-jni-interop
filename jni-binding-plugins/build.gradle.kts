@@ -27,6 +27,23 @@ gradlePlugin {
 
 dependencies {
     implementation(libs.serialization.json)
+    implementation(libs.palantir.gradle.jdks) {
+        // `gradle-jdks` pulls in `gradle-baseline-java` for the `javaVersions { }` configuration it
+        // sets up when its own plugin is applied. This plugin never applies it and never configures
+        // `javaVersions`, so the whole Baseline tree is dead weight here - and it is not resolvable
+        // from Maven Central, so leaving it in makes this plugin unusable in a build that does not
+        // have the Gradle Plugin Portal among its `pluginManagement` repositories.
+        exclude(group = "com.palantir.baseline")
+    }
+    // `gradle-jdks` declares both of these as `implementation` dependencies of its own, so they are
+    // not on the classpath of anything that depends on it, while the types used to describe a JDK
+    // (`OperatingSystem`, `Arch`) come from them.
+    implementation(libs.palantir.gradle.jdks.setup.common)
+    implementation(libs.palantir.platform)
+    // A JDK is published as a `.tar.gz` for linux and macos, and the JVM reads a `.zip` on its own but
+    // has no reader for a tar archive. This one covers both formats outside of Gradle's services, which
+    // are not available wherever a JDK may be fetched.
+    implementation(libs.commons.compress)
     implementation(gradleKotlinDsl())
     implementation(kotlin("gradle-plugin"))
 }

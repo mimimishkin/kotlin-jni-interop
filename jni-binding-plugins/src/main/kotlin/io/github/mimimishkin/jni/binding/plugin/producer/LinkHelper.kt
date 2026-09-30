@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.tooling.core.Extras
 import org.jetbrains.kotlin.tooling.core.extrasKeyOf
 import org.jetbrains.kotlin.tooling.core.getOrPut
 import java.io.File
+import java.nio.file.Path
 
 private val defaultX11Libraries = listOf("X11", "Xext", "Xrender", "Xtst", "Xi")
 
@@ -62,9 +63,12 @@ private val NativeBinary.jvmLinkage: JvmLinkage
  *
  * The JDK is taken from the Gradle Java toolchain matching [JniLibProducerExtension.jniVersion],
  * which is the right choice as long as the target architecture matches the host one. For
- * cross-compilation point [linkJvm] at a JDK built for the target instead:
+ * cross-compilation point [linkJvm] at a JDK built for the target instead, which [downloadCompatibleJdk]
+ * provides:
  *
  * ```kotlin
+ * linkJvm()                                                               // toolchain of the host
+ * linkJvm(downloadCompatibleJdk("17.0.13.11.1"))                                    // JDK of the target
  * linkJvm(javaHome = file("/opt/jdk-17-linux-x64"))                          // File
  * linkJvm(javaHome = providers.gradleProperty("jni.jdk.x64").map(::file))    // or a Provider
  * linkJvm(languageVersion = 17)                                              // toolchain by version
@@ -99,6 +103,30 @@ public fun NativeBinary.linkJvm(languageVersion: Int) {
     linkJvmHome(toolchainJavaHome {
         it.languageVersion.set(JavaLanguageVersion.of(languageVersion))
     })
+}
+
+/**
+ * Adds the JVM runtime library (`libjvm`) linked against the JDK in [javaHome].
+ *
+ * This is the overload for a home directory a build works out itself.
+ *
+ * See the parameterless [linkJvm] for details.
+ */
+public fun NativeBinary.linkJvm(javaHome: Provider<Directory>) {
+    linkJvmHome(javaHome)
+}
+
+/**
+ * Adds the JVM runtime library (`libjvm`) linked against the JDK at [javaHome].
+ *
+ * This is the overload to use for a target that is not the host, where no toolchain can help because
+ * Gradle only serves JDKs for the host: [downloadCompatibleJdk] fetches one built for the target, and its
+ * result is what this takes.
+ *
+ * See the parameterless [linkJvm] for details.
+ */
+public fun NativeBinary.linkJvm(javaHome: Path) {
+    linkJvm(javaHome.toFile())
 }
 
 /**
@@ -243,7 +271,7 @@ private fun NativeBinary.lazyLinkerOptions(): LazyLinkerOptions {
  * version is lower than [minVersion], or if its architecture differs from the
  * [architecture] of the target.
  */
-private fun checkJdk(javaHome: File, targetName: String, architecture: Architecture, minVersion: Int) {
+internal fun checkJdk(javaHome: File, targetName: String, architecture: Architecture, minVersion: Int) {
     val release = javaHome.resolve("release")
     require(release.isFile) {
         "JDK release file not found at $release, ${javaHome.absolutePath} is not a JDK installation"

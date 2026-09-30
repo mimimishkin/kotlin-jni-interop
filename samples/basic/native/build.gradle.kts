@@ -17,8 +17,15 @@ kotlin {
         macosArm64()
     ).forEach {
         it.binaries {
-            if (it.konanTarget == HostManager.host) sharedLib("native") {
-                linkJvm()
+            sharedLib("native") {
+                if (it.konanTarget == HostManager.host) {
+                    // The host has a JDK of its own, so a toolchain of the right version is enough.
+                    linkJvm()
+                } else {
+                    // Gradle serves toolchains for the host only, so a target that is not the host needs a
+                    // JDK built for it, of the Java version `jniLibraries.jniVersion` declares.
+                    linkJvm(downloadCompatibleJdk())
+                }
             }
         }
     }
