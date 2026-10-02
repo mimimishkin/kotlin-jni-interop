@@ -27,6 +27,10 @@ internal object Symbols {
 
     val JNINativeInterface = "jni".pkg().classId("JNINativeInterface_")
     val JNIInvokeInterface = "jni".pkg().classId("JNIInvokeInterface_")
+    // Android has no cinterop of the JDK headers behind `jni-binding`: it uses the declarations Kotlin/Native
+    // ships as `platform.android`, and those name the same structs without the trailing underscore.
+    val JNINativeInterfaceAndroid = "platform.android".pkg().classId("JNINativeInterface")
+    val JNIInvokeInterfaceAndroid = "platform.android".pkg().classId("JNIInvokeInterface")
     val JObjectRaw = "jni".pkg().classId("_jobject")
     val JClassRaw = "jni".pkg().classId("_jclass")
 
@@ -38,6 +42,8 @@ internal object Symbols {
     val JClass = bindingPackage.classId("JClass")
     val JNINativeMethodRegistry = bindingPackage.classId("JNINativeMethodRegistry")
     val JRef = bindingPackage.classId("JRef")
+    val JNINativeInterfaceWrapped = bindingPackage.classId("Raw_JniNativeInterface")
+    val JNIInvokeInterfaceWrapped = bindingPackage.classId("Raw_JniInvokeInterface")
 
     val generatedPackage = "jni.binding.generated".pkg()
     val entryPointBinding = generatedPackage.callableId("entryPointJniBinding")

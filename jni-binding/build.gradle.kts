@@ -1,9 +1,8 @@
-@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
-
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    alias(conventions.plugins.native64bitLibrary)
+    alias(conventions.plugins.nativeDesktopLibrary)
+    alias(conventions.plugins.nativeAndroidLibrary)
     alias(libs.plugins.dokka)
     alias(conventions.plugins.publish)
 }
@@ -11,10 +10,11 @@ plugins {
 description = "JNI bingdings for Kotlin Native"
 
 kotlin {
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     applyHierarchyTemplate {
         common {
             group("native") {
-                group("intermideate") {
+                group("desktop") {
                     group("mingw") {
                         withMingwX64()
                     }
@@ -26,14 +26,25 @@ kotlin {
                         withMacosArm64()
                     }
                 }
+
+                group("androidNative") {
+                    withAndroidNativeArm32()
+                    withAndroidNativeArm64()
+                    withAndroidNativeX86()
+                    withAndroidNativeX64()
+                }
             }
         }
     }
 
     sourceSets {
         nativeMain.dependencies {
-            implementation(projects.jniBindingRaw)
             implementation(projects.jniBindingAnnotations)
+        }
+        named("desktopMain") {
+            dependencies {
+                implementation(projects.jniBindingRaw)
+            }
         }
     }
 }

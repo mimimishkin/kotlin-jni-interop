@@ -26,7 +26,7 @@ afterEvaluate {
 }
 
 mavenPublishing {
-    publishToMavenCentral(false)
+    publishToMavenCentral(automaticRelease = false)
 
     signAllPublications()
 

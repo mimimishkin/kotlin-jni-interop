@@ -3,6 +3,7 @@ import org.gradle.internal.os.OperatingSystem
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        google()
         mavenLocal()
     }
 }
@@ -12,6 +13,7 @@ dependencyResolutionManagement {
     repositories {
         mavenLocal()
         mavenCentral()
+        google()
     }
 }
 

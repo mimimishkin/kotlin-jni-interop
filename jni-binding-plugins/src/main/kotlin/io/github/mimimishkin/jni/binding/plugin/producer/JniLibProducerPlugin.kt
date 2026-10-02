@@ -50,7 +50,11 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
     }
 
     override fun isApplicable(kotlinCompilation: KotlinCompilation<*>): Boolean =
-        kotlinCompilation is KotlinNativeCompilation
+        kotlinCompilation is KotlinNativeCompilation &&
+            // Only `main` is exported. The `test` compilation would otherwise publish a second, unusable set of
+            // artifacts under the same target, and a consumer - which has one binding per target, not per producer
+            // compilation - has no way to pick between them.
+            kotlinCompilation.compilationName == KotlinCompilation.MAIN_COMPILATION_NAME
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val compilation = kotlinCompilation as KotlinNativeCompilation
@@ -60,8 +64,8 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
         val buildDir = project.layout.buildDirectory
         val target = compilation.target.name
         val flavor = compilation.compilationName
-        val binariesDir = buildDir.dir("jniBindings/binaries/$target/$flavor")
-        val actualsInfoDir = buildDir.dir("jniBindings/actualsInfo/$target/$flavor")
+        val binariesDir = buildDir.dir("jniBindings/binaries/$target")
+        val actualsInfoDir = buildDir.dir("jniBindings/actualsInfo/$target")
 
         // Work around KGP's native plugin classpath being non-transitive (KT-53477).
         val pluginClasspathConfiguration = camelCase(
@@ -105,7 +109,7 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
             // Use `Sync` instead of `Copy` to ensure that the binary is the only one file in dir.
             val exportBinary = project.tasks.register<Sync>(camelCase(binary.baseName, target, "JniLibrary")) {
                 group = null
-                description = "Copies ${binary.finalName} to $target/$flavor binding directory"
+                description = "Copies ${binary.finalName} to the $target binding directory"
 
                 from(binary.outputDirectory) {
                     include(binary.finalName)
@@ -132,7 +136,7 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
             val config = project.the<JniLibProducerExtension>()
             listOf(
                 SubpluginOption("enabled", "true"),
-                SubpluginOption("jniVersion", config.jniVersion.get().toString()),
+                SubpluginOption("expectedJdkVersion", config.expectedJdkVersion.get().toString()),
                 SubpluginOption("allowSeveralHooks", config.allowSeveralHooks.get().toString()),
                 SubpluginOption("useRegisterNatives", (config.exportMethod.get() == RegisterNatives).toString()),
                 FilesSubpluginOption("actualsFile", listOf(actualsFile.get().asFile)),

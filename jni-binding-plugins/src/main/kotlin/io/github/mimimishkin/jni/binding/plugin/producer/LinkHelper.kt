@@ -61,7 +61,7 @@ private val NativeBinary.jvmLinkage: JvmLinkage
 /**
  * Adds the JVM runtime library (`libjvm`) to the native linker options.
  *
- * The JDK is taken from the Gradle Java toolchain matching [JniLibProducerExtension.jniVersion],
+ * The JDK is taken from the Gradle Java toolchain matching [JniLibProducerExtension.expectedJdkVersion],
  * which is the right choice as long as the target architecture matches the host one. For
  * cross-compilation point [linkJvm] at a JDK built for the target instead, which [downloadCompatibleJdk]
  * provides:
@@ -85,8 +85,8 @@ private val NativeBinary.jvmLinkage: JvmLinkage
  * uses JAWT, and [linkX11IfLinux] on Linux when the AWT runtime needs X11.
  */
 public fun NativeBinary.linkJvm() {
-    val jniVersion = project.the<JniLibProducerExtension>().jniVersion
-    linkJvmHome(jniVersion.flatMap { version ->
+    val expectedJdkVersion = project.the<JniLibProducerExtension>().expectedJdkVersion
+    linkJvmHome(expectedJdkVersion.flatMap { version ->
         toolchainJavaHome {
             it.languageVersion.set(JavaLanguageVersion.of(version))
         }
@@ -240,8 +240,8 @@ private fun NativeBinary.javaLibraryPathProvider(
     val konanTarget = target.konanTarget
     val targetName = konanTarget.name
     val architecture = konanTarget.architecture
-    val jniVersion = project.the<JniLibProducerExtension>().jniVersion
-    return linkage.home.zip(jniVersion) { directory, minVersion ->
+    val expectedJdkVersion = project.the<JniLibProducerExtension>().expectedJdkVersion
+    return linkage.home.zip(expectedJdkVersion) { directory, minVersion ->
         val javaHome = directory.asFile
         checkJdk(javaHome, targetName, architecture, minVersion)
         javaHome.resolve(relativeLibraryPath).absolutePath

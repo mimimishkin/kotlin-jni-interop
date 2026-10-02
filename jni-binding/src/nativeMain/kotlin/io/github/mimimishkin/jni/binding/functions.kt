@@ -14,7 +14,7 @@ import kotlin.String
  */
 context(env: JniEnv)
 public val jniVersion: JniVersion get() {
-    return env.pointed!!.GetVersion!!(env.ptr)
+    return env.GetVersion!!(env.ptr)
 }
 
 /**
@@ -40,7 +40,7 @@ public val jniVersion: JniVersion get() {
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun defineClass(name: CValuesRef<ByteVar>?, loader: JObject?, classBuf: CPointer<ByteVar>, classBufLen: Int): JClass? {
-    return env.pointed!!.DefineClass!!(env.ptr, name?.getPointer(autofreeScope), loader.c, classBuf, classBufLen).wrap()
+    return env.DefineClass!!(env.ptr, name?.getPointer(autofreeScope), loader.c, classBuf, classBufLen).wrap()
 }
 
 /**
@@ -81,7 +81,7 @@ public fun defineClass(name: CValuesRef<ByteVar>?, loader: JObject?, classBuf: C
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun findClass(name: CValuesRef<ByteVar>): JClass? {
-    return env.pointed!!.FindClass!!(env.ptr, name.getPointer(autofreeScope)).wrap()
+    return env.FindClass!!(env.ptr, name.getPointer(autofreeScope)).wrap()
 }
 
 /**
@@ -92,7 +92,7 @@ public fun findClass(name: CValuesRef<ByteVar>): JClass? {
  * @since JDK/JRE 1.2
  */
 public fun JniEnv.fromReflectedMethod(method: JObject): JMethodID? {
-    return pointed!!.FromReflectedMethod!!(ptr, method.c)?.wrap()
+    return this.FromReflectedMethod!!(ptr, method.c)?.wrap()
 }
 
 /**
@@ -103,7 +103,7 @@ public fun JniEnv.fromReflectedMethod(method: JObject): JMethodID? {
  * @since JDK/JRE 1.2
  */
 public fun JniEnv.fromReflectedField(field: JObject): JFieldID? {
-    return pointed!!.FromReflectedField!!(ptr, field.c)?.wrap()
+    return this.FromReflectedField!!(ptr, field.c)?.wrap()
 }
 
 /**
@@ -121,7 +121,7 @@ public fun JniEnv.fromReflectedField(field: JObject): JFieldID? {
  */
 context(env: JniEnv)
 public fun JMethodID.toReflectedMethod(cls: JClass, isStatic: Boolean): JObject? {
-    return env.pointed!!.ToReflectedMethod!!(env.ptr, cls.c, c, isStatic.toJBoolean()).wrap()
+    return env.ToReflectedMethod!!(env.ptr, cls.c, c, isStatic.toJBoolean()).wrap()
 }
 
 /**
@@ -138,7 +138,7 @@ public fun JMethodID.toReflectedMethod(cls: JClass, isStatic: Boolean): JObject?
  */
 context(env: JniEnv)
 public fun JFieldID.toReflectedField(cls: JClass, isStatic: Boolean): JObject? {
-    return env.pointed!!.ToReflectedField!!(env.ptr, cls.c, c, isStatic.toJBoolean()).wrap()
+    return env.ToReflectedField!!(env.ptr, cls.c, c, isStatic.toJBoolean()).wrap()
 }
 
 /**
@@ -151,7 +151,7 @@ public fun JFieldID.toReflectedField(cls: JClass, isStatic: Boolean): JObject? {
  */
 context(env: JniEnv)
 public val JClass.superclass: JClass? get() {
-    return env.pointed!!.GetSuperclass!!(env.ptr, c).wrap()
+    return env.GetSuperclass!!(env.ptr, c).wrap()
 }
 
 /**
@@ -164,7 +164,7 @@ public val JClass.superclass: JClass? get() {
  */
 context(env: JniEnv)
 public infix fun JClass.isAssignableFrom(other: JClass): Boolean {
-    return env.pointed!!.IsAssignableFrom!!(env.ptr, c, other.c).toKBoolean()
+    return env.IsAssignableFrom!!(env.ptr, c, other.c).toKBoolean()
 }
 
 /**
@@ -173,7 +173,7 @@ public infix fun JClass.isAssignableFrom(other: JClass): Boolean {
 context(env: JniEnv)
 public fun throwEx(throwable: JThrowable) {
     JNI.safeCall {
-        env.pointed!!.Throw!!(env.ptr, throwable.c)
+        env.Throw!!(env.ptr, throwable.c)
     }
 }
 
@@ -188,7 +188,7 @@ public fun throwEx(throwable: JThrowable) {
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun throwNew(clazz: JClass, message: CValuesRef<ByteVar>?) {
     JNI.safeCall {
-        env.pointed!!.ThrowNew!!(env.ptr, clazz.c, message?.getPointer(autofreeScope))
+        env.ThrowNew!!(env.ptr, clazz.c, message?.getPointer(autofreeScope))
     }
 }
 
@@ -223,7 +223,7 @@ public fun throwNew(clazz: JClass, message: CValuesRef<ByteVar>?) {
  */
 context(env: JniEnv)
 public val pendingException: JThrowable? get() {
-    return env.pointed!!.ExceptionOccurred!!(env.ptr).wrap()
+    return env.ExceptionOccurred!!(env.ptr).wrap()
 }
 
 /**
@@ -275,7 +275,7 @@ public inline fun handleJvmException(block: (JThrowable) -> Unit) {
  */
 context(env: JniEnv)
 public fun printStackTrace() {
-    env.pointed!!.ExceptionDescribe!!(env.ptr)
+    env.ExceptionDescribe!!(env.ptr)
 }
 
 /**
@@ -284,7 +284,7 @@ public fun printStackTrace() {
  */
 context(env: JniEnv)
 public fun clearException() {
-    env.pointed!!.ExceptionClear!!(env.ptr)
+    env.ExceptionClear!!(env.ptr)
 }
 
 /**
@@ -297,7 +297,7 @@ public fun clearException() {
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun fatalError(message: CValuesRef<ByteVar>?): Nothing {
-    env.pointed!!.FatalError!!(env.ptr, message?.getPointer(autofreeScope))
+    env.FatalError!!(env.ptr, message?.getPointer(autofreeScope))
     throw Error() // this won't be invoked
 }
 
@@ -308,7 +308,7 @@ public fun fatalError(message: CValuesRef<ByteVar>?): Nothing {
  */
 context(env: JniEnv)
 public val isExceptionThrown: Boolean get() {
-    return env.pointed!!.ExceptionCheck!!(env.ptr).toKBoolean()
+    return env.ExceptionCheck!!(env.ptr).toKBoolean()
 }
 
 /**
@@ -324,7 +324,7 @@ public val isExceptionThrown: Boolean get() {
  */
 context(env: JniEnv)
 public fun JObject.deleteLocalRef() {
-    env.pointed!!.DeleteLocalRef!!(env.ptr, c)
+    env.DeleteLocalRef!!(env.ptr, c)
 }
 
 /**
@@ -349,7 +349,7 @@ public fun JObject.deleteLocalRef() {
 context(env: JniEnv)
 public fun ensureLocalCapacity(capacity: Int) {
     JNI.safeCall {
-        env.pointed!!.EnsureLocalCapacity!!(env.ptr, capacity)
+        env.EnsureLocalCapacity!!(env.ptr, capacity)
     }
 }
 
@@ -370,7 +370,7 @@ public fun ensureLocalCapacity(capacity: Int) {
 context(env: JniEnv)
 public fun pushLocalFrame(capacity: Int) {
     JNI.safeCall {
-        env.pointed!!.PushLocalFrame!!(env.ptr, capacity)
+        env.PushLocalFrame!!(env.ptr, capacity)
     }
 }
 
@@ -389,7 +389,7 @@ public fun pushLocalFrame(capacity: Int) {
  */
 context(env: JniEnv)
 public fun <T : JRef<O>, O : _jobject> popLocalFrame(result: T? = null): T? {
-    return env.pointed!!.PopLocalFrame!!(env.ptr, result.c).wrap()
+    return env.PopLocalFrame!!(env.ptr, result.c).wrap()
 }
 
 /**
@@ -423,8 +423,13 @@ public inline fun popLocalFrame() {
 context(env: JniEnv)
 public inline fun <T : JRef<O>, O : _jobject> fromRefFrame(capacity: Int, block: () -> T?): T? {
     pushLocalFrame(capacity)
-    val res = block()
-    return popLocalFrame(res)
+    var result: T? = null
+    try {
+        result = block()
+    } finally {
+        result = popLocalFrame(result)
+    }
+    return result
 }
 
 /**
@@ -446,9 +451,11 @@ public inline fun <T : JRef<O>, O : _jobject> fromRefFrame(capacity: Int, block:
 context(env: JniEnv)
 public inline fun <T> refFrame(capacity: Int, block: () -> T): T {
     pushLocalFrame(capacity)
-    val res = block()
-    popLocalFrame()
-    return res
+    try {
+        return block()
+    } finally {
+        popLocalFrame()
+    }
 }
 
 /**
@@ -463,7 +470,7 @@ public inline fun <T> refFrame(capacity: Int, block: () -> T): T {
  */
 context(env: JniEnv)
 public fun <T : JRef<O>, O : _jobject> T.newLocalRef(): T? {
-    return env.pointed!!.NewLocalRef!!(env.ptr, c).wrap()
+    return env.NewLocalRef!!(env.ptr, c).wrap()
 }
 
 /**
@@ -480,7 +487,7 @@ public fun <T : JRef<O>, O : _jobject> T.newLocalRef(): T? {
  */
 context(env: JniEnv)
 public fun <T : JRef<O>, O : _jobject> T.newGlobalRef(): T? {
-    return env.pointed!!.NewGlobalRef!!(env.ptr, c).wrap()
+    return env.NewGlobalRef!!(env.ptr, c).wrap()
 }
 
 /**
@@ -499,7 +506,7 @@ public fun <T : JRef<O>, O : _jobject> T.newGlobalRef(): T? {
  */
 context(env: JniEnv)
 public fun <T : JRef<O>, O : _jobject> T.newWeakGlobalRef(): T? {
-    return env.pointed!!.NewWeakGlobalRef!!(env.ptr, c).wrap()
+    return env.NewWeakGlobalRef!!(env.ptr, c).wrap()
 }
 
 /**
@@ -507,7 +514,7 @@ public fun <T : JRef<O>, O : _jobject> T.newWeakGlobalRef(): T? {
  */
 context(env: JniEnv)
 public fun JObject.deleteGlobalRef() {
-    env.pointed!!.DeleteGlobalRef!!(env.ptr, c)
+    env.DeleteGlobalRef!!(env.ptr, c)
 }
 
 /**
@@ -517,7 +524,7 @@ public fun JObject.deleteGlobalRef() {
  */
 context(env: JniEnv)
 public fun JWeak.deleteWeakGlobalRef() {
-    env.pointed!!.DeleteWeakGlobalRef!!(env.ptr, c)
+    env.DeleteWeakGlobalRef!!(env.ptr, c)
 }
 
 /**
@@ -537,7 +544,7 @@ public fun JWeak.deleteWeakGlobalRef() {
  */
 context(env: JniEnv)
 public fun JClass.allocObject(): JObject? {
-    return env.pointed!!.AllocObject!!(env.ptr, c).wrap()
+    return env.AllocObject!!(env.ptr, c).wrap()
 }
 
 /**
@@ -555,7 +562,7 @@ public fun JClass.allocObject(): JObject? {
  */
 context(env: JniEnv)
 public fun JClass.newObject(methodId: JMethodID, args: JArguments): JObject? {
-    return env.pointed!!.NewObjectA!!(env.ptr, c, methodId.c, args).wrap()
+    return env.NewObjectA!!(env.ptr, c, methodId.c, args).wrap()
 }
 
 /**
@@ -563,7 +570,7 @@ public fun JClass.newObject(methodId: JMethodID, args: JArguments): JObject? {
  */
 context(env: JniEnv)
 public val JObject.javaClass: JClass get() {
-    return env.pointed!!.GetObjectClass!!(env.ptr, c).wrap()!!
+    return env.GetObjectClass!!(env.ptr, c).wrap()!!
 }
 
 /**
@@ -573,7 +580,7 @@ public val JObject.javaClass: JClass get() {
  */
 context(env: JniEnv)
 public val JObject?.refType: JObjectRefType get() {
-    val ordinal = env.pointed!!.GetObjectRefType!!(env.ptr, c)
+    val ordinal = env.GetObjectRefType!!(env.ptr, c)
     return JObjectRefType.entries[ordinal.toInt()]
 }
 
@@ -584,7 +591,7 @@ public val JObject?.refType: JObjectRefType get() {
  */
 context(env: JniEnv)
 public infix fun JObject?.instanceOf(clazz: JClass): Boolean {
-    return env.pointed!!.IsInstanceOf!!(env.ptr, c, clazz.c).toKBoolean()
+    return env.IsInstanceOf!!(env.ptr, c, clazz.c).toKBoolean()
 }
 
 /**
@@ -594,7 +601,7 @@ public infix fun JObject?.instanceOf(clazz: JClass): Boolean {
  */
 context(env: JniEnv)
 public infix fun JObject?.isSame(other: JObject?): Boolean {
-    return env.pointed!!.IsSameObject!!(env.ptr, c, other.c).toKBoolean()
+    return env.IsSameObject!!(env.ptr, c, other.c).toKBoolean()
 }
 
 /**
@@ -619,7 +626,7 @@ public infix fun JObject?.isSame(other: JObject?): Boolean {
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun JClass.methodId(name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JMethodID? {
-    return env.pointed!!.GetMethodID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
+    return env.GetMethodID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
 }
 
 /**
@@ -637,7 +644,7 @@ public fun JClass.methodId(name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>):
  */
 context(env: JniEnv)
 public fun JObject.callObjectMethod(methodId: JMethodID, args: JArguments): JObject? {
-    return env.pointed!!.CallObjectMethodA!!(env.ptr, c, methodId.c, args).wrap()
+    return env.CallObjectMethodA!!(env.ptr, c, methodId.c, args).wrap()
 }
 
 /**
@@ -655,7 +662,7 @@ public fun JObject.callObjectMethod(methodId: JMethodID, args: JArguments): JObj
  */
 context(env: JniEnv)
 public fun JObject.callBooleanMethod(methodId: JMethodID, args: JArguments): Boolean {
-    return env.pointed!!.CallBooleanMethodA!!(env.ptr, c, methodId.c, args).toKBoolean()
+    return env.CallBooleanMethodA!!(env.ptr, c, methodId.c, args).toKBoolean()
 }
 
 /**
@@ -673,7 +680,7 @@ public fun JObject.callBooleanMethod(methodId: JMethodID, args: JArguments): Boo
  */
 context(env: JniEnv)
 public fun JObject.callByteMethod(methodId: JMethodID, args: JArguments): Byte {
-    return env.pointed!!.CallByteMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallByteMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -691,7 +698,7 @@ public fun JObject.callByteMethod(methodId: JMethodID, args: JArguments): Byte {
  */
 context(env: JniEnv)
 public fun JObject.callCharMethod(methodId: JMethodID, args: JArguments): Char {
-    return env.pointed!!.CallCharMethodA!!(env.ptr, c, methodId.c, args).toKChar()
+    return env.CallCharMethodA!!(env.ptr, c, methodId.c, args).toKChar()
 }
 
 /**
@@ -709,7 +716,7 @@ public fun JObject.callCharMethod(methodId: JMethodID, args: JArguments): Char {
  */
 context(env: JniEnv)
 public fun JObject.callShortMethod(methodId: JMethodID, args: JArguments): Short {
-    return env.pointed!!.CallShortMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallShortMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -727,7 +734,7 @@ public fun JObject.callShortMethod(methodId: JMethodID, args: JArguments): Short
  */
 context(env: JniEnv)
 public fun JObject.callIntMethod(methodId: JMethodID, args: JArguments): Int {
-    return env.pointed!!.CallIntMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallIntMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -745,7 +752,7 @@ public fun JObject.callIntMethod(methodId: JMethodID, args: JArguments): Int {
  */
 context(env: JniEnv)
 public fun JObject.callLongMethod(methodId: JMethodID, args: JArguments): Long {
-    return env.pointed!!.CallLongMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallLongMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -763,7 +770,7 @@ public fun JObject.callLongMethod(methodId: JMethodID, args: JArguments): Long {
  */
 context(env: JniEnv)
 public fun JObject.callFloatMethod(methodId: JMethodID, args: JArguments): Float {
-    return env.pointed!!.CallFloatMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallFloatMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -781,7 +788,7 @@ public fun JObject.callFloatMethod(methodId: JMethodID, args: JArguments): Float
  */
 context(env: JniEnv)
 public fun JObject.callDoubleMethod(methodId: JMethodID, args: JArguments): Double {
-    return env.pointed!!.CallDoubleMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallDoubleMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -797,7 +804,7 @@ public fun JObject.callDoubleMethod(methodId: JMethodID, args: JArguments): Doub
  */
 context(env: JniEnv)
 public fun JObject.callVoidMethod(methodId: JMethodID, args: JArguments) {
-    return env.pointed!!.CallVoidMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallVoidMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -842,7 +849,7 @@ public inline fun <reified R> JObject.callMethod(methodId: JMethodID, args: JArg
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualObjectMethod(clazz: JClass, methodId: JMethodID, args: JArguments): JObject? {
-    return env.pointed!!.CallNonvirtualObjectMethodA!!(env.ptr, clazz.c, c, methodId.c, args).wrap()
+    return env.CallNonvirtualObjectMethodA!!(env.ptr, clazz.c, c, methodId.c, args).wrap()
 }
 
 /**
@@ -865,7 +872,7 @@ public fun JObject.callNonvirtualObjectMethod(clazz: JClass, methodId: JMethodID
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualBooleanMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Boolean {
-    return env.pointed!!.CallNonvirtualBooleanMethodA!!(env.ptr, clazz.c, c, methodId.c, args).toKBoolean()
+    return env.CallNonvirtualBooleanMethodA!!(env.ptr, clazz.c, c, methodId.c, args).toKBoolean()
 }
 
 /**
@@ -888,7 +895,7 @@ public fun JObject.callNonvirtualBooleanMethod(clazz: JClass, methodId: JMethodI
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualByteMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Byte {
-    return env.pointed!!.CallNonvirtualByteMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
+    return env.CallNonvirtualByteMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
 }
 
 /**
@@ -910,7 +917,7 @@ public fun JObject.callNonvirtualByteMethod(clazz: JClass, methodId: JMethodID, 
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualCharMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Char {
-    return env.pointed!!.CallNonvirtualCharMethodA!!(env.ptr, clazz.c, c, methodId.c, args).toKChar()
+    return env.CallNonvirtualCharMethodA!!(env.ptr, clazz.c, c, methodId.c, args).toKChar()
 }
 
 /**
@@ -932,7 +939,7 @@ public fun JObject.callNonvirtualCharMethod(clazz: JClass, methodId: JMethodID, 
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualShortMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Short {
-    return env.pointed!!.CallNonvirtualShortMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
+    return env.CallNonvirtualShortMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
 }
 
 /**
@@ -954,7 +961,7 @@ public fun JObject.callNonvirtualShortMethod(clazz: JClass, methodId: JMethodID,
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualIntMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Int {
-    return env.pointed!!.CallNonvirtualIntMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
+    return env.CallNonvirtualIntMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
 }
 
 /**
@@ -976,7 +983,7 @@ public fun JObject.callNonvirtualIntMethod(clazz: JClass, methodId: JMethodID, a
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualLongMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Long {
-    return env.pointed!!.CallNonvirtualLongMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
+    return env.CallNonvirtualLongMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
 }
 
 /**
@@ -998,7 +1005,7 @@ public fun JObject.callNonvirtualLongMethod(clazz: JClass, methodId: JMethodID, 
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualFloatMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Float {
-    return env.pointed!!.CallNonvirtualFloatMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
+    return env.CallNonvirtualFloatMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
 }
 
 /**
@@ -1020,7 +1027,7 @@ public fun JObject.callNonvirtualFloatMethod(clazz: JClass, methodId: JMethodID,
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualDoubleMethod(clazz: JClass, methodId: JMethodID, args: JArguments): Double {
-    return env.pointed!!.CallNonvirtualDoubleMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
+    return env.CallNonvirtualDoubleMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
 }
 
 /**
@@ -1040,7 +1047,7 @@ public fun JObject.callNonvirtualDoubleMethod(clazz: JClass, methodId: JMethodID
  */
 context(env: JniEnv)
 public fun JObject.callNonvirtualVoidMethod(clazz: JClass, methodId: JMethodID, args: JArguments) {
-    return env.pointed!!.CallNonvirtualVoidMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
+    return env.CallNonvirtualVoidMethodA!!(env.ptr, clazz.c, c, methodId.c, args)
 }
 
 /**
@@ -1088,7 +1095,7 @@ public inline fun <reified R> JObject.callNonvirtualMethod(clazz: JClass, method
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun JClass.fieldId(name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JFieldID? {
-    return env.pointed!!.GetFieldID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
+    return env.GetFieldID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
 }
 
 /**
@@ -1101,7 +1108,7 @@ public fun JClass.fieldId(name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): 
  */
 context(env: JniEnv)
 public fun JObject.getObjectField(fieldID: JFieldID): JObject? {
-    return env.pointed!!.GetObjectField!!(env.ptr, c, fieldID.c).wrap()
+    return env.GetObjectField!!(env.ptr, c, fieldID.c).wrap()
 }
 
 /**
@@ -1114,7 +1121,7 @@ public fun JObject.getObjectField(fieldID: JFieldID): JObject? {
  */
 context(env: JniEnv)
 public fun JObject.getBooleanField(fieldID: JFieldID): Boolean {
-    return env.pointed!!.GetBooleanField!!(env.ptr, c, fieldID.c).toKBoolean()
+    return env.GetBooleanField!!(env.ptr, c, fieldID.c).toKBoolean()
 }
 
 /**
@@ -1127,7 +1134,7 @@ public fun JObject.getBooleanField(fieldID: JFieldID): Boolean {
  */
 context(env: JniEnv)
 public fun JObject.getByteField(fieldID: JFieldID): Byte {
-    return env.pointed!!.GetByteField!!(env.ptr, c, fieldID.c)
+    return env.GetByteField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1140,7 +1147,7 @@ public fun JObject.getByteField(fieldID: JFieldID): Byte {
  */
 context(env: JniEnv)
 public fun JObject.getCharField(fieldID: JFieldID): Char {
-    return env.pointed!!.GetCharField!!(env.ptr, c, fieldID.c).toKChar()
+    return env.GetCharField!!(env.ptr, c, fieldID.c).toKChar()
 }
 
 /**
@@ -1153,7 +1160,7 @@ public fun JObject.getCharField(fieldID: JFieldID): Char {
  */
 context(env: JniEnv)
 public fun JObject.getShortField(fieldID: JFieldID): Short {
-    return env.pointed!!.GetShortField!!(env.ptr, c, fieldID.c)
+    return env.GetShortField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1166,7 +1173,7 @@ public fun JObject.getShortField(fieldID: JFieldID): Short {
  */
 context(env: JniEnv)
 public fun JObject.getIntField(fieldID: JFieldID): Int {
-    return env.pointed!!.GetIntField!!(env.ptr, c, fieldID.c)
+    return env.GetIntField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1179,7 +1186,7 @@ public fun JObject.getIntField(fieldID: JFieldID): Int {
  */
 context(env: JniEnv)
 public fun JObject.getLongField(fieldID: JFieldID): Long {
-    return env.pointed!!.GetLongField!!(env.ptr, c, fieldID.c)
+    return env.GetLongField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1192,7 +1199,7 @@ public fun JObject.getLongField(fieldID: JFieldID): Long {
  */
 context(env: JniEnv)
 public fun JObject.getFloatField(fieldID: JFieldID): Float {
-    return env.pointed!!.GetFloatField!!(env.ptr, c, fieldID.c)
+    return env.GetFloatField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1205,7 +1212,7 @@ public fun JObject.getFloatField(fieldID: JFieldID): Float {
  */
 context(env: JniEnv)
 public fun JObject.getDoubleField(fieldID: JFieldID): Double {
-    return env.pointed!!.GetDoubleField!!(env.ptr, c, fieldID.c)
+    return env.GetDoubleField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1216,7 +1223,7 @@ public fun JObject.getDoubleField(fieldID: JFieldID): Double {
  */
 context(env: JniEnv)
 public fun JObject.setObjectField(fieldID: JFieldID, value: JObject?) {
-    env.pointed!!.SetObjectField!!(env.ptr, c, fieldID.c, value.c)
+    env.SetObjectField!!(env.ptr, c, fieldID.c, value.c)
 }
 
 /**
@@ -1227,7 +1234,7 @@ public fun JObject.setObjectField(fieldID: JFieldID, value: JObject?) {
  */
 context(env: JniEnv)
 public fun JObject.setBooleanField(fieldID: JFieldID, value: Boolean) {
-    env.pointed!!.SetBooleanField!!(env.ptr, c, fieldID.c, value.toJBoolean())
+    env.SetBooleanField!!(env.ptr, c, fieldID.c, value.toJBoolean())
 }
 
 /**
@@ -1238,7 +1245,7 @@ public fun JObject.setBooleanField(fieldID: JFieldID, value: Boolean) {
  */
 context(env: JniEnv)
 public fun JObject.setByteField(fieldID: JFieldID, value: Byte) {
-    env.pointed!!.SetByteField!!(env.ptr, c, fieldID.c, value)
+    env.SetByteField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1249,7 +1256,7 @@ public fun JObject.setByteField(fieldID: JFieldID, value: Byte) {
  */
 context(env: JniEnv)
 public fun JObject.setCharField(fieldID: JFieldID, value: Char) {
-    env.pointed!!.SetCharField!!(env.ptr, c, fieldID.c, value.toJChar())
+    env.SetCharField!!(env.ptr, c, fieldID.c, value.toJChar())
 }
 
 /**
@@ -1260,7 +1267,7 @@ public fun JObject.setCharField(fieldID: JFieldID, value: Char) {
  */
 context(env: JniEnv)
 public fun JObject.setShortField(fieldID: JFieldID, value: Short) {
-    env.pointed!!.SetShortField!!(env.ptr, c, fieldID.c, value)
+    env.SetShortField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1271,7 +1278,7 @@ public fun JObject.setShortField(fieldID: JFieldID, value: Short) {
  */
 context(env: JniEnv)
 public fun JObject.setIntField(fieldID: JFieldID, value: Int) {
-    env.pointed!!.SetIntField!!(env.ptr, c, fieldID.c, value)
+    env.SetIntField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1282,7 +1289,7 @@ public fun JObject.setIntField(fieldID: JFieldID, value: Int) {
  */
 context(env: JniEnv)
 public fun JObject.setLongField(fieldID: JFieldID, value: Long) {
-    env.pointed!!.SetLongField!!(env.ptr, c, fieldID.c, value)
+    env.SetLongField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1293,7 +1300,7 @@ public fun JObject.setLongField(fieldID: JFieldID, value: Long) {
  */
 context(env: JniEnv)
 public fun JObject.setFloatField(fieldID: JFieldID, value: Float) {
-    env.pointed!!.SetFloatField!!(env.ptr, c, fieldID.c, value)
+    env.SetFloatField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1304,7 +1311,7 @@ public fun JObject.setFloatField(fieldID: JFieldID, value: Float) {
  */
 context(env: JniEnv)
 public fun JObject.setDoubleField(fieldID: JFieldID, value: Double) {
-    env.pointed!!.SetDoubleField!!(env.ptr, c, fieldID.c, value)
+    env.SetDoubleField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1325,7 +1332,7 @@ public fun JObject.setDoubleField(fieldID: JFieldID, value: Double) {
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun JClass.staticMethodId(name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JMethodID? {
-    return env.pointed!!.GetStaticMethodID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
+    return env.GetStaticMethodID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
 }
 
 /**
@@ -1342,7 +1349,7 @@ public fun JClass.staticMethodId(name: CValuesRef<ByteVar>, sig: CValuesRef<Byte
  */
 context(env: JniEnv)
 public fun JClass.callStaticObjectMethod(methodId: JMethodID, args: JArguments): JObject? {
-    return env.pointed!!.CallStaticObjectMethodA!!(env.ptr, c, methodId.c, args).wrap()
+    return env.CallStaticObjectMethodA!!(env.ptr, c, methodId.c, args).wrap()
 }
 
 /**
@@ -1359,7 +1366,7 @@ public fun JClass.callStaticObjectMethod(methodId: JMethodID, args: JArguments):
  */
 context(env: JniEnv)
 public fun JClass.callStaticBooleanMethod(methodId: JMethodID, args: JArguments): Boolean {
-    return env.pointed!!.CallStaticBooleanMethodA!!(env.ptr, c, methodId.c, args).toKBoolean()
+    return env.CallStaticBooleanMethodA!!(env.ptr, c, methodId.c, args).toKBoolean()
 }
 
 /**
@@ -1376,7 +1383,7 @@ public fun JClass.callStaticBooleanMethod(methodId: JMethodID, args: JArguments)
  */
 context(env: JniEnv)
 public fun JClass.callStaticByteMethod(methodId: JMethodID, args: JArguments): Byte {
-    return env.pointed!!.CallStaticByteMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallStaticByteMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -1393,7 +1400,7 @@ public fun JClass.callStaticByteMethod(methodId: JMethodID, args: JArguments): B
  */
 context(env: JniEnv)
 public fun JClass.callStaticCharMethod(methodId: JMethodID, args: JArguments): Char {
-    return env.pointed!!.CallStaticCharMethodA!!(env.ptr, c, methodId.c, args).toKChar()
+    return env.CallStaticCharMethodA!!(env.ptr, c, methodId.c, args).toKChar()
 }
 
 /**
@@ -1410,7 +1417,7 @@ public fun JClass.callStaticCharMethod(methodId: JMethodID, args: JArguments): C
  */
 context(env: JniEnv)
 public fun JClass.callStaticShortMethod(methodId: JMethodID, args: JArguments): Short {
-    return env.pointed!!.CallStaticShortMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallStaticShortMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -1427,7 +1434,7 @@ public fun JClass.callStaticShortMethod(methodId: JMethodID, args: JArguments): 
  */
 context(env: JniEnv)
 public fun JClass.callStaticIntMethod(methodId: JMethodID, args: JArguments): Int {
-    return env.pointed!!.CallStaticIntMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallStaticIntMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -1444,7 +1451,7 @@ public fun JClass.callStaticIntMethod(methodId: JMethodID, args: JArguments): In
  */
 context(env: JniEnv)
 public fun JClass.callStaticLongMethod(methodId: JMethodID, args: JArguments): Long {
-    return env.pointed!!.CallStaticLongMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallStaticLongMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -1461,7 +1468,7 @@ public fun JClass.callStaticLongMethod(methodId: JMethodID, args: JArguments): L
  */
 context(env: JniEnv)
 public fun JClass.callStaticFloatMethod(methodId: JMethodID, args: JArguments): Float {
-    return env.pointed!!.CallStaticFloatMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallStaticFloatMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -1478,7 +1485,7 @@ public fun JClass.callStaticFloatMethod(methodId: JMethodID, args: JArguments): 
  */
 context(env: JniEnv)
 public fun JClass.callStaticDoubleMethod(methodId: JMethodID, args: JArguments): Double {
-    return env.pointed!!.CallStaticDoubleMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallStaticDoubleMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -1493,7 +1500,7 @@ public fun JClass.callStaticDoubleMethod(methodId: JMethodID, args: JArguments):
  */
 context(env: JniEnv)
 public fun JClass.callStaticVoidMethod(methodId: JMethodID, args: JArguments) {
-    return env.pointed!!.CallStaticVoidMethodA!!(env.ptr, c, methodId.c, args)
+    return env.CallStaticVoidMethodA!!(env.ptr, c, methodId.c, args)
 }
 
 /**
@@ -1538,7 +1545,7 @@ public inline fun <reified R> JClass.callStaticMethod(methodId: JMethodID, args:
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public fun JClass.staticFieldId(name: CValuesRef<ByteVar>, sig: CValuesRef<ByteVar>): JFieldID? {
-    return env.pointed!!.GetStaticFieldID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
+    return env.GetStaticFieldID!!(env.ptr, c, name.getPointer(autofreeScope), sig.getPointer(autofreeScope))?.wrap()
 }
 
 /**
@@ -1551,7 +1558,7 @@ public fun JClass.staticFieldId(name: CValuesRef<ByteVar>, sig: CValuesRef<ByteV
  */
 context(env: JniEnv)
 public fun JClass.getStaticObjectField(fieldID: JFieldID): JObject? {
-    return env.pointed!!.GetStaticObjectField!!(env.ptr, c, fieldID.c).wrap()
+    return env.GetStaticObjectField!!(env.ptr, c, fieldID.c).wrap()
 }
 
 /**
@@ -1564,7 +1571,7 @@ public fun JClass.getStaticObjectField(fieldID: JFieldID): JObject? {
  */
 context(env: JniEnv)
 public fun JClass.getStaticBooleanField(fieldID: JFieldID): Boolean {
-    return env.pointed!!.GetStaticBooleanField!!(env.ptr, c, fieldID.c).toKBoolean()
+    return env.GetStaticBooleanField!!(env.ptr, c, fieldID.c).toKBoolean()
 }
 
 /**
@@ -1577,7 +1584,7 @@ public fun JClass.getStaticBooleanField(fieldID: JFieldID): Boolean {
  */
 context(env: JniEnv)
 public fun JClass.getStaticByteField(fieldID: JFieldID): Byte {
-    return env.pointed!!.GetStaticByteField!!(env.ptr, c, fieldID.c)
+    return env.GetStaticByteField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1590,7 +1597,7 @@ public fun JClass.getStaticByteField(fieldID: JFieldID): Byte {
  */
 context(env: JniEnv)
 public fun JClass.getStaticCharField(fieldID: JFieldID): Char {
-    return env.pointed!!.GetStaticCharField!!(env.ptr, c, fieldID.c).toKChar()
+    return env.GetStaticCharField!!(env.ptr, c, fieldID.c).toKChar()
 }
 
 /**
@@ -1603,7 +1610,7 @@ public fun JClass.getStaticCharField(fieldID: JFieldID): Char {
  */
 context(env: JniEnv)
 public fun JClass.getStaticShortField(fieldID: JFieldID): Short {
-    return env.pointed!!.GetStaticShortField!!(env.ptr, c, fieldID.c)
+    return env.GetStaticShortField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1616,7 +1623,7 @@ public fun JClass.getStaticShortField(fieldID: JFieldID): Short {
  */
 context(env: JniEnv)
 public fun JClass.getStaticIntField(fieldID: JFieldID): Int {
-    return env.pointed!!.GetStaticIntField!!(env.ptr, c, fieldID.c)
+    return env.GetStaticIntField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1629,7 +1636,7 @@ public fun JClass.getStaticIntField(fieldID: JFieldID): Int {
  */
 context(env: JniEnv)
 public fun JClass.getStaticLongField(fieldID: JFieldID): Long {
-    return env.pointed!!.GetStaticLongField!!(env.ptr, c, fieldID.c)
+    return env.GetStaticLongField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1642,7 +1649,7 @@ public fun JClass.getStaticLongField(fieldID: JFieldID): Long {
  */
 context(env: JniEnv)
 public fun JClass.getStaticFloatField(fieldID: JFieldID): Float {
-    return env.pointed!!.GetStaticFloatField!!(env.ptr, c, fieldID.c)
+    return env.GetStaticFloatField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1655,7 +1662,7 @@ public fun JClass.getStaticFloatField(fieldID: JFieldID): Float {
  */
 context(env: JniEnv)
 public fun JClass.getStaticDoubleField(fieldID: JFieldID): Double {
-    return env.pointed!!.GetStaticDoubleField!!(env.ptr, c, fieldID.c)
+    return env.GetStaticDoubleField!!(env.ptr, c, fieldID.c)
 }
 
 /**
@@ -1666,7 +1673,7 @@ public fun JClass.getStaticDoubleField(fieldID: JFieldID): Double {
  */
 context(env: JniEnv)
 public fun JClass.setStaticObjectField(fieldID: JFieldID, value: JObject?) {
-    env.pointed!!.SetStaticObjectField!!(env.ptr, c, fieldID.c, value.c)
+    env.SetStaticObjectField!!(env.ptr, c, fieldID.c, value.c)
 }
 
 /**
@@ -1677,7 +1684,7 @@ public fun JClass.setStaticObjectField(fieldID: JFieldID, value: JObject?) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticBooleanField(fieldID: JFieldID, value: Boolean) {
-    env.pointed!!.SetStaticBooleanField!!(env.ptr, c, fieldID.c, value.toJBoolean())
+    env.SetStaticBooleanField!!(env.ptr, c, fieldID.c, value.toJBoolean())
 }
 
 /**
@@ -1688,7 +1695,7 @@ public fun JClass.setStaticBooleanField(fieldID: JFieldID, value: Boolean) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticByteField(fieldID: JFieldID, value: Byte) {
-    env.pointed!!.SetStaticByteField!!(env.ptr, c, fieldID.c, value)
+    env.SetStaticByteField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1699,7 +1706,7 @@ public fun JClass.setStaticByteField(fieldID: JFieldID, value: Byte) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticCharField(fieldID: JFieldID, value: Char) {
-    env.pointed!!.SetStaticCharField!!(env.ptr, c, fieldID.c, value.toJChar())
+    env.SetStaticCharField!!(env.ptr, c, fieldID.c, value.toJChar())
 }
 
 /**
@@ -1710,7 +1717,7 @@ public fun JClass.setStaticCharField(fieldID: JFieldID, value: Char) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticShortField(fieldID: JFieldID, value: Short) {
-    env.pointed!!.SetStaticShortField!!(env.ptr, c, fieldID.c, value)
+    env.SetStaticShortField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1721,7 +1728,7 @@ public fun JClass.setStaticShortField(fieldID: JFieldID, value: Short) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticIntField(fieldID: JFieldID, value: Int) {
-    env.pointed!!.SetStaticIntField!!(env.ptr, c, fieldID.c, value)
+    env.SetStaticIntField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1732,7 +1739,7 @@ public fun JClass.setStaticIntField(fieldID: JFieldID, value: Int) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticLongField(fieldID: JFieldID, value: Long) {
-    env.pointed!!.SetStaticLongField!!(env.ptr, c, fieldID.c, value)
+    env.SetStaticLongField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1743,7 +1750,7 @@ public fun JClass.setStaticLongField(fieldID: JFieldID, value: Long) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticFloatField(fieldID: JFieldID, value: Float) {
-    env.pointed!!.SetStaticFloatField!!(env.ptr, c, fieldID.c, value)
+    env.SetStaticFloatField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1754,7 +1761,7 @@ public fun JClass.setStaticFloatField(fieldID: JFieldID, value: Float) {
  */
 context(env: JniEnv)
 public fun JClass.setStaticDoubleField(fieldID: JFieldID, value: Double) {
-    env.pointed!!.SetStaticDoubleField!!(env.ptr, c, fieldID.c, value)
+    env.SetStaticDoubleField!!(env.ptr, c, fieldID.c, value)
 }
 
 /**
@@ -1769,7 +1776,7 @@ public fun JClass.setStaticDoubleField(fieldID: JFieldID, value: Double) {
  */
 context(env: JniEnv)
 public fun newString(unicodeChars: CArrayPointer<UShortVar>, len: Int): JString? {
-    return env.pointed!!.NewString!!(env.ptr, unicodeChars, len).wrap()
+    return env.NewString!!(env.ptr, unicodeChars, len).wrap()
 }
 
 /**
@@ -1777,7 +1784,7 @@ public fun newString(unicodeChars: CArrayPointer<UShortVar>, len: Int): JString?
  */
 context(env: JniEnv)
 public val JString.length: Int get() {
-    return env.pointed!!.GetStringLength!!(env.ptr, c)
+    return env.GetStringLength!!(env.ptr, c)
 }
 
 /**
@@ -1794,7 +1801,7 @@ public val JString.length: Int get() {
 context(env: JniEnv, placement: NativePlacement)
 public fun JString.getChars(): Pair<CArrayPointer<UShortVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val chars = env.pointed!!.GetStringChars!!(env.ptr, c, isCopy.ptr)
+    val chars = env.GetStringChars!!(env.ptr, c, isCopy.ptr)
     return chars?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -1804,7 +1811,7 @@ public fun JString.getChars(): Pair<CArrayPointer<UShortVar>, Boolean>? {
  */
 context(env: JniEnv)
 public fun JString.releaseChars(chars: CArrayPointer<UShortVar>) {
-    env.pointed!!.ReleaseStringChars!!(env.ptr, c, chars)
+    env.ReleaseStringChars!!(env.ptr, c, chars)
 }
 
 /**
@@ -1816,7 +1823,7 @@ public fun JString.releaseChars(chars: CArrayPointer<UShortVar>) {
  */
 context(env: JniEnv)
 public fun newStringUTF(bytes: CArrayPointer<ByteVar>): JString? {
-    return env.pointed!!.NewStringUTF!!(env.ptr, bytes).wrap()
+    return env.NewStringUTF!!(env.ptr, bytes).wrap()
 }
 
 /**
@@ -1833,17 +1840,7 @@ public fun newStringUTF(bytes: CArrayPointer<ByteVar>): JString? {
  */
 context(env: JniEnv)
 public val JString.utfLength: Int get() {
-    return env.pointed!!.GetStringUTFLength!!(env.ptr, c)
-}
-
-/**
- * The length in bytes of the modified UTF-8 representation of a string.
- *
- * @since JDK 24
- */
-context(env: JniEnv)
-public val JString.utfLengthLong: Long get() {
-    return env.pointed!!.GetStringUTFLengthAsLong!!(env.ptr, c)
+    return env.GetStringUTFLength!!(env.ptr, c)
 }
 
 /**
@@ -1858,7 +1855,7 @@ public val JString.utfLengthLong: Long get() {
 context(env: JniEnv, placement: NativePlacement)
 public fun JString.getUTFChars(): Pair<CArrayPointer<ByteVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val utf = env.pointed!!.GetStringUTFChars!!(env.ptr, c, isCopy.ptr)
+    val utf = env.GetStringUTFChars!!(env.ptr, c, isCopy.ptr)
     return utf?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -1872,7 +1869,7 @@ public fun JString.getUTFChars(): Pair<CArrayPointer<ByteVar>, Boolean>? {
  */
 context(env: JniEnv)
 public fun JString.releaseUTFChars(utf: CArrayPointer<ByteVar>) {
-    env.pointed!!.ReleaseStringUTFChars!!(env.ptr, c, utf)
+    env.ReleaseStringUTFChars!!(env.ptr, c, utf)
 }
 
 /**
@@ -1880,7 +1877,7 @@ public fun JString.releaseUTFChars(utf: CArrayPointer<ByteVar>) {
  */
 context(env: JniEnv)
 public val JArray.length: Int get() {
-    return env.pointed!!.GetArrayLength!!(env.ptr, c)
+    return env.GetArrayLength!!(env.ptr, c)
 }
 
 /**
@@ -1896,7 +1893,7 @@ public val JArray.length: Int get() {
  */
 context(env: JniEnv)
 public fun newObjectArray(length: Int, elementClass: JClass, initialElement: JObject? = null): JObjectArray? {
-    return env.pointed!!.NewObjectArray!!(env.ptr, length, elementClass.c, initialElement.c).wrap()
+    return env.NewObjectArray!!(env.ptr, length, elementClass.c, initialElement.c).wrap()
 }
 
 /**
@@ -1908,7 +1905,7 @@ public fun newObjectArray(length: Int, elementClass: JClass, initialElement: JOb
  */
 context(env: JniEnv)
 public operator fun JObjectArray.get(index: Int): JObject? {
-    return env.pointed!!.GetObjectArrayElement!!(env.ptr, c, index).wrap()
+    return env.GetObjectArrayElement!!(env.ptr, c, index).wrap()
 }
 
 /**
@@ -1919,7 +1916,7 @@ public operator fun JObjectArray.get(index: Int): JObject? {
  */
 context(env: JniEnv)
 public operator fun JObjectArray.set(index: Int, value: JObject?) {
-    env.pointed!!.SetObjectArrayElement!!(env.ptr, c, index, value.c)
+    env.SetObjectArrayElement!!(env.ptr, c, index, value.c)
 }
 
 /**
@@ -1927,7 +1924,7 @@ public operator fun JObjectArray.set(index: Int, value: JObject?) {
  */
 context(env: JniEnv)
 public fun newBooleanArray(length: Int): JBooleanArray? {
-    return env.pointed!!.NewBooleanArray!!(env.ptr, length).wrap()
+    return env.NewBooleanArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -1935,7 +1932,7 @@ public fun newBooleanArray(length: Int): JBooleanArray? {
  */
 context(env: JniEnv)
 public fun newByteArray(length: Int): JByteArray? {
-    return env.pointed!!.NewByteArray!!(env.ptr, length).wrap()
+    return env.NewByteArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -1943,7 +1940,7 @@ public fun newByteArray(length: Int): JByteArray? {
  */
 context(env: JniEnv)
 public fun newCharArray(length: Int): JCharArray? {
-    return env.pointed!!.NewCharArray!!(env.ptr, length).wrap()
+    return env.NewCharArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -1951,7 +1948,7 @@ public fun newCharArray(length: Int): JCharArray? {
  */
 context(env: JniEnv)
 public fun newShortArray(length: Int): JShortArray? {
-    return env.pointed!!.NewShortArray!!(env.ptr, length).wrap()
+    return env.NewShortArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -1959,7 +1956,7 @@ public fun newShortArray(length: Int): JShortArray? {
  */
 context(env: JniEnv)
 public fun newIntArray(length: Int): JIntArray? {
-    return env.pointed!!.NewIntArray!!(env.ptr, length).wrap()
+    return env.NewIntArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -1967,7 +1964,7 @@ public fun newIntArray(length: Int): JIntArray? {
  */
 context(env: JniEnv)
 public fun newLongArray(length: Int): JLongArray? {
-    return env.pointed!!.NewLongArray!!(env.ptr, length).wrap()
+    return env.NewLongArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -1975,7 +1972,7 @@ public fun newLongArray(length: Int): JLongArray? {
  */
 context(env: JniEnv)
 public fun newFloatArray(length: Int): JFloatArray? {
-    return env.pointed!!.NewFloatArray!!(env.ptr, length).wrap()
+    return env.NewFloatArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -1983,7 +1980,7 @@ public fun newFloatArray(length: Int): JFloatArray? {
  */
 context(env: JniEnv)
 public fun newDoubleArray(length: Int): JDoubleArray? {
-    return env.pointed!!.NewDoubleArray!!(env.ptr, length).wrap()
+    return env.NewDoubleArray!!(env.ptr, length).wrap()
 }
 
 /**
@@ -2002,7 +1999,7 @@ public fun newDoubleArray(length: Int): JDoubleArray? {
 context(env: JniEnv, placement: NativePlacement)
 public fun JBooleanArray.getElements(): Pair<CArrayPointer<UByteVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetBooleanArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetBooleanArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2018,7 +2015,7 @@ public fun JBooleanArray.getElements(): Pair<CArrayPointer<UByteVar>, Boolean>? 
 context(env: JniEnv, placement: NativePlacement)
 public fun JByteArray.getElements(): Pair<CArrayPointer<ByteVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetByteArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetByteArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2034,7 +2031,7 @@ public fun JByteArray.getElements(): Pair<CArrayPointer<ByteVar>, Boolean>? {
 context(env: JniEnv, placement: NativePlacement)
 public fun JCharArray.getElements(): Pair<CArrayPointer<UShortVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetCharArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetCharArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2050,7 +2047,7 @@ public fun JCharArray.getElements(): Pair<CArrayPointer<UShortVar>, Boolean>? {
 context(env: JniEnv, placement: NativePlacement)
 public fun JShortArray.getElements(): Pair<CArrayPointer<ShortVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetShortArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetShortArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2066,7 +2063,7 @@ public fun JShortArray.getElements(): Pair<CArrayPointer<ShortVar>, Boolean>? {
 context(env: JniEnv, placement: NativePlacement)
 public fun JIntArray.getElements(): Pair<CArrayPointer<IntVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetIntArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetIntArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2082,7 +2079,7 @@ public fun JIntArray.getElements(): Pair<CArrayPointer<IntVar>, Boolean>? {
 context(env: JniEnv, placement: NativePlacement)
 public fun JLongArray.getElements(): Pair<CArrayPointer<LongVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetLongArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetLongArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2098,7 +2095,7 @@ public fun JLongArray.getElements(): Pair<CArrayPointer<LongVar>, Boolean>? {
 context(env: JniEnv, placement: NativePlacement)
 public fun JFloatArray.getElements(): Pair<CArrayPointer<FloatVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetFloatArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetFloatArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2114,7 +2111,7 @@ public fun JFloatArray.getElements(): Pair<CArrayPointer<FloatVar>, Boolean>? {
 context(env: JniEnv, placement: NativePlacement)
 public fun JDoubleArray.getElements(): Pair<CArrayPointer<DoubleVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val elements = env.pointed!!.GetDoubleArrayElements!!(env.ptr, c, isCopy.ptr)
+    val elements = env.GetDoubleArrayElements!!(env.ptr, c, isCopy.ptr)
     return elements?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2131,7 +2128,7 @@ public fun JDoubleArray.getElements(): Pair<CArrayPointer<DoubleVar>, Boolean>? 
  */
 context(env: JniEnv)
 public fun JBooleanArray.releaseElements(elems: CArrayPointer<UByteVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseBooleanArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseBooleanArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2147,7 +2144,7 @@ public fun JBooleanArray.releaseElements(elems: CArrayPointer<UByteVar>, mode: A
  */
 context(env: JniEnv)
 public fun JByteArray.releaseElements(elems: CArrayPointer<ByteVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseByteArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseByteArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2163,7 +2160,7 @@ public fun JByteArray.releaseElements(elems: CArrayPointer<ByteVar>, mode: Apply
  */
 context(env: JniEnv)
 public fun JCharArray.releaseElements(elems: CArrayPointer<UShortVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseCharArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseCharArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2179,7 +2176,7 @@ public fun JCharArray.releaseElements(elems: CArrayPointer<UShortVar>, mode: App
  */
 context(env: JniEnv)
 public fun JShortArray.releaseElements(elems: CArrayPointer<ShortVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseShortArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseShortArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2195,7 +2192,7 @@ public fun JShortArray.releaseElements(elems: CArrayPointer<ShortVar>, mode: App
  */
 context(env: JniEnv)
 public fun JIntArray.releaseElements(elems: CPointer<IntVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseIntArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseIntArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2211,7 +2208,7 @@ public fun JIntArray.releaseElements(elems: CPointer<IntVar>, mode: ApplyChanges
  */
 context(env: JniEnv)
 public fun JLongArray.releaseElements(elems: CPointer<LongVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseLongArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseLongArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2227,7 +2224,7 @@ public fun JLongArray.releaseElements(elems: CPointer<LongVar>, mode: ApplyChang
  */
 context(env: JniEnv)
 public fun JFloatArray.releaseElements(elems: CPointer<FloatVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseFloatArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseFloatArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2243,7 +2240,7 @@ public fun JFloatArray.releaseElements(elems: CPointer<FloatVar>, mode: ApplyCha
  */
 context(env: JniEnv)
 public fun JDoubleArray.releaseElements(elems: CPointer<DoubleVar>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleaseDoubleArrayElements!!(env.ptr, c, elems, mode.ordinal)
+    env.ReleaseDoubleArrayElements!!(env.ptr, c, elems, mode.ordinal)
 }
 
 /**
@@ -2259,7 +2256,7 @@ public fun JDoubleArray.releaseElements(elems: CPointer<DoubleVar>, mode: ApplyC
  */
 context(env: JniEnv)
 public fun JBooleanArray.getRegion(start: Int, len: Int, buf: CArrayPointer<UByteVar>) {
-    env.pointed!!.GetBooleanArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetBooleanArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2275,7 +2272,7 @@ public fun JBooleanArray.getRegion(start: Int, len: Int, buf: CArrayPointer<UByt
  */
 context(env: JniEnv)
 public fun JByteArray.getRegion(start: Int, len: Int, buf: CArrayPointer<ByteVar>) {
-    env.pointed!!.GetByteArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetByteArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2291,7 +2288,7 @@ public fun JByteArray.getRegion(start: Int, len: Int, buf: CArrayPointer<ByteVar
  */
 context(env: JniEnv)
 public fun JCharArray.getRegion(start: Int, len: Int, buf: CArrayPointer<UShortVar>) {
-    env.pointed!!.GetCharArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetCharArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2307,7 +2304,7 @@ public fun JCharArray.getRegion(start: Int, len: Int, buf: CArrayPointer<UShortV
  */
 context(env: JniEnv)
 public fun JShortArray.getRegion(start: Int, len: Int, buf: CArrayPointer<ShortVar>) {
-    env.pointed!!.GetShortArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetShortArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2323,7 +2320,7 @@ public fun JShortArray.getRegion(start: Int, len: Int, buf: CArrayPointer<ShortV
  */
 context(env: JniEnv)
 public fun JIntArray.getRegion(start: Int, len: Int, buf: CPointer<IntVar>) {
-    env.pointed!!.GetIntArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetIntArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2339,7 +2336,7 @@ public fun JIntArray.getRegion(start: Int, len: Int, buf: CPointer<IntVar>) {
  */
 context(env: JniEnv)
 public fun JLongArray.getRegion(start: Int, len: Int, buf: CPointer<LongVar>) {
-    env.pointed!!.GetLongArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetLongArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2355,7 +2352,7 @@ public fun JLongArray.getRegion(start: Int, len: Int, buf: CPointer<LongVar>) {
  */
 context(env: JniEnv)
 public fun JFloatArray.getRegion(start: Int, len: Int, buf: CPointer<FloatVar>) {
-    env.pointed!!.GetFloatArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetFloatArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2371,7 +2368,7 @@ public fun JFloatArray.getRegion(start: Int, len: Int, buf: CPointer<FloatVar>) 
  */
 context(env: JniEnv)
 public fun JDoubleArray.getRegion(start: Int, len: Int, buf: CPointer<DoubleVar>) {
-    env.pointed!!.GetDoubleArrayRegion!!(env.ptr, c, start, len, buf)
+    env.GetDoubleArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2387,7 +2384,7 @@ public fun JDoubleArray.getRegion(start: Int, len: Int, buf: CPointer<DoubleVar>
  */
 context(env: JniEnv)
 public fun JBooleanArray.setRegion(start: Int, len: Int, buf: CArrayPointer<UByteVar>) {
-    env.pointed!!.SetBooleanArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetBooleanArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2403,7 +2400,7 @@ public fun JBooleanArray.setRegion(start: Int, len: Int, buf: CArrayPointer<UByt
  */
 context(env: JniEnv)
 public fun JByteArray.setRegion(start: Int, len: Int, buf: CArrayPointer<ByteVar>) {
-    env.pointed!!.SetByteArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetByteArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2419,7 +2416,7 @@ public fun JByteArray.setRegion(start: Int, len: Int, buf: CArrayPointer<ByteVar
  */
 context(env: JniEnv)
 public fun JCharArray.setRegion(start: Int, len: Int, buf: CArrayPointer<UShortVar>) {
-    env.pointed!!.SetCharArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetCharArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2435,7 +2432,7 @@ public fun JCharArray.setRegion(start: Int, len: Int, buf: CArrayPointer<UShortV
  */
 context(env: JniEnv)
 public fun JShortArray.setRegion(start: Int, len: Int, buf: CArrayPointer<ShortVar>) {
-    env.pointed!!.SetShortArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetShortArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2451,7 +2448,7 @@ public fun JShortArray.setRegion(start: Int, len: Int, buf: CArrayPointer<ShortV
  */
 context(env: JniEnv)
 public fun JIntArray.setRegion(start: Int, len: Int, buf: CPointer<IntVar>) {
-    env.pointed!!.SetIntArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetIntArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2467,7 +2464,7 @@ public fun JIntArray.setRegion(start: Int, len: Int, buf: CPointer<IntVar>) {
  */
 context(env: JniEnv)
 public fun JLongArray.setRegion(start: Int, len: Int, buf: CPointer<LongVar>) {
-    env.pointed!!.SetLongArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetLongArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2483,7 +2480,7 @@ public fun JLongArray.setRegion(start: Int, len: Int, buf: CPointer<LongVar>) {
  */
 context(env: JniEnv)
 public fun JFloatArray.setRegion(start: Int, len: Int, buf: CPointer<FloatVar>) {
-    env.pointed!!.SetFloatArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetFloatArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2499,7 +2496,7 @@ public fun JFloatArray.setRegion(start: Int, len: Int, buf: CPointer<FloatVar>) 
  */
 context(env: JniEnv)
 public fun JDoubleArray.setRegion(start: Int, len: Int, buf: CPointer<DoubleVar>) {
-    env.pointed!!.SetDoubleArrayRegion!!(env.ptr, c, start, len, buf)
+    env.SetDoubleArrayRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2521,7 +2518,7 @@ public fun JDoubleArray.setRegion(start: Int, len: Int, buf: CPointer<DoubleVar>
 context(env: JniEnv)
 public fun JClass.registerNatives(methods: CArrayPointer<JniNativeMethod>, methodsCount: Int) {
     JNI.safeCall {
-        env.pointed!!.RegisterNatives!!(env.ptr, c, methods, methodsCount)
+        env.RegisterNatives!!(env.ptr, c, methods, methodsCount)
     }
 }
 
@@ -2589,7 +2586,7 @@ public inline fun JClass.registerNatives(count: Int, block: JNINativeMethodRegis
 context(env: JniEnv)
 public fun JClass.unregisterNatives() {
     JNI.safeCall {
-        env.pointed!!.UnregisterNatives!!(env.ptr, c)
+        env.UnregisterNatives!!(env.ptr, c)
     }
 }
 
@@ -2614,7 +2611,7 @@ public fun JClass.unregisterNatives() {
 context(env: JniEnv)
 public fun monitorEnter(obj: JObject) {
     JNI.safeCall {
-        env.pointed!!.MonitorEnter!!(env.ptr, obj.c)
+        env.MonitorEnter!!(env.ptr, obj.c)
     }
 }
 
@@ -2629,7 +2626,7 @@ public fun monitorEnter(obj: JObject) {
 context(env: JniEnv)
 public fun monitorExit(obj: JObject) {
     JNI.safeCall {
-        env.pointed!!.MonitorExit!!(env.ptr, obj.c)
+        env.MonitorExit!!(env.ptr, obj.c)
     }
 }
 
@@ -2640,7 +2637,7 @@ context(env: JniEnv, placement: NativePlacement)
 public val javaVM: JavaVM get() {
     val vm = placement.allocPointerTo<JavaVM>()
     JNI.safeCall {
-        env.pointed!!.GetJavaVM!!(env.ptr, vm.ptr)
+        env.GetJavaVM!!(env.ptr, vm.ptr)
     }
     return vm.pointed!!
 }
@@ -2661,7 +2658,7 @@ public val javaVM: JavaVM get() {
  */
 context(env: JniEnv)
 public fun JString.getRegion(start: Int, len: Int, buf: CArrayPointer<UShortVar>) {
-    env.pointed!!.GetStringRegion!!(env.ptr, c, start, len, buf)
+    env.GetStringRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2688,7 +2685,7 @@ public fun JString.getRegion(start: Int, len: Int, buf: CArrayPointer<UShortVar>
  */
 context(env: JniEnv)
 public fun JString.getUTFRegion(start: Int, len: Int, buf: CArrayPointer<ByteVar>) {
-    env.pointed!!.GetStringUTFRegion!!(env.ptr, c, start, len, buf)
+    env.GetStringUTFRegion!!(env.ptr, c, start, len, buf)
 }
 
 /**
@@ -2726,7 +2723,7 @@ public fun JString.getUTFRegion(start: Int, len: Int, buf: CArrayPointer<ByteVar
 context(env: JniEnv, placement: NativePlacement)
 public fun <T : CPrimitiveVar> JPrimitiveArray<T>.getElementsCritical(): Pair<CArrayPointer<T>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val carray = env.pointed!!.GetPrimitiveArrayCritical!!(env.ptr, c, isCopy.ptr)
+    val carray = env.GetPrimitiveArrayCritical!!(env.ptr, c, isCopy.ptr)
     return carray?.let { it.reinterpret<T>() to isCopy.value.toKBoolean() }
 }
 
@@ -2757,7 +2754,7 @@ public fun <T : CPrimitiveVar> JPrimitiveArray<T>.getElementsCritical(): Pair<CA
  */
 context(env: JniEnv)
 public fun <T : CPrimitiveVar> JPrimitiveArray<T>.releaseElementsCritical(carray: CArrayPointer<T>, mode: ApplyChangesMode) {
-    env.pointed!!.ReleasePrimitiveArrayCritical!!(env.ptr, c, carray, mode.ordinal)
+    env.ReleasePrimitiveArrayCritical!!(env.ptr, c, carray, mode.ordinal)
 }
 
 /**
@@ -2774,7 +2771,7 @@ public fun <T : CPrimitiveVar> JPrimitiveArray<T>.releaseElementsCritical(carray
 context(env: JniEnv, placement: NativePlacement)
 public fun JString.getCharsCritical(): Pair<CArrayPointer<UShortVar>, Boolean>? {
     val isCopy = placement.alloc<UByteVar>()
-    val carray = env.pointed!!.GetStringCritical!!(env.ptr, c, isCopy.ptr)
+    val carray = env.GetStringCritical!!(env.ptr, c, isCopy.ptr)
     return carray?.let { it to isCopy.value.toKBoolean() }
 }
 
@@ -2791,7 +2788,7 @@ public fun JString.getCharsCritical(): Pair<CArrayPointer<UShortVar>, Boolean>? 
  */
 context(env: JniEnv)
 public fun JString.releaseCharsCritical(carray: CArrayPointer<UShortVar>) {
-    env.pointed!!.ReleaseStringCritical!!(env.ptr, c, carray)
+    env.ReleaseStringCritical!!(env.ptr, c, carray)
 }
 
 /**
@@ -2816,7 +2813,7 @@ public fun JString.releaseCharsCritical(carray: CArrayPointer<UShortVar>) {
  */
 context(env: JniEnv)
 public fun newDirectByteBuffer(address: COpaquePointer, capacity: Long): JByteBuffer? {
-    return env.pointed!!.NewDirectByteBuffer!!(env.ptr, address, capacity).wrap()
+    return env.NewDirectByteBuffer!!(env.ptr, address, capacity).wrap()
 }
 
 /**
@@ -2835,7 +2832,7 @@ public fun newDirectByteBuffer(address: COpaquePointer, capacity: Long): JByteBu
  */
 context(env: JniEnv)
 public val JByteBuffer.address: COpaquePointer? get() {
-    return env.pointed!!.GetDirectBufferAddress!!(env.ptr, c)
+    return env.GetDirectBufferAddress!!(env.ptr, c)
 }
 
 /**
@@ -2852,29 +2849,5 @@ public val JByteBuffer.address: COpaquePointer? get() {
  */
 context(env: JniEnv)
 public val JByteBuffer.capacity: Long get() {
-    return env.pointed!!.GetDirectBufferCapacity!!(env.ptr, c)
-}
-
-/**
- * Returns the `java.lang.Module` object for the module that the class is a member of. If the class is not in a named
- * module, then the unnamed module of the class loader for the class is returned.
- * If the class represents an array type, then this function returns the Module object for the element type. If the
- * class represents a primitive type or void, then the Module object for the `java.base` module is returned.
- *
- * @return the module that the class or interface is a member of.
- *
- * @since JDK/JRE 9
- */
-context(env: JniEnv)
-public val JClass.module: JObject get() {
-    return env.pointed!!.GetModule!!(env.ptr, c).wrap()!!
-}
-
-/**
- * Tests whether an object is a virtual Thread.
- *
- * @since JDK/JRE 21
- */
-public fun JniEnv.isVirtualThread(thread: JObject?): Boolean {
-    return pointed!!.IsVirtualThread!!(ptr, thread.c).toKBoolean()
+    return env.GetDirectBufferCapacity!!(env.ptr, c)
 }

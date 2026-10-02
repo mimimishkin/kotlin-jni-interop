@@ -264,7 +264,10 @@ internal class FirBuilder(
             }
         }
 
-    /** The JNI env parameter type of a facade: the actual's `context(env)` parameter type, or `CPointerVarOf<CPointer<JNINativeInterface_>>` if absent. */
+    /**
+     * The JNI env parameter type of a facade: the actual's `context(env)` parameter type, or
+     * `CPointerVarOf<CPointer<Raw_JniNativeInterface>>` - the expansion of the `JniEnv` type alias - if absent.
+     */
     fun envTypeRef(actualFn: FirNamedFunction): FirResolvedTypeRef {
         val contextType = actualFn.contextParameters.firstOrNull()?.returnTypeRef?.coneType
         return if (contextType != null) {
@@ -274,7 +277,7 @@ internal class FirBuilder(
                 coneType = Symbols.CPointerVarOf.constructClassLikeType(
                     arrayOf(
                         Symbols.CPointer.constructClassLikeType(
-                            arrayOf(Symbols.JNINativeInterface.constructClassLikeType()),
+                            arrayOf(Symbols.JNINativeInterfaceWrapped.constructClassLikeType()),
                         ),
                     ),
                 )

@@ -9,7 +9,8 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.register
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinSingleTargetExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
@@ -43,18 +44,24 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
      * Puts `jni-binding-annotations` to the source set all the applicable compilations have in common.
      */
     private fun Project.addAnnotationsAsDependency() {
-        val compilations = jniLibrariesCompilations() ?: return
+        val targets = jniLibrariesTargets()
+        val compilations = jniLibrariesCompilations().ifEmpty { return }
 
-        val kotlin = extensions.findByType<KotlinMultiplatformExtension>()
-        // Absent for a plain JVM project, which has a single compilation kind and no common source set to leak into.
-        val allTargetsAreConsumable = kotlin?.targets.orEmpty().all {
+        // A source set shared by every target would leak the annotations into the published variant too, which is
+        // why this is only done when all of them are consumable. A single-target project -- JVM or Android -- is such
+        // a case by construction.
+        val allTargetsAreConsumable = targets.all {
             it.platformType == jvm || it.platformType == androidJvm || it.platformType == KotlinPlatformType.common
         }
 
         for (compilationName in compilations.map { it.compilationName }.toSet()) {
             val sourceSet = mostCommonSourceSet(
                 compilations = compilations.filter { it.compilationName == compilationName },
-                common = if (allTargetsAreConsumable) kotlin?.let { commonSourceSet(it, compilationName) } else null,
+                common = if (allTargetsAreConsumable) {
+                    extensions.findByType<KotlinMultiplatformExtension>()?.let { commonSourceSet(it, compilationName) }
+                } else {
+                    null
+                },
             ) ?: continue
             sourceSet.dependencies {
                 compileOnly(ANNOTATIONS_ID)
@@ -65,19 +72,27 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
     /**
      * Every compilation of this project this plugin is wired to, or `null` if the project has none.
      */
-    private fun Project.jniLibrariesCompilations(): List<KotlinCompilation<*>>? {
-        val all = extensions.findByType<KotlinMultiplatformExtension>()
-            ?.targets
-            ?.flatMap { target -> target.compilations }
-            ?: extensions.findByType<KotlinJvmProjectExtension>()
-                ?.target
-                ?.compilations
-                ?.toList()
-            ?: return null
-
-        return all
+    private fun Project.jniLibrariesCompilations(): List<KotlinCompilation<*>> {
+        return jniLibrariesTargets()
+            .flatMap { target -> target.compilations }
             .filter { it.platformType in CONSUMABLE_PLATFORMS && it.jniLibrariesProvider.isPresent }
-            .ifEmpty { null }
+    }
+
+    /**
+     * Every target of this project, however its Kotlin plugin is spelled.
+     *
+     * The Android extension is `KotlinAndroidProjectExtension`, which is *not* a `KotlinJvmProjectExtension` --
+     * only both descend from `KotlinTopLevelExtension`. Looking up the JVM extension alone therefore finds nothing
+     * on an Android project, and the plugin would silently skip it.
+     */
+    private fun Project.jniLibrariesTargets(): List<KotlinTarget> {
+        extensions.findByType<KotlinMultiplatformExtension>()?.let { return it.targets.toList() }
+
+        // A single-target project registers its extension under the name `kotlin`, whichever of the two it is:
+        // `KotlinJvmProjectExtension` or `KotlinAndroidProjectExtension`. The lookup is by name because Gradle
+        // matches extensions by their declared generic type, and `KotlinSingleTargetExtension` is generic.
+        val single = extensions.findByName("kotlin") as? KotlinSingleTargetExtension<*>
+        return listOfNotNull(single?.target)
     }
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
@@ -136,7 +151,7 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                         for (target in library.targets) {
                             val source = if (target.source.isPresent) target.source.get() else null
                             val actualsFile = try {
-                                source?.actuals(kotlinCompilation.compilationName)?.singleOrNull()
+                                source?.actuals()?.singleOrNull()
                             } catch (e: Exception) {
                                 if (library.allowAbsentBindings.get()) null else throw e
                             }
@@ -177,7 +192,6 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
      * matters: the task has to work before they were ever built, which is the state a new binding starts from.
      */
     private fun producerProjectsOf(compilation: KotlinCompilation<*>): List<JniActualsProducer> {
-        val compilationName = compilation.compilationName
         val consumerProject = compilation.project
         val byProducer = compilation.jniLibrariesProvider.orNull.orEmpty()
             .flatMap { it.targets }
@@ -196,7 +210,7 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                     projectDir = producer.projectDir,
                     actuals = consumerProject.objects.fileCollection().apply {
                         sources.forEach { source ->
-                            from(consumerProject.provider { source?.actuals(compilationName) ?: consumerProject.files() })
+                            from(consumerProject.provider { source?.actuals() ?: consumerProject.files() })
                         }
                     },
                 )

@@ -1,13 +1,31 @@
 package io.github.mimimishkin.jni.binding
 
-import jni.*
-
 /**
  * Java version that corresponds to the new JNI API.
  *
  * Without configuration, JNI functions receive [JniEnv] of version [JNI.v1].
  */
 public typealias JniVersion = Int
+
+@PublishedApi internal const val JNI_VERSION_1_1: JniVersion = 0x00010001
+@PublishedApi internal const val JNI_VERSION_1_2: JniVersion = 0x00010002
+@PublishedApi internal const val JNI_VERSION_1_4: JniVersion = 0x00010004
+@PublishedApi internal const val JNI_VERSION_1_6: JniVersion = 0x00010006
+@PublishedApi internal const val JNI_VERSION_1_8: JniVersion = 0x00010008
+@PublishedApi internal const val JNI_VERSION_9: JniVersion = 0x00090000
+@PublishedApi internal const val JNI_VERSION_10: JniVersion = 0x000a0000
+@PublishedApi internal const val JNI_VERSION_19: JniVersion = 0x00130000
+@PublishedApi internal const val JNI_VERSION_20: JniVersion = 0x00140000
+@PublishedApi internal const val JNI_VERSION_21: JniVersion = 0x00150000
+@PublishedApi internal const val JNI_VERSION_24: JniVersion = 0x00180000
+
+@PublishedApi internal const val JNI_OK: Int = 0
+@PublishedApi internal const val JNI_ERR: Int = -1
+@PublishedApi internal const val JNI_EDETACHED: Int = -2
+@PublishedApi internal const val JNI_EVERSION: Int = -3
+@PublishedApi internal const val JNI_ENOMEM: Int = -4
+@PublishedApi internal const val JNI_EEXIST: Int = -5
+@PublishedApi internal const val JNI_EINVAL: Int = -6
 
 /**
  * Functions and utilities to work with JNI (Java Native Interface).
@@ -31,7 +49,7 @@ public object JNI {
     public inline val v3: JniVersion get() = JNI_VERSION_1_4
 
     /**
-     * JDK/JRE version *1.6*, *1.7*.
+     * JDK/JRE versions *1.6*, *1.7*.
      */
     public inline val v6: JniVersion get() = JNI_VERSION_1_6
 
@@ -80,10 +98,10 @@ public object JNI {
         when (val code = block()) {
             JNI_OK -> {/* success */}
             JNI_ERR -> throw RuntimeException("Unknown error.")
-            JNI_EDETACHED -> throw IllegalStateException("Thread detached from the VM.")
-            JNI_EVERSION -> throw IllegalArgumentException("JNI version error.")
-            JNI_ENOMEM -> throw IllegalStateException("Not enough memory.")
-            JNI_EEXIST -> throw IllegalStateException("VM already created.")
+            JNI_EDETACHED -> throw JniThreadDetachedException()
+            JNI_EVERSION -> throw JniVersionException()
+            JNI_ENOMEM -> throw JniOutOfMemoryException()
+            JNI_EEXIST -> throw JniVmAlreadyExistsException()
             JNI_EINVAL -> throw IllegalArgumentException("Invalid arguments.")
             else -> throw Exception("Unknown error code: $code")
         }

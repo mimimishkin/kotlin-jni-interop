@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.konan.target.Family
 import org.jetbrains.kotlin.konan.target.HostManager.Companion.hostIsLinux
 
 plugins {
-    alias(conventions.plugins.native64bitLibrary)
+    alias(conventions.plugins.nativeDesktopLibrary)
     alias(libs.plugins.dokka)
     alias(conventions.plugins.publish)
 }

@@ -161,19 +161,19 @@ class JniBindingProducerCompilationTest {
         ),
     )
 
-    private fun compile(vararg sources: SourceFile, jniVersion: Int? = null): KotlinCompilation =
-        compileWithActualsFile(File.createTempFile("actuals", ".json"), *sources, jniVersion = jniVersion)
+    private fun compile(vararg sources: SourceFile, expectedJdkVersion: Int? = null): KotlinCompilation =
+        compileWithActualsFile(File.createTempFile("actuals", ".json"), *sources, expectedJdkVersion = expectedJdkVersion)
 
     private fun compile(
         vararg sources: SourceFile,
-        jniVersion: Int? = null,
+        expectedJdkVersion: Int? = null,
         allowSeveralHooks: Boolean = false,
         useRegisterNatives: Boolean = false,
     ): KotlinCompilation =
         compileWithActualsFile(
             File.createTempFile("actuals", ".json"),
             *sources,
-            jniVersion = jniVersion,
+            expectedJdkVersion = expectedJdkVersion,
             allowSeveralHooks = allowSeveralHooks,
             useRegisterNatives = useRegisterNatives,
         )
@@ -181,7 +181,7 @@ class JniBindingProducerCompilationTest {
     private fun compileWithActualsFile(
         actualsFile: File,
         vararg sources: SourceFile,
-        jniVersion: Int? = null,
+        expectedJdkVersion: Int? = null,
         allowSeveralHooks: Boolean = false,
         useRegisterNatives: Boolean = false,
     ): KotlinCompilation =
@@ -189,10 +189,10 @@ class JniBindingProducerCompilationTest {
             this.sources = stubSources + sources
             compilerPluginRegistrars = listOf(JniBindingProducerRegistrar())
             commandLineProcessors = listOf(JniBindingProducerCommandLineProcessor())
-            pluginOptions = listOf(
+            pluginOptions = listOfNotNull(
                 PluginOption("jni-binding-producer", "actualsFile", actualsFile.absolutePath),
-                (if (jniVersion != null) {
-                    PluginOption("jni-binding-producer", "jniVersion", jniVersion.toString())
+                (if (expectedJdkVersion != null) {
+                    PluginOption("jni-binding-producer", "expectedJdkVersion", expectedJdkVersion.toString())
                 } else null),
                 (if (allowSeveralHooks) {
                     PluginOption("jni-binding-producer", "allowSeveralHooks", "true")
@@ -200,7 +200,7 @@ class JniBindingProducerCompilationTest {
                 (if (useRegisterNatives) {
                     PluginOption("jni-binding-producer", "useRegisterNatives", "true")
                 } else null),
-            ).filterNotNull()
+            )
             inheritClassPath = true
             kotlincArguments = listOf("-Xallow-kotlin-package")
         }
@@ -265,7 +265,7 @@ class JniBindingProducerCompilationTest {
                 fun add(a: Int, b: Int): Int = a + b
                 """.trimIndent(),
             ),
-            jniVersion = 2,
+            expectedJdkVersion = 2,
         ).compile()
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
@@ -1151,7 +1151,7 @@ class JniBindingProducerCompilationTest {
                 fun b(): Int = 2
                 """.trimIndent(),
             ),
-            jniVersion = 2,
+            expectedJdkVersion = 2,
         ).compile()
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)

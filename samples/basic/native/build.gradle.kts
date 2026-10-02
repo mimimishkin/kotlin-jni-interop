@@ -23,7 +23,7 @@ kotlin {
                     linkJvm()
                 } else {
                     // Gradle serves toolchains for the host only, so a target that is not the host needs a
-                    // JDK built for it, of the Java version `jniLibraries.jniVersion` declares.
+                    // JDK built for it, of the Java version `jniLibraries.expectedJdkVersion` declares.
                     linkJvm(downloadCompatibleJdk())
                 }
             }
@@ -37,7 +37,7 @@ kotlin {
 }
 
 jniLibraries {
-    jniVersion = 17
+    expectedJdkVersion = 17
     exportMethod = JniExportMethod.RegisterNatives
     allowSeveralHooks = true
 }

@@ -69,22 +69,32 @@ internal fun facadeReceiverStasis(receiverTypeRef: FirResolvedTypeRef?): Boolean
     }
 }
 
-/** Whether [this] is a `JniEnv` (expands to `CPointerVarOf<CPointer<JNINativeInterface_>>`). */
+/**
+ * Whether [this] is a `JniEnv`.
+ *
+ * `JniEnv` is a type alias for `CPointerVar<Raw_JniNativeInterface>`, and `Raw_JniNativeInterface` is actualized either
+ * by a type alias to the cinterop `jni.JNINativeInterface_` or - on the targets that need a delegating declaration to
+ * bridge the two JNI headers - by the library's own class. Both have to be recognized.
+ */
 internal fun ConeKotlinType.isJniEnvType(): Boolean {
     if (classId != Symbols.CPointerVarOf) return false
     val pointer = typeArguments.singleOrNull()?.type ?: return false
     if (pointer.classId != Symbols.CPointer) return false
     val pointed = pointer.typeArguments.singleOrNull()?.type ?: return false
-    return pointed.classId == Symbols.JNINativeInterface
+    return pointed.classId in setOf(Symbols.JNINativeInterface, Symbols.JNINativeInterfaceWrapped, Symbols.JNINativeInterfaceAndroid)
 }
 
-/** Whether [this] is a `JavaVM` (expands to `CPointerVarOf<CPointer<JNIInvokeInterface_>>`), i.e. the built-in `jni.JavaVM` typealias. */
+/**
+ * Whether [this] is a `JavaVM`.
+ *
+ * See [isJniEnvType] for why both the cinterop and the library's own `Raw_JniInvokeInterface` are accepted.
+ */
 internal fun ConeKotlinType.isJavaVmType(): Boolean {
     if (classId != Symbols.CPointerVarOf) return false
     val pointer = typeArguments.singleOrNull()?.type ?: return false
     if (pointer.classId != Symbols.CPointer) return false
     val pointed = pointer.typeArguments.singleOrNull()?.type ?: return false
-    return pointed.classId == Symbols.JNIInvokeInterface
+    return pointed.classId in setOf(Symbols.JNIInvokeInterface, Symbols.JNIInvokeInterfaceWrapped, Symbols.JNIInvokeInterfaceAndroid)
 }
 
 /** The JVM class and method a `@JniActual` function binds to. */

@@ -13,7 +13,7 @@ import kotlinx.cinterop.*
  */
 public fun JavaVM.destroy() {
     JNI.safeCall {
-        pointed!!.DestroyJavaVM!!(ptr)
+        this.DestroyJavaVM!!(ptr)
     }
 }
 
@@ -39,14 +39,14 @@ public fun JavaVM.attachCurrentThread(
 ): JniEnv {
     val env = autofreeScope.allocPointerTo<JniEnv>()
 
-    val args = autofreeScope.alloc<jni.JavaVMAttachArgs> {
+    val args = autofreeScope.alloc<JavaVMAttachArgs> {
         this.version = version
         this.name = name?.getPointer(autofreeScope)
         this.group = group.c
     }
 
     JNI.safeCall {
-        pointed!!.AttachCurrentThread!!(ptr, env.ptr, args.ptr)
+        this.AttachCurrentThread!!(ptr, env.ptr, args.ptr)
     }
 
     return env.pointed!!
@@ -71,14 +71,14 @@ public fun JavaVM.attachCurrentThreadAsDaemon(
     group: JObject? = null
 ): JniEnv {
     val env = autofreeScope.allocPointerTo<JniEnv>()
-    val args = autofreeScope.alloc<jni.JavaVMAttachArgs> {
+    val args = autofreeScope.alloc<JavaVMAttachArgs> {
         this.version = version
         this.name = name?.getPointer(autofreeScope)
         this.group = group.c
     }
 
     JNI.safeCall {
-        pointed!!.AttachCurrentThreadAsDaemon!!(ptr, env.ptr, args.ptr)
+        this.AttachCurrentThreadAsDaemon!!(ptr, env.ptr, args.ptr)
     }
 
     return env.pointed!!
@@ -92,7 +92,7 @@ public fun JavaVM.attachCurrentThreadAsDaemon(
  */
 public fun JavaVM.detachCurrentThread() {
     JNI.safeCall {
-        pointed!!.DetachCurrentThread!!(ptr)
+        this.DetachCurrentThread!!(ptr)
     }
 }
 
@@ -106,7 +106,7 @@ context(placement: NativePlacement)
 public fun JavaVM.getEnv(version: JniVersion): JniEnv {
     val env = placement.allocPointerTo<JniEnv>()
     JNI.safeCall {
-        pointed!!.GetEnv!!(ptr, env.ptr, version)
+        this.GetEnv!!(ptr, env.ptr, version)
     }
     return env.pointed!!
 }
@@ -125,19 +125,18 @@ public fun JavaVM.getEnv(version: JniVersion): JniEnv {
  */
 context(placement: NativePlacement)
 public fun JNI.createJavaVM(args: JavaVMInitArgs): Pair<JavaVM, JniEnv> {
-    val vm = placement.allocPointerTo<jni.JavaVMVar>()
-    val env = placement.allocPointerTo<jni.JNIEnvVar>()
+    val vm = placement.allocPointerTo<JavaVM>()
+    val env = placement.allocPointerTo<JniEnv>()
 
     safeCall {
-        jni.JNI_CreateJavaVM(
+        platformCreateJavaVM(
             pvm = vm.ptr,
             penv = env.ptr,
             args = args.ptr
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
-    return (vm.pointed!! as JavaVM) to (env.pointed!! as JniEnv)
+    return vm.pointed!! to env.pointed!!
 }
 
 /**
@@ -150,14 +149,36 @@ public val JNI.javaVMs: List<JavaVM> get() {
     // test invocation to get VMs count
     val count = placement.alloc<IntVar>()
     safeCall {
-        jni.JNI_GetCreatedJavaVMs(null, 0, count.ptr)
+        platformGetCreatedJavaVMs(null, 0, count.ptr)
     }
 
-    val vms = placement.allocArray<CPointerVar<jni.JavaVMVar>>(count.value)
+    val vms = placement.allocArray<CPointerVar<JavaVM>>(count.value)
     safeCall {
-        jni.JNI_GetCreatedJavaVMs(vms, count.value, count.ptr)
+        platformGetCreatedJavaVMs(vms, count.value, count.ptr)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    return List(count.value) { i -> vms[i]!!.pointed as JavaVM }
+    return List(count.value) { i -> vms[i]!!.pointed }
 }
+
+/**
+ * Calls the platform's `JNI_GetDefaultJavaVMInitArgs`.
+ */
+internal expect inline fun platformGetDefaultJavaVMInitArgs(args: CPointer<JavaVMInitArgs>): Int
+
+/**
+ * Calls the platform's `JNI_CreateJavaVM`.
+ */
+internal expect inline fun platformCreateJavaVM(
+    pvm: CPointer<CPointerVar<JavaVM>>?,
+    penv: CPointer<CPointerVar<JniEnv>>?,
+    args: CPointer<JavaVMInitArgs>?
+): Int
+
+/**
+ * Calls the platform's `JNI_GetCreatedJavaVMs`.
+ */
+internal expect inline fun platformGetCreatedJavaVMs(
+    vms: CPointer<CPointerVar<JavaVM>>?,
+    nVMs: Int,
+    nCreated: CPointer<IntVar>?
+): Int

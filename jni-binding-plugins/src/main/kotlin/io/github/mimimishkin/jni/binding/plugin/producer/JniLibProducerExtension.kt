@@ -4,17 +4,13 @@ import io.github.mimimishkin.jni.binding.plugin.JniBindingAttributes
 import io.github.mimimishkin.jni.binding.plugin.producer.JniExportMethod.RegisterNatives
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.WriteProperties
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.kotlin.dsl.property
 import org.gradle.kotlin.dsl.register
-import org.gradle.kotlin.dsl.support.serviceOf
 import org.jetbrains.kotlin.gradle.plugin.HasProject
 import javax.inject.Inject
 
@@ -43,7 +39,7 @@ public abstract class JniLibProducerExtension @Inject constructor(override val p
             task.description = "Generates jniBindings/info.properties"
 
             task.destinationFile.set(infoFile)
-            task.property("jniVersion", jniVersion)
+            task.property("expectedJdkVersion", expectedJdkVersion)
             task.property("allowSeveralHooks", allowSeveralHooks)
             task.property("useRegisterNatives", exportMethod.map { it == RegisterNatives })
         }
@@ -63,10 +59,11 @@ public abstract class JniLibProducerExtension @Inject constructor(override val p
 
     /**
      * JNI of this Java version will be available inside JNI functions.
-     * This is required parameter.
+     *
+     * Ignored on Android targets. They are always request `JNI_VERSION_1_6`.
      *
      * More concrete mapping:
-     * - 1 -> `JNI_VERSION_1_1`
+     * - 1 (default) -> `JNI_VERSION_1_1`
      * - 2, 3 -> `JNI_VERSION_1_2`
      * - 4, 5 -> `JNI_VERSION_1_4`
      * - 6, 7 -> `JNI_VERSION_1_6`
@@ -78,7 +75,7 @@ public abstract class JniLibProducerExtension @Inject constructor(override val p
      * - 21, 22, 23 -> `JNI_VERSION_21`
      * - 24+ -> `JNI_VERSION_24`
      */
-    public val jniVersion: Property<Int> = project.objects.property<Int>()
+    public val expectedJdkVersion: Property<Int> = project.objects.property<Int>().convention(1)
 
     /**
      * By default, only one function annotated with `@JniOnLoad` is allowed. The same with `@JniOnUnload`.

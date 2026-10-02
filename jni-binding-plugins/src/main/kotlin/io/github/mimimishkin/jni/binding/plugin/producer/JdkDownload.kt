@@ -66,7 +66,7 @@ public fun Project.jdksExtension(): JdksExtension {
 }
 
 /**
- * Provides the latest JDK of the Java version of [JniLibProducerExtension.jniVersion] built for the
+ * Provides the latest JDK of the Java version of [JniLibProducerExtension.expectedJdkVersion] built for the
  * platform of this binary's target, to link against.
  *
  * This is how a target that is not the host is linked, because Gradle serves Java toolchains for the
@@ -76,7 +76,7 @@ public fun Project.jdksExtension(): JdksExtension {
  * binaries {
  *     sharedLib("native") {
  *         linkJvm()                                         // the host, where a toolchain is enough
- *         linkJvm(downloadCompatibleJdk())                  // any other target, jniVersion
+ *         linkJvm(downloadCompatibleJdk())                  // any other target, expectedJdkVersion
  *         linkJvm(downloadCompatibleJdk(21))                // or a named major version
  *         linkJvm(downloadCompatibleJdk("17.0.13.11.1"))    // or an exact build
  *     }
@@ -100,8 +100,8 @@ public fun NativeBinary.downloadCompatibleJdk(
     arch: Arch = target.konanTarget.architecture.jdkArchitecture,
     extension: JdksExtension = project.jdksExtension(),
 ): Provider<Directory> {
-    val jniVersion = project.the<JniLibProducerExtension>().jniVersion
-    return jdkProvider(distribution, jniVersion, project.provider { "" }, os, arch, extension)
+    val expectedJdkVersion = project.the<JniLibProducerExtension>().expectedJdkVersion
+    return jdkProvider(distribution, expectedJdkVersion, project.provider { "" }, os, arch, extension)
 }
 
 /**

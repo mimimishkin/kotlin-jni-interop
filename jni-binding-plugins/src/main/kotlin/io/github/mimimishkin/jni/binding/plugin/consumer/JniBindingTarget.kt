@@ -28,7 +28,10 @@ public interface JniBindingTarget : Named, HasProject {
     public val arch: String
 
     /**
-     * Name of the platform ABI, e.g. `"gnu"`, `"darwin"`, `"android"`.
+     * Name of the platform ABI, e.g. `"gnu"`, `"darwin"`.
+     *
+     * For an Android target this is the Android ABI directory name - `"arm64-v8a"`, `"armeabi-v7a"`, `"x86"` or
+     * `"x86_64".
      */
     public val abi: String
 
@@ -69,8 +72,8 @@ public interface JniBindingTarget : Named, HasProject {
     /**
      * Takes the binding from pre-built bindings in the given directory.
      *
-     * The directory layout must be `<bindingsDir>/<targetName>/<compilationName>/<binary>` plus
-     * `<bindingsDir>/info.properties` describing binary names per platform.
+     * The directory layout must be `<bindingsDir>/<targetName>/<binary>` plus `<bindingsDir>/info.properties`
+     * describing binary names per platform.
      *
      * @param bindingsDir provider of the directory with aggregated prebuilt bindings.
      */
@@ -110,15 +113,11 @@ public interface JniLibrarySource {
 
     /**
      * Returns the file(s) of the compiled native library.
-     *
-     * @param compilationName name of the producer compilation, `"main"` by default.
      */
-    public fun binaries(compilationName: String = "main"): FileCollection
+    public fun binaries(): FileCollection
 
     /**
      * Returns the JSON file describing `@JniActual` functions exported by the native library.
-     *
-     * @param compilationName name of the producer compilation, `"main"` by default.
      */
-    public fun actuals(compilationName: String = "main"): FileCollection
+    public fun actuals(): FileCollection
 }

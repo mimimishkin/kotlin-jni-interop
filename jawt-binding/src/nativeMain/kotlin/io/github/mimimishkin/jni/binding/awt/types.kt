@@ -4,8 +4,9 @@ package io.github.mimimishkin.jni.binding.awt
 
 import io.github.mimimishkin.jni.binding.JRef
 import io.github.mimimishkin.jni.binding.JniEnv
-import io.github.mimimishkin.jni.binding._jobject
+
 import io.github.mimimishkin.jni.binding.annotation.WithJvmType
+import io.github.mimimishkin.jni.binding._jobject
 import kotlinx.cinterop.*
 
 /**
@@ -13,16 +14,16 @@ import kotlinx.cinterop.*
  *
  * We need this type to be able to use [Awt] in consumer common code without cinterop commonization.
  */
-public expect class _Awt : CStructVar {
+public expect class Raw_Awt : CStructVar {
     @PublishedApi internal var version: Int
-    internal var SynthesizeWindowActivation: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, UByte) -> Unit>>?
-    internal var SetBounds: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, Int, Int) -> Unit>>?
-    internal var FreeDrawingSurface: CPointer<CFunction<(CPointer<_DrawingSurface>?) -> Unit>>?
-    internal var Unlock: CPointer<CFunction<(CPointer<JniEnv>?) -> Unit>>?
-    internal var Lock: CPointer<CFunction<(CPointer<JniEnv>?) -> Unit>>?
-    internal var GetDrawingSurface: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<_DrawingSurface>?>>?
-    internal var CreateEmbeddedFrame: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<out CPointed>?) -> CPointer<jni._jobject>?>>?
-    internal var GetComponent: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<out CPointed>?) -> CPointer<jni._jobject>?>>?
+    internal var SynthesizeWindowActivation: CPointer<CFunction<(CPointer<jni.JNIEnvVar>?, CPointer<jni._jobject>?, UByte) -> Unit>>?
+    internal var SetBounds: CPointer<CFunction<(CPointer<jni.JNIEnvVar>?, CPointer<jni._jobject>?, Int, Int, Int, Int) -> Unit>>?
+    internal var FreeDrawingSurface: CPointer<CFunction<(CPointer<Raw_DrawingSurface>?) -> Unit>>?
+    internal var Unlock: CPointer<CFunction<(CPointer<jni.JNIEnvVar>?) -> Unit>>?
+    internal var Lock: CPointer<CFunction<(CPointer<jni.JNIEnvVar>?) -> Unit>>?
+    internal var GetDrawingSurface: CPointer<CFunction<(CPointer<jni.JNIEnvVar>?, CPointer<jni._jobject>?) -> CPointer<Raw_DrawingSurface>?>>?
+    internal var CreateEmbeddedFrame: CPointer<CFunction<(CPointer<jni.JNIEnvVar>?, CPointer<out CPointed>?) -> CPointer<jni._jobject>?>>?
+    internal var GetComponent: CPointer<CFunction<(CPointer<jni.JNIEnvVar>?, CPointer<out CPointed>?) -> CPointer<jni._jobject>?>>?
 }
 
 /**
@@ -42,7 +43,7 @@ public expect class _Awt : CStructVar {
  * These interfaces are not part of the Java SE specification, and a VM is not required to implement this API.
  * However, it is strongly recommended that all implementations which support headful AWT also support these interfaces.
  */
-public typealias Awt = CPointer<_Awt>
+public typealias Awt = CPointer<Raw_Awt>
 
 /**
  * Java version that corresponds to the new JAWT API.
@@ -54,13 +55,13 @@ public typealias AwtVersion = Int
  *
  * We need this type to be able to use [DrawingSurface] in consumer common code without cinterop commonization.
  */
-public expect class _DrawingSurface : CStructVar {
-    @PublishedApi internal var env: CPointer<JniEnv>?
+public expect class Raw_DrawingSurface : CStructVar {
+    @PublishedApi internal var env: CPointer<jni.JNIEnvVar>?
     @PublishedApi internal var target: CPointer<jni._jobject>?
-    internal var GetDrawingSurfaceInfo: CPointer<CFunction<(CPointer<_DrawingSurface>?) -> CPointer<_DrawingSurfaceInfo>?>>?
-    internal var Unlock: CPointer<CFunction<(CPointer<_DrawingSurface>?) -> Unit>>?
-    internal var Lock: CPointer<CFunction<(CPointer<_DrawingSurface>?) -> Int>>?
-    internal var FreeDrawingSurfaceInfo: CPointer<CFunction<(CPointer<_DrawingSurfaceInfo>?) -> Unit>>?
+    internal var GetDrawingSurfaceInfo: CPointer<CFunction<(CPointer<Raw_DrawingSurface>?) -> CPointer<Raw_DrawingSurfaceInfo>?>>?
+    internal var Unlock: CPointer<CFunction<(CPointer<Raw_DrawingSurface>?) -> Unit>>?
+    internal var Lock: CPointer<CFunction<(CPointer<Raw_DrawingSurface>?) -> Int>>?
+    internal var FreeDrawingSurfaceInfo: CPointer<CFunction<(CPointer<Raw_DrawingSurfaceInfo>?) -> Unit>>?
 }
 
 /**
@@ -68,25 +69,25 @@ public expect class _DrawingSurface : CStructVar {
  *
  * All operations on a [DrawingSurface] MUST be performed from the same thread as the call to [getDrawingSurface].
  */
-public typealias DrawingSurface = CPointer<_DrawingSurface>
+public typealias DrawingSurface = CPointer<Raw_DrawingSurface>
 
 /**
  * The underlying type for [DrawingSurfaceInfo].
  *
  * We need this type to be able to use [DrawingSurfaceInfo] in consumer common code without cinterop commonization.
  */
-public expect class _DrawingSurfaceInfo : CStructVar {
+public expect class Raw_DrawingSurfaceInfo : CStructVar {
     @PublishedApi internal val bounds: AwtRectangle
     @PublishedApi internal var clip: CPointer<AwtRectangle>?
     @PublishedApi internal var clipSize: Int
     @PublishedApi internal var platformInfo: CPointer<out CPointed>?
-    @PublishedApi internal var ds: CPointer<_DrawingSurface>?
+    @PublishedApi internal var ds: CPointer<Raw_DrawingSurface>?
 }
 
 /**
  * Contains the underlying drawing information of a component.
  */
-public typealias DrawingSurfaceInfo = CPointer<_DrawingSurfaceInfo>
+public typealias DrawingSurfaceInfo = CPointer<Raw_DrawingSurfaceInfo>
 
 /**
  * Structure for a native rectangle.

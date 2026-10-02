@@ -100,7 +100,7 @@ kotlin {
 }
 
 jniLibraries {
-    jniVersion = 17                                 // JDK the native library is built against
+    expectedJdkVersion = 17                         // JDK the native library is built against
     exportMethod = JniExportMethod.RegisterNatives  // or ExposeFunctions, see below
     allowSeveralHooks = false                       // allow several @JniOnLoad/@JniOnUnload in one library
 }
@@ -203,21 +203,44 @@ Note that `@JniExpects` is not applied to nested classes: they are annotated sep
 
 Configured on the native project:
 
-| Option              | Type                        | Default           | Meaning                                                                                                      |
-|---------------------|-----------------------------|-------------------|--------------------------------------------------------------------------------------------------------------|
-| `jniVersion`        | `Property<Int>`             | —                 | JDK major version the native library is built against. A consumer compiled against an older JDK is rejected. |
-| `exportMethod`      | `Property<JniExportMethod>` | `ExposeFunctions` | How `external` functions are linked: `RegisterNatives` or `ExposeFunctions`, see [below](#export-methods).   |
-| `allowSeveralHooks` | `Property<Boolean>`         | `false`           | Allow several `@JniOnLoad`/`@JniOnUnload` functions in one library.                                          |
+| Option               | Type                        | Default           | Meaning                                                                                                      |
+|----------------------|-----------------------------|-------------------|--------------------------------------------------------------------------------------------------------------|
+| `expectedJdkVersion` | `Property<Int>`             | `1`               | JDK major version the native library is built against. A consumer compiled against an older JDK is rejected. |
+| `exportMethod`       | `Property<JniExportMethod>` | `ExposeFunctions` | How `external` functions are linked: `RegisterNatives` or `ExposeFunctions`, see [below](#export-methods).   |
+| `allowSeveralHooks`  | `Property<Boolean>`         | `false`           | Allow several `@JniOnLoad`/`@JniOnUnload` functions in one library.                                          |
 
 ### Producer: linker helpers
 
 Called inside `binaries { sharedLib(...) { ... } }`:
 
-| Function           | Adds                                                           |
-|--------------------|----------------------------------------------------------------|
-| `linkJvm()`        | the JNI headers and `libjvm` of the JDK set by `jniVersion`    |
-| `linkJAwt()`       | the `libjawt` library; call after `linkJvm()`, which it reuses |
-| `linkX11IfLinux()` | the X11 libraries the AWT runtime needs on Linux               |
+| Function            | Adds                                                                                       |
+|---------------------|--------------------------------------------------------------------------------------------|
+| `linkJvm()`         | the JNI headers and `libjvm` of the JDK set by `expectedJdkVersion`                        |
+| `linkJvm(javaHome)` | the `libjvm` of the JDK at that path, which is how a target that is not the host is linked |
+| `linkJAwt()`        | the `libjawt` library; call after `linkJvm()`, which it reuses                             |
+| `linkX11IfLinux()`  | the X11 libraries the AWT runtime needs on Linux                                           |
+
+#### Cross-compiling
+
+Gradle serves Java toolchains for the host only, so the toolchain above cannot link a target that
+differs from it. `downloadCompatibleJdk` provides a JDK built for the target instead, working the
+platform out from the target itself:
+
+```kotlin
+import io.github.mimimishkin.jni.binding.plugin.producer.downloadCompatibleJdk
+
+binaries {
+    sharedLib("native") {
+        if (target.konanTarget == HostManager.host) {
+            linkJvm()
+        } else {
+            linkJvm(downloadCompatibleJdk())                   // the Java version of expectedJdkVersion
+            // linkJvm(downloadCompatibleJdk(21))              // or a named major version
+            // linkJvm(downloadCompatibleJdk("17.0.13.11.1"))  // or an exact build
+        }
+    }
+}
+```
 
 ### Consumer side: `jniLibraries.create`
 
@@ -226,6 +249,7 @@ One `create` call per native library, on a JVM or Android JVM compilation:
 | Option                     | Type                | Default             | Meaning                                                                                                                                 |
 |----------------------------|---------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | `copyToResources()`        | function            | not called          | Package the binaries of every configured target into the jar. Without it nothing is packaged and the library must be loaded explicitly. |
+| `copyToJniLibs()`          | function            | not called          | Android only: package the binaries into `jniLibs/<abi>/` of the APK or the AAR, so that `System.loadLibrary("...")` finds them.         |
 | `resourceDir` (per target) | `Property<String>`  | `natives/$os-$arch` | Path inside the jar the binary is placed at.                                                                                            |
 | `allowExtraActuals`        | `Property<Boolean>` | `false`             | Forbid a native `@JniActual` that has no `@JniExpect` counterpart.                                                                      |
 | `allowAbsentBindings`      | `Property<Boolean>` | `false`             | Skip a target whose bindings are not available instead of failing.                                                                      |
@@ -358,6 +382,9 @@ Full reference: [`jawt-binding/Module.md`](jawt-binding/Module.md).
   `JObject`/`JClass` receivers, `@WithJvmType`/`@WithJvmSignature` overrides, `@JniOnLoad`/`@JniOnUnload` hooks, a 
   nested class, a non-ASCII class name, private field access, two native libraries in one build, per-target 
   implementations (`@JniExpect("mingwX64")` plus Kotlin `expect`/`actual`) and the producer-vs-prebuilt target setup.
+- [`samples/android-basic`](samples/android-basic) — an Android app that walks the JNI boundary section by section:
+  callbacks, native threads with a cached `JavaVM`, direct buffers and reference kinds, exceptions in both directions,
+  calls into plain Java/Android objects.
 - [`samples/windows-registry`](samples/windows-registry) — a real-world type-safe wrapper over the Windows Registry
   (Windows-only: it only builds when the host is `mingwX64`).
 
@@ -371,7 +398,7 @@ jni-binding-annotations/ JVM + native annotations
 jni-binding-producer/    Kotlin compiler plugin (native side)
 jni-binding-consumer/    Kotlin compiler plugin (JVM side)
 jni-binding-plugins/     Gradle plugins with the jniLibraries DSL
-samples/                 examples (basic, windows-registry)
+samples/                 examples (basic, android-basic, windows-registry)
 ```
 
 ## License

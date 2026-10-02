@@ -101,6 +101,28 @@ public inline var JavaVMInitArgs.ignoreUnknown: Boolean
     set(value) { ignoreUnrecognized = value.toJBoolean() }
 
 /**
+ * Thread attachment arguments.
+ */
+public expect class JavaVMAttachArgs : CStructVar {
+    /**
+     * The requested JNI version.
+     */
+    public var version: JniVersion
+
+    /**
+     * The name of the thread in the null-terminated modified UTF-8.
+     */
+    public var name: CPointer<ByteVar>?
+}
+
+/**
+ * Global ref of a `ThreadGroup` object.
+ *
+ * Kept out of [JavaVMAttachArgs] itself, because it is a `jobject` and the two JNI headers spell that differently.
+ */
+internal expect inline var JavaVMAttachArgs.group: COpaquePointer?
+
+/**
  * The option list.
  */
 public inline val JavaVMInitArgs.optionList: List<JavaVMOption>
@@ -119,7 +141,7 @@ public inline val JavaVMInitArgs.optionList: List<JavaVMOption>
  */
 public fun JavaVMInitArgs.setDefault() {
     safeCall {
-        jni.JNI_GetDefaultJavaVMInitArgs(ptr)
+        platformGetDefaultJavaVMInitArgs(ptr)
     }
 }
 
@@ -285,16 +307,16 @@ public typealias JObject = @WithJvmType("java.lang.Object") JRef<_jobject>
 public inline fun <T : JRef<O>, O : _jobject> JObject.unsafeCast(): T = this as T
 
 /**
- * Converts this [JObject] to [jni.jobject] from cinterop.
+ * Converts this [JObject] to the `jobject` pointer of the underlying platform bindings.
  */
 @Suppress("UNCHECKED_CAST")
-public inline val JObject?.c: jni.jobject? get() = this as jni.jobject?
+public inline val JObject?.c: COpaquePointer? get() = this as COpaquePointer?
 
 /**
- * Convert this [jni.jobject] from cinterop to [JObject] or its descendant.
+ * Converts the platform's `jobject` pointer to [JObject] or its descendant.
  */
 @Suppress("UNCHECKED_CAST")
-public inline fun <T : JRef<O>, O : _jobject> jni.jobject?.wrap(): T? = this as T?
+public inline fun <T : JRef<O>, O : _jobject> COpaquePointer?.wrap(): T? = this as T?
 
 /**
  * The underlying opaque type for [JClass].
@@ -736,7 +758,6 @@ public expect class JValue : CStructVar {
     @PublishedApi internal var s: Short
     @PublishedApi internal var z: UByte
     @PublishedApi internal var i: Int
-    @PublishedApi internal var l: jni.jobject?
 }
 
 /**
@@ -798,9 +819,7 @@ public inline var JValue.double: Double
 /**
  * Union field of an object type.
  */
-public inline var JValue.ref: JObject?
-    get() = l.wrap()
-    set(value) { l = value.c }
+public expect inline var JValue.ref: JObject?
 
 /**
  * C array of [JValue].
@@ -940,10 +959,10 @@ public class _jFieldID private constructor(rawPtr: NativePtr) : CPointed(rawPtr)
 public typealias JFieldID = CPointer<_jFieldID>
 
 @Suppress("UNCHECKED_CAST")
-public inline val JFieldID.c: jni.jfieldID get() = this as jni.jfieldID
+public inline val JFieldID.c: CPointer<_jFieldID> get() = this
 
 @Suppress("UNCHECKED_CAST")
-public inline fun jni.jfieldID.wrap(): JFieldID = this as JFieldID
+public inline fun CPointer<_jFieldID>.wrap(): JFieldID = this
 
 /**
  * The underlying opaque type for [JMethodID].
@@ -958,211 +977,34 @@ public class _jMethodID private constructor(rawPtr: NativePtr) : CPointed(rawPtr
 public typealias JMethodID = CPointer<_jMethodID>
 
 @Suppress("UNCHECKED_CAST")
-public inline val JMethodID.c: jni.jmethodID get() = this as jni.jmethodID
+public inline val JMethodID.c: CPointer<_jMethodID> get() = this
 
 @Suppress("UNCHECKED_CAST")
-public inline fun jni.jmethodID.wrap(): JMethodID = this as JMethodID
+public inline fun CPointer<_jMethodID>.wrap(): JMethodID = this
 
 /**
  * The underlying type for [JavaVM].
  *
  * We need this type to be able to use [JavaVM] in consumer common code without cinterop commonization.
  */
-public expect class _JniInvokeInterface : CStructVar {
-    internal var DestroyJavaVM: CPointer<CFunction<(CPointer<JavaVM>?) -> Int>>?
-    internal var AttachCurrentThread: CPointer<CFunction<(CPointer<JavaVM>?, CPointer<CPointerVar<JniEnv>>?, COpaquePointer?) -> Int>>?
-    internal var GetEnv: CPointer<CFunction<(CPointer<JavaVM>?, CPointer<CPointerVar<JniEnv>>?, Int) -> Int>>?
-    internal var AttachCurrentThreadAsDaemon: CPointer<CFunction<(CPointer<JavaVM>?, CPointer<CPointerVar<JniEnv>>?, COpaquePointer?) -> Int>>?
-    internal var DetachCurrentThread: CPointer<CFunction<(CPointer<JavaVM>?) -> Int>>?
-}
+public expect class Raw_JniInvokeInterface : CStructVar
 
 /**
  * Type allowing to operate with Invocation API.
  */
-public typealias JavaVM = CPointerVar<_JniInvokeInterface>
+public typealias JavaVM = CPointerVar<Raw_JniInvokeInterface>
 
 /**
  * The underlying type for [JniEnv].
  *
  * We need this type to be able to use [JniEnv] in consumer common code without cinterop commonization.
  */
-public expect class _JniNativeInterface : CStructVar {
-    internal var GetStringUTFLengthAsLong: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Long>>?
-    internal var NewLongArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var GetByteArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<ByteVar>?>>?
-    internal var ExceptionClear: CPointer<CFunction<(CPointer<JniEnv>?) -> Unit>>?
-    internal var SetStaticByteField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Byte) -> Unit>>?
-    internal var CallStaticFloatMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Float>>?
-    internal var CallStaticLongMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Long>>?
-    internal var GetStringUTFLength: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Int>>?
-    internal var Throw: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Int>>?
-    internal var NewByteArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var CallLongMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Long>>?
-    internal var FatalError: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?) -> Unit>>?
-    internal var NewCharArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var EnsureLocalCapacity: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> Int>>?
-    internal var CallNonvirtualObjectMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> CPointer<jni._jobject>?>>?
-    internal var AllocObject: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var ExceptionOccurred: CPointer<CFunction<(CPointer<JniEnv>?) -> CPointer<jni._jobject>?>>?
-    internal var GetObjectField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> CPointer<jni._jobject>?>>?
-    internal var ReleaseIntArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<IntVar>?, Int) -> Unit>>?
-    internal var SetIntField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Int) -> Unit>>?
-    internal var GetStaticBooleanField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> UByte>>?
-    internal var GetStaticDoubleField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Double>>?
-    internal var GetStaticIntField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Int>>?
-    internal var GetJavaVM: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<CPointerVarOf<CPointer<JavaVM>>>?) -> Int>>?
-    internal var GetFieldID: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ByteVar>?, CPointer<ByteVar>?) -> jni.jfieldID?>>?
-    internal var GetLongArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<LongVar>?) -> Unit>>?
-    internal var SetStaticLongField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Long) -> Unit>>?
-    internal var ExceptionDescribe: CPointer<CFunction<(CPointer<JniEnv>?) -> Unit>>?
-    internal var CallShortMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Short>>?
-    internal var CallStaticVoidMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Unit>>?
-    internal var ReleaseStringUTFChars: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ByteVar>?) -> Unit>>?
-    internal var NewGlobalRef: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var SetCharArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<UShortVar>?) -> Unit>>?
-    internal var ExceptionCheck: CPointer<CFunction<(CPointer<JniEnv>?) -> UByte>>?
-    internal var CallCharMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> UShort>>?
-    internal var GetByteField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Byte>>?
-    internal var FindClass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?) -> CPointer<jni._jobject>?>>?
-    internal var SetByteField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Byte) -> Unit>>?
-    internal var SetStaticShortField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Short) -> Unit>>?
-    internal var PopLocalFrame: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var SetStaticDoubleField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Double) -> Unit>>?
-    internal var GetModule: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var GetBooleanField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> UByte>>?
-    internal var GetStaticMethodID: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ByteVar>?, CPointer<ByteVar>?) -> jni.jmethodID?>>?
-    internal var GetObjectArrayElement: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var CallVoidMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Unit>>?
-    internal var NewShortArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var PushLocalFrame: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> Int>>?
-    internal var ReleaseByteArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ByteVar>?, Int) -> Unit>>?
-    internal var CallNonvirtualFloatMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Float>>?
-    internal var CallNonvirtualByteMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Byte>>?
-    internal var GetPrimitiveArrayCritical: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> COpaquePointer?>>?
-    internal var DeleteWeakGlobalRef: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Unit>>?
-    internal var SetCharField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, UShort) -> Unit>>?
-    internal var GetCharArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<UShortVar>?>>?
-    internal var NewString: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<UShortVar>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var GetStringLength: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Int>>?
-    internal var CallNonvirtualShortMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Short>>?
-    internal var GetByteArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<ByteVar>?) -> Unit>>?
-    internal var IsVirtualThread: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> UByte>>?
-    internal var GetBooleanArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<UByteVar>?>>?
-    internal var SetObjectField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, CPointer<jni._jobject>?) -> Unit>>?
-    internal var GetSuperclass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var GetStringUTFRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<ByteVar>?) -> Unit>>?
-    internal var SetLongArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<LongVar>?) -> Unit>>?
-    internal var RegisterNatives: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<JniNativeMethod>?, Int) -> Int>>?
-    internal var SetIntArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<IntVar>?) -> Unit>>?
-    internal var SetFloatField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Float) -> Unit>>?
-    internal var NewBooleanArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var GetDoubleArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<DoubleVar>?>>?
-    internal var CallFloatMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Float>>?
-    internal var SetByteArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<ByteVar>?) -> Unit>>?
-    internal var GetStaticShortField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Short>>?
-    internal var CallStaticShortMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Short>>?
-    internal var ReleaseBooleanArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?, Int) -> Unit>>?
-    internal var GetStaticObjectField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> CPointer<jni._jobject>?>>?
-    internal var MonitorEnter: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Int>>?
-    internal var SetLongField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Long) -> Unit>>?
-    internal var ReleaseStringCritical: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UShortVar>?) -> Unit>>?
-    internal var GetFloatField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Float>>?
-    internal var ReleasePrimitiveArrayCritical: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, COpaquePointer?, Int) -> Unit>>?
-    internal var GetIntField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Int>>?
-    internal var GetObjectRefType: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> UInt>>?
-    internal var GetFloatArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<FloatVar>?) -> Unit>>?
-    internal var GetDoubleArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<DoubleVar>?) -> Unit>>?
-    internal var SetDoubleField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Double) -> Unit>>?
-    internal var CallBooleanMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> UByte>>?
-    internal var GetShortArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<ShortVar>?>>?
-    internal var CallNonvirtualDoubleMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Double>>?
-    internal var FromReflectedMethod: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> jni.jmethodID?>>?
-    internal var DeleteLocalRef: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Unit>>?
-    internal var CallNonvirtualVoidMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Unit>>?
-    internal var ReleaseShortArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ShortVar>?, Int) -> Unit>>?
-    internal var ToReflectedMethod: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, UByte) -> CPointer<jni._jobject>?>>?
-    internal var GetDirectBufferCapacity: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Long>>?
-    internal var CallNonvirtualCharMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> UShort>>?
-    internal var GetStaticCharField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> UShort>>?
-    internal var NewDirectByteBuffer: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, Long) -> CPointer<jni._jobject>?>>?
-    internal var UnregisterNatives: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Int>>?
-    internal var GetDirectBufferAddress: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> COpaquePointer?>>?
-    internal var GetShortField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Short>>?
-    internal var NewFloatArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var FromReflectedField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> jni.jfieldID?>>?
-    internal var GetStaticByteField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Byte>>?
-    internal var GetStaticLongField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Long>>?
-    internal var SetFloatArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<FloatVar>?) -> Unit>>?
-    internal var CallNonvirtualIntMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Int>>?
-    internal var GetStringUTFChars: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<ByteVar>?>>?
-    internal var ReleaseFloatArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<FloatVar>?, Int) -> Unit>>?
-    internal var IsAssignableFrom: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?) -> UByte>>?
-    internal var SetShortField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Short) -> Unit>>?
-    internal var CallByteMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Byte>>?
-    internal var ReleaseCharArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UShortVar>?, Int) -> Unit>>?
-    internal var NewObjectArray: CPointer<CFunction<(CPointer<JniEnv>?, Int, CPointer<jni._jobject>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var CallStaticIntMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Int>>?
-    internal var GetObjectClass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var GetStringCritical: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<UShortVar>?>>?
-    internal var CallStaticByteMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Byte>>?
-    internal var ReleaseDoubleArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<DoubleVar>?, Int) -> Unit>>?
-    internal var GetStaticFieldID: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ByteVar>?, CPointer<ByteVar>?) -> jni.jfieldID?>>?
-    internal var SetBooleanArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<UByteVar>?) -> Unit>>?
-    internal var NewStringUTF: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?) -> CPointer<jni._jobject>?>>?
-    internal var SetObjectArrayElement: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, CPointer<jni._jobject>?) -> Unit>>?
-    internal var GetCharArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<UShortVar>?) -> Unit>>?
-    internal var GetFloatArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<FloatVar>?>>?
-    internal var CallObjectMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> CPointer<jni._jobject>?>>?
-    internal var NewWeakGlobalRef: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var NewDoubleArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var SetStaticIntField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Int) -> Unit>>?
-    internal var ToReflectedField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, UByte) -> CPointer<jni._jobject>?>>?
-    internal var GetStringRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<UShortVar>?) -> Unit>>?
-    internal var GetShortArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<ShortVar>?) -> Unit>>?
-    internal var MonitorExit: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Int>>?
-    internal var CallNonvirtualLongMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Long>>?
-    internal var GetMethodID: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ByteVar>?, CPointer<ByteVar>?) -> jni.jmethodID?>>?
-    internal var CallIntMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Int>>?
-    internal var DefineClass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?, CPointer<jni._jobject>?, CPointer<ByteVar>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var GetStringChars: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<UShortVar>?>>?
-    internal var GetIntArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<IntVar>?) -> Unit>>?
-    internal var CallDoubleMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Double>>?
-    internal var CallStaticObjectMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> CPointer<jni._jobject>?>>?
-    internal var ReleaseStringChars: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UShortVar>?) -> Unit>>?
-    internal var GetStaticFloatField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Float>>?
-    internal var GetIntArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<IntVar>?>>?
-    internal var GetBooleanArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<UByteVar>?) -> Unit>>?
-    internal var GetVersion: CPointer<CFunction<(CPointer<JniEnv>?) -> Int>>?
-    internal var NewObjectA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> CPointer<jni._jobject>?>>?
-    internal var SetStaticCharField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, UShort) -> Unit>>?
-    internal var IsSameObject: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?) -> UByte>>?
-    internal var SetStaticBooleanField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, UByte) -> Unit>>?
-    internal var SetStaticObjectField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, CPointer<jni._jobject>?) -> Unit>>?
-    internal var CallStaticBooleanMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> UByte>>?
-    internal var SetStaticFloatField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, Float) -> Unit>>?
-    internal var CallStaticCharMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> UShort>>?
-    internal var DeleteGlobalRef: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Unit>>?
-    internal var IsInstanceOf: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?) -> UByte>>?
-    internal var NewLocalRef: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> CPointer<jni._jobject>?>>?
-    internal var CallStaticDoubleMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> Double>>?
-    internal var GetArrayLength: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?) -> Int>>?
-    internal var GetLongArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<UByteVar>?) -> CPointer<LongVar>?>>?
-    internal var ThrowNew: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<ByteVar>?) -> Int>>?
-    internal var SetShortArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<ShortVar>?) -> Unit>>?
-    internal var NewIntArray: CPointer<CFunction<(CPointer<JniEnv>?, Int) -> CPointer<jni._jobject>?>>?
-    internal var GetCharField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> UShort>>?
-    internal var GetLongField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Long>>?
-    internal var SetBooleanField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?, UByte) -> Unit>>?
-    internal var SetDoubleArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, Int, Int, CPointer<DoubleVar>?) -> Unit>>?
-    internal var GetDoubleField: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, jni.jfieldID?) -> Double>>?
-    internal var ReleaseLongArrayElements: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<LongVar>?, Int) -> Unit>>?
-    internal var CallNonvirtualBooleanMethodA: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<jni._jobject>?, CPointer<jni._jobject>?, jni.jmethodID?, JArguments?) -> UByte>>?
-}
+public expect class Raw_JniNativeInterface : CStructVar
 
 /**
  * Type allowing to operate with Native JNI API.
  */
-public typealias JniEnv = CPointerVar<_JniNativeInterface>
+public typealias JniEnv = CPointerVar<Raw_JniNativeInterface>
 
 /**
  * Represents a native method specification.

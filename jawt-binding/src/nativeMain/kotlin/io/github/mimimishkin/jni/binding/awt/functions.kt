@@ -1,21 +1,23 @@
 package io.github.mimimishkin.jni.binding.awt
 
+import io.github.mimimishkin.jni.binding.JObject
 import io.github.mimimishkin.jni.binding.JniEnv
 import io.github.mimimishkin.jni.binding.c
 import io.github.mimimishkin.jni.binding.toJBoolean
 import io.github.mimimishkin.jni.binding.toKBoolean
 import io.github.mimimishkin.jni.binding.wrap
 import jni.JAWT_GetAWT
-import jni.JNIEnvVar
 import kotlinx.cinterop.CArrayPointer
 import kotlinx.cinterop.COpaquePointer
-import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.NativePlacement
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.get
 import kotlinx.cinterop.invoke
 import kotlinx.cinterop.pointed
 import kotlinx.cinterop.ptr
+import kotlinx.cinterop.reinterpret
+
+private inline fun JObject?.c(): jni.jobject? = c?.reinterpret()
 
 /**
  * Get the AWT native structure.
@@ -25,8 +27,7 @@ public fun getAwt(version: AwtVersion): Awt? {
     val awt = placement.alloc<jni.jawt> {
         this.version = version
     }
-    @Suppress("UNCHECKED_CAST")
-    val success = JAWT_GetAWT(env.ptr as CValuesRef<JNIEnvVar>?, awt.ptr).toKBoolean()
+    val success = JAWT_GetAWT(env.ptr, awt.ptr).toKBoolean()
     @Suppress("UNCHECKED_CAST")
     return if (success) awt.ptr as Awt? else null
 }
@@ -47,7 +48,7 @@ public inline val Awt.version: AwtVersion
  */
 context(env: JniEnv)
 public fun Awt.getDrawingSurface(target: JAwtComponent): DrawingSurface? {
-    return pointed.GetDrawingSurface!!(env.ptr, target.c)
+    return pointed.GetDrawingSurface!!(env.ptr, target.c())
 }
 
 /**
@@ -126,7 +127,7 @@ public fun Awt.createEmbeddedFrame(platformInfo: COpaquePointer): JAwtFrame? {
  */
 context(env: JniEnv)
 public fun Awt.setBounds(embeddedFrame: JAwtFrame, x: Int, y: Int, w: Int, h: Int) {
-    pointed.SetBounds!!(env.ptr, embeddedFrame.c, x, y, w, h)
+    pointed.SetBounds!!(env.ptr, embeddedFrame.c(), x, y, w, h)
 }
 
 /**
@@ -139,7 +140,7 @@ public fun Awt.setBounds(embeddedFrame: JAwtFrame, x: Int, y: Int, w: Int, h: In
  */
 context(env: JniEnv)
 public fun Awt.synthesizeWindowActivation(embeddedFrame: JAwtFrame, doActivate: Boolean) {
-    pointed.SynthesizeWindowActivation!!(env.ptr, embeddedFrame.c, doActivate.toJBoolean())
+    pointed.SynthesizeWindowActivation!!(env.ptr, embeddedFrame.c(), doActivate.toJBoolean())
 }
 
 /**

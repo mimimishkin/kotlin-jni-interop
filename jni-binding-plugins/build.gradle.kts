@@ -27,6 +27,8 @@ gradlePlugin {
 
 dependencies {
     implementation(libs.serialization.json)
+
+    // TODO: replace with io.foojay:discoclient:2.0.39
     implementation(libs.palantir.gradle.jdks) {
         // `gradle-jdks` pulls in `gradle-baseline-java` for the `javaVersions { }` configuration it
         // sets up when its own plugin is applied. This plugin never applies it and never configures
@@ -44,8 +46,10 @@ dependencies {
     // has no reader for a tar archive. This one covers both formats outside of Gradle's services, which
     // are not available wherever a JDK may be fetched.
     implementation(libs.commons.compress)
-    implementation(gradleKotlinDsl())
-    implementation(kotlin("gradle-plugin"))
+
+    compileOnly(gradleKotlinDsl())
+    compileOnly(kotlin("gradle-plugin"))
+    compileOnly(libs.androidTools.build.gradle)
 }
 
 dokka {

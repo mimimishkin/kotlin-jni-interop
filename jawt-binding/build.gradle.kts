@@ -3,7 +3,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    alias(conventions.plugins.native64bitLibrary)
+    alias(conventions.plugins.nativeDesktopLibrary)
     alias(libs.plugins.dokka)
     alias(conventions.plugins.publish)
 }

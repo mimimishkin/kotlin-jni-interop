@@ -30,7 +30,7 @@ kotlin {
 }
 
 jniLibraries {
-    jniVersion = 17
+    expectedJdkVersion = 17
     exportMethod = JniExportMethod.RegisterNatives
     allowSeveralHooks = true
 }

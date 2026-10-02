@@ -6,7 +6,7 @@ kotlin = "2.4.20"
 buildConfig = "6.1.2"
 
 # https://developer.android.com/studio/releases/gradle-plugin
-agp = "9.3.3"
+agp = "9.4.1"
 
 # https://github.com/google/auto/blob/main/service/README.md
 autoService = "1.1.1"
@@ -42,6 +42,7 @@ palantirPlatform = "0.29.0"
 commonsCompress = "1.28.0"
 
 [libraries]
+androidTools-build-gradle = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-gradlePluginApi  = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin-api", version.ref = "kotlin" }
 kotlin-compiler = { group = "org.jetbrains.kotlin", name = "kotlin-compiler", version.ref = "kotlin" }
 kotlin-compiler-embeddable = { group = "org.jetbrains.kotlin", name = "kotlin-compiler-embeddable", version.ref = "kotlin" }

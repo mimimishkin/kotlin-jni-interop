@@ -16,13 +16,17 @@ import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.compiler.plugin.registerExtension
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
+import org.jetbrains.kotlin.config.targetPlatform
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
+import org.jetbrains.kotlin.fir.moduleData
+import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.platform.konan.NativePlatformWithTarget
 import java.io.File
 
 internal object Keys {
     val ENABLED = CompilerConfigurationKey<Boolean>("Enable plugin")
-    val JNI_VERSION = CompilerConfigurationKey<Int>("JNI version (as Java major version)")
+    val EXPECTED_JDK_VERSION = CompilerConfigurationKey<Int>("JDK major version whose JNI version will be used")
     val ALLOW_SEVERAL_HOOKS = CompilerConfigurationKey<Boolean>("Allow several hooks of the same type")
     val USE_REGISTER_NATIVES = CompilerConfigurationKey<Boolean>("Generate bindings using RegisterNatives")
     val ACTUALS_FILE = CompilerConfigurationKey<File>("JSON file to write the actuals into")
@@ -31,7 +35,7 @@ internal object Keys {
 /**
  * Registers the plugin's command-line options:
  * - `enabled` - master switch; `false` skips all generation and checking,
- * - `jniVersion` - the JNI version (as a Java major version) reported by the generated `JNI_OnLoad`,
+ * - `expectedJdkVersion` - JDK major version whose JNI version will be reported by the generated `JNI_OnLoad`,
  * - `allowSeveralHooks` - relaxes the single-`@JniOnLoad` constraint,
  * - `useRegisterNatives` - generates `RegisterNatives` bindings instead of exported `@CName` facades,
  * - `actualsFile` - the JSON file the `actuals.json` contract is written into (required).
@@ -47,10 +51,10 @@ public class JniBindingProducerCommandLineProcessor : CommandLineProcessor {
         description = "Whether to enable the plugin or not.",
         required = false
     )
-    private val jniVersionOption = CliOption(
-        optionName = "jniVersion",
+    private val expectedJdkVersionOption = CliOption(
+        optionName = "expectedJdkVersion",
         valueDescription = "<java major version>",
-        description = "The JNI version (as a Java major version) required by the generated bindings.",
+        description = "JDK major version whose JNI version will be used.",
         required = false
     )
     private val allowSeveralHookOption = CliOption(
@@ -73,7 +77,7 @@ public class JniBindingProducerCommandLineProcessor : CommandLineProcessor {
     )
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         enabledOption,
-        jniVersionOption,
+        expectedJdkVersionOption,
         allowSeveralHookOption,
         useRegisterNativesOption,
         actualsFileOption
@@ -86,7 +90,7 @@ public class JniBindingProducerCommandLineProcessor : CommandLineProcessor {
     ) {
         when (option) {
             enabledOption -> configuration.put(Keys.ENABLED, value.toBoolean())
-            jniVersionOption -> configuration.put(Keys.JNI_VERSION, value.toInt())
+            expectedJdkVersionOption -> configuration.put(Keys.EXPECTED_JDK_VERSION, value.toInt())
             allowSeveralHookOption -> configuration.put(Keys.ALLOW_SEVERAL_HOOKS, value.toBoolean())
             useRegisterNativesOption -> configuration.put(Keys.USE_REGISTER_NATIVES, value.toBoolean())
             actualsFileOption -> configuration.put(Keys.ACTUALS_FILE, File(value))
@@ -110,7 +114,10 @@ public class JniBindingProducerRegistrar : CompilerPluginRegistrar() {
 
         val actualsFile = configuration[Keys.ACTUALS_FILE]
             ?: error("jni-binding-producer: the 'actualsFile' option is required")
-        val jniVersion = JniVersion.fromMajor(configuration[Keys.JNI_VERSION, 1])
+        val jniVersion = when {
+            configuration.isAndroidTarget() -> JniVersion.V1_6
+            else -> JniVersion.fromMajor(configuration[Keys.EXPECTED_JDK_VERSION, 1])
+        }
         val useRegisterNatives = configuration.getBoolean(Keys.USE_REGISTER_NATIVES)
         val allowSeveralHooks = configuration.getBoolean(Keys.ALLOW_SEVERAL_HOOKS)
 
@@ -132,6 +139,11 @@ public class JniBindingProducerRegistrar : CompilerPluginRegistrar() {
             JniHookStepsMerger()
         )
     }
+
+    private fun CompilerConfiguration.isAndroidTarget(): Boolean =
+        this.targetPlatform?.componentPlatforms.orEmpty()
+            .filterIsInstance<NativePlatformWithTarget>()
+            .any { it.target.family == Family.ANDROID }
 
     private class FirRegistrar(
         val jniVersion: JniVersion,
