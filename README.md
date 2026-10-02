@@ -376,4 +376,4 @@ samples/                 examples (basic, windows-registry)
 
 ## License
 
-MIT
+[MIT](LICENSE.txt)
