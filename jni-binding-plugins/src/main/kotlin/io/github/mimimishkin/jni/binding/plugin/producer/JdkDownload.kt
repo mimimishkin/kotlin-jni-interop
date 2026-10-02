@@ -1,14 +1,19 @@
 package io.github.mimimishkin.jni.binding.plugin.producer
 
-import com.palantir.gradle.jdks.CaCerts
-import com.palantir.gradle.jdks.JdkDistribution
-import com.palantir.gradle.jdks.JdkDistributionName
-import com.palantir.gradle.jdks.JdkManager
-import com.palantir.gradle.jdks.JdkRelease
-import com.palantir.gradle.jdks.JdkSpec
-import com.palantir.gradle.jdks.JdksExtension
-import com.palantir.gradle.jdks.setup.common.Arch
-import com.palantir.platform.OperatingSystem
+import eu.hansolo.jdktools.ArchiveType
+import eu.hansolo.jdktools.Architecture as JdkArchitecture
+import eu.hansolo.jdktools.Bitness
+import eu.hansolo.jdktools.Latest
+import eu.hansolo.jdktools.LibCType
+import eu.hansolo.jdktools.Match
+import eu.hansolo.jdktools.OperatingSystem as JdkOperatingSystem
+import eu.hansolo.jdktools.PackageType
+import eu.hansolo.jdktools.ReleaseStatus
+import eu.hansolo.jdktools.TermOfSupport
+import eu.hansolo.jdktools.versioning.VersionNumber
+import io.foojay.api.discoclient.DiscoClient
+import io.foojay.api.discoclient.pkg.Pkg
+import io.foojay.api.discoclient.pkg.Scope
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.archivers.zip.ZipFile
@@ -16,7 +21,6 @@ import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logging
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ValueSource
@@ -27,17 +31,17 @@ import org.jetbrains.kotlin.konan.target.Architecture
 import org.jetbrains.kotlin.konan.target.Family
 import java.io.File
 import java.io.InputStream
-import java.nio.file.FileAlreadyExistsException
-import java.nio.file.attribute.PosixFilePermission
-import java.util.zip.GZIPInputStream
-import java.nio.file.FileVisitResult
-import java.nio.file.SimpleFileVisitor
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.BasicFileAttributes
 import java.net.URI
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.FileAlreadyExistsException
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.attribute.PosixFilePermission
+import java.util.zip.GZIPInputStream
 
 /**
  * Distribution [downloadCompatibleJdk] uses when it is not told otherwise.
@@ -45,7 +49,7 @@ import java.nio.file.Path
  * Amazon Corretto publishes the widest set of platform combinations, which is what matters for a
  * target that is not the host.
  */
-public const val DEFAULT_JDK_DISTRIBUTION: String = "amazon-corretto"
+public const val DEFAULT_JDK_DISTRIBUTION: String = "corretto"
 
 /**
  * File every JDK has at the root of its home directory, and what identifies one.
@@ -53,17 +57,9 @@ public const val DEFAULT_JDK_DISTRIBUTION: String = "amazon-corretto"
 private const val RELEASE_FILE: String = "release"
 
 /**
- * The `jdks` extension of this project, or one holding the defaults when it has none.
- *
- * A project that configures the extension gets its own storage location and mirrors; one that does
- * not gets the defaults, which are what a build applying `com.palantir.jdks` starts from as well.
+ * Gradle property naming the directory JDKs are unpacked into, `$GRADLE_USER_HOME/jdks` by default.
  */
-public fun Project.jdksExtension(): JdksExtension {
-    val existing = extensions.findByName("jdks")
-    if (existing is JdksExtension) return existing
-    return callStatic("com.palantir.gradle.jdks.JdksPlugin", "extension", this, newJdkDistributions())
-        as JdksExtension
-}
+private const val JDK_STORAGE_LOCATION_PROPERTY: String = "jni.jdkStorageLocation"
 
 /**
  * Provides the latest JDK of the Java version of [JniLibProducerExtension.expectedJdkVersion] built for the
@@ -83,25 +79,22 @@ public fun Project.jdksExtension(): JdksExtension {
  * }
  * ```
  *
- * A major version resolves to whichever build the distribution published last at the time of the first
- * download, and to that same one afterwards, since the JDK is then reused from disk. Pass a version as
- * a [String] to pin it.
+ * The JDK is looked up through the foojay Disco API, which means a build that downloads one needs
+ * network access. A major version resolves to whichever build the distribution published last at the
+ * time of the first download, and to that same one afterwards, since the JDK is then reused from
+ * disk. Pass a version as a [String] to pin it.
  *
- * @param distribution distribution to download from, as a [JdkDistributionName] name.
  * @param os operating system to build the JDK for, which is this target's one by default.
  * @param arch architecture to build the JDK for, which is this target's one by default.
- * @param extension the `jdks` extension to read the storage location and the mirror URLs from. Pass
- * `rootProject.jdksExtension()` to use the one of the root project, which is where a build applying
- * `com.palantir.jdks` has it.
+ * @param distribution distribution to download from, for example `"corretto"` or `"zulu"`.
  */
 public fun NativeBinary.downloadCompatibleJdk(
+    os: JdkOperatingSystem = jdkOperatingSystem,
+    arch: JdkArchitecture = target.konanTarget.architecture.jdkArchitecture,
     distribution: String = DEFAULT_JDK_DISTRIBUTION,
-    os: OperatingSystem = jdkOperatingSystem,
-    arch: Arch = target.konanTarget.architecture.jdkArchitecture,
-    extension: JdksExtension = project.jdksExtension(),
 ): Provider<Directory> {
     val expectedJdkVersion = project.the<JniLibProducerExtension>().expectedJdkVersion
-    return jdkProvider(distribution, expectedJdkVersion, project.provider { "" }, os, arch, extension)
+    return jdkProvider(distribution, expectedJdkVersion, project.provider { "" }, os, arch)
 }
 
 /**
@@ -113,11 +106,10 @@ public fun NativeBinary.downloadCompatibleJdk(
 public fun NativeBinary.downloadCompatibleJdk(
     version: Int,
     distribution: String = DEFAULT_JDK_DISTRIBUTION,
-    os: OperatingSystem = jdkOperatingSystem,
-    arch: Arch = target.konanTarget.architecture.jdkArchitecture,
-    extension: JdksExtension = project.jdksExtension(),
+    os: JdkOperatingSystem = jdkOperatingSystem,
+    arch: JdkArchitecture = target.konanTarget.architecture.jdkArchitecture,
 ): Provider<Directory> =
-    jdkProvider(distribution, project.provider { version }, project.provider { "" }, os, arch, extension)
+    jdkProvider(distribution, project.provider { version }, project.provider { "" }, os, arch)
 
 /**
  * Provides the JDK of exactly [version] built for the platform of this binary's target, to link
@@ -130,11 +122,10 @@ public fun NativeBinary.downloadCompatibleJdk(
 public fun NativeBinary.downloadCompatibleJdk(
     version: String,
     distribution: String = DEFAULT_JDK_DISTRIBUTION,
-    os: OperatingSystem = jdkOperatingSystem,
-    arch: Arch = target.konanTarget.architecture.jdkArchitecture,
-    extension: JdksExtension = project.jdksExtension(),
+    os: JdkOperatingSystem = jdkOperatingSystem,
+    arch: JdkArchitecture = target.konanTarget.architecture.jdkArchitecture,
 ): Provider<Directory> =
-    jdkProvider(distribution, project.provider { 0 }, project.provider { version }, os, arch, extension)
+    jdkProvider(distribution, project.provider { 0 }, project.provider { version }, os, arch)
 
 /**
  * Provider of the home directory of a JDK, which downloads and unpacks it when first read.
@@ -147,26 +138,31 @@ private fun NativeBinary.jdkProvider(
     distributionName: String,
     majorVersion: Provider<Int>,
     exactVersion: Provider<String>,
-    os: OperatingSystem,
-    arch: Arch,
-    extension: JdksExtension,
+    os: JdkOperatingSystem,
+    arch: JdkArchitecture,
 ): Provider<Directory> {
-    val distribution = distributionName.toJdkDistribution()
     val konanTarget = target.konanTarget
     val home = project.providers.of(JdkValueSource::class.java) { spec ->
         val parameters = spec.parameters
-        parameters.distribution.set(distribution.uiName())
+        parameters.distribution.set(distributionName)
         parameters.majorVersion.set(majorVersion)
         parameters.exactVersion.set(exactVersion)
-        parameters.operatingSystem.set(project.provider { os.uiName() })
-        parameters.architecture.set(project.provider { arch.uiName() })
-        parameters.baseUrl.set(extension.jdkDistributionFor(distribution).baseUrl)
-        parameters.storageLocation.set(extension.jdkStorageLocation)
-        parameters.caCerts.set(extension.caCerts)
-        parameters.targetName.set(project.provider { konanTarget.name })
-        parameters.targetArchitecture.set(project.provider { konanTarget.architecture.name })
+        parameters.operatingSystem.set(os.name)
+        parameters.architecture.set(arch.name)
+        parameters.storageLocation.fileValue(project.jdkStorageLocation())
+        parameters.targetName.set(konanTarget.name)
+        parameters.targetArchitecture.set(konanTarget.architecture.name)
     }
     return project.layout.dir(project.provider { home.get() })
+}
+
+/**
+ * Directory JDKs are unpacked into, `$GRADLE_USER_HOME/jdks` unless overridden by the
+ * [JDK_STORAGE_LOCATION_PROPERTY] Gradle property.
+ */
+private fun Project.jdkStorageLocation(): File {
+    val configured = providers.gradleProperty(JDK_STORAGE_LOCATION_PROPERTY).orNull
+    return if (configured.isNullOrEmpty()) File(gradle.gradleUserHomeDir, "jdks") else File(configured)
 }
 
 /**
@@ -175,18 +171,13 @@ private fun NativeBinary.jdkProvider(
  * Kotlin/Native has no `Family` for a Linux libc, so a musl target is told apart from a glibc one by
  * the target name.
  */
-public val NativeBinary.jdkOperatingSystem: OperatingSystem
+public val NativeBinary.jdkOperatingSystem: JdkOperatingSystem
     get() {
         val konanTarget = target.konanTarget
         return when (konanTarget.family) {
-            Family.LINUX ->
-                if (konanTarget.name.contains("musl", ignoreCase = true)) {
-                    OperatingSystem.LINUX_MUSL
-                } else {
-                    OperatingSystem.LINUX_GLIBC
-                }
-            Family.MINGW -> OperatingSystem.WINDOWS
-            Family.OSX -> OperatingSystem.MACOS
+            Family.LINUX -> JdkOperatingSystem.LINUX
+            Family.MINGW -> JdkOperatingSystem.WINDOWS
+            Family.OSX -> JdkOperatingSystem.MACOS
             else -> error(
                 "Cannot link a JDK into the ${konanTarget.name} target: JDKs are published for linux, " +
                     "macos and windows only, while ${konanTarget.name} is a ${konanTarget.family} target. " +
@@ -198,11 +189,11 @@ public val NativeBinary.jdkOperatingSystem: OperatingSystem
 /**
  * Architecture of this binary's target, which is the one a JDK linked into it has to be built for.
  */
-public val Architecture.jdkArchitecture: Arch
+public val Architecture.jdkArchitecture: JdkArchitecture
     get() = when (this) {
-        Architecture.X64 -> Arch.X86_64
-        Architecture.X86 -> Arch.X86
-        Architecture.ARM64 -> Arch.AARCH64
+        Architecture.X64 -> JdkArchitecture.X86_64
+        Architecture.X86 -> JdkArchitecture.X86
+        Architecture.ARM64 -> JdkArchitecture.AARCH64
         else -> error(
             "Cannot link a JDK into a $this target: no JDK distribution publishes a 32-bit ARM build, " +
                 "so there is nothing to download. Do not call linkJvm() for it."
@@ -229,27 +220,22 @@ internal abstract class JdkValueSource : ValueSource<File, JdkValueSource.Parame
         val exactVersion: Property<String>
         val operatingSystem: Property<String>
         val architecture: Property<String>
-        val baseUrl: Property<String>
         val storageLocation: DirectoryProperty
-        val caCerts: MapProperty<String, String>
         val targetName: Property<String>
         val targetArchitecture: Property<String>
     }
 
     override fun obtain(): File {
-        val distribution = JdkDistributionName.fromStringThrowing(parameters.distribution.get())
-        val os = OperatingSystem.fromStringThrowing(parameters.operatingSystem.get())
-        val arch = Arch.fromStringThrowing(parameters.architecture.get())
+        val distribution = parameters.distribution.get()
+        val os = JdkOperatingSystem.valueOf(parameters.operatingSystem.get())
+        val arch = JdkArchitecture.valueOf(parameters.architecture.get())
         val exact = parameters.exactVersion.orNull?.ifEmpty { null }
         val major = parameters.majorVersion.get()
 
-        val home = parameters.storageLocation.get().asFile.resolve(
-            homeDirectoryName(distribution, exact, major, os, arch, parameters.caCerts.get())
-        )
+        val jdk = resolve(distribution, exact, major, os, arch)
+        val home = File(parameters.storageLocation.get().asFile, jdk.directoryName)
         if (!File(home, RELEASE_FILE).isFile) {
-            val archive = if (exact == null) latestArchive(distribution, major, os, arch)
-            else exactArchive(distribution, exact, os, arch)
-            unpack(archive, home)
+            unpack(Archive(jdk.url, jdk.format), home)
         }
         checkJdk(
             home,
@@ -261,80 +247,83 @@ internal abstract class JdkValueSource : ValueSource<File, JdkValueSource.Parame
     }
 
     /**
-     * Archive of the latest build of a major [version].
+     * Asks the foojay Disco API for the JDK matching [exact], or the latest build of [major] when
+     * [exact] is null, and for the URL to download it from.
      */
-    private fun latestArchive(
-        distribution: JdkDistributionName,
-        version: Int,
-        os: OperatingSystem,
-        arch: Arch,
-    ): Archive {
-        if (distribution != JdkDistributionName.AMAZON_CORRETTO) {
-            error(
-                "Cannot ask $distribution for the latest JDK $version: it publishes no build under a " +
-                    "URL by major version alone, so the version has to be given exactly, as in " +
-                    "downloadCompatibleJdk(\"17.0.13.11.1\")"
-            )
-        }
-        val format = if (os == OperatingSystem.WINDOWS) "zip" else "tar.gz"
-        val osName = when (os) {
-            OperatingSystem.LINUX_GLIBC -> "linux"
-            OperatingSystem.LINUX_MUSL -> "alpine-linux"
-            OperatingSystem.MACOS -> "macosx"
-            OperatingSystem.WINDOWS -> "windows"
-        }
-        val archName = when (arch) {
-            Arch.X86_64 -> "x64"
-            Arch.AARCH64 -> "aarch64"
-            Arch.X86 -> error("Cannot ask $distribution for a JDK of $osName $arch: it publishes none")
-        }
-        return Archive(
-            "${parameters.baseUrl.get().trimEnd('/')}/downloads/latest/" +
-                "${distribution.uiName()}-$version-$archName-$osName-jdk.$format",
-            format,
-        )
-    }
-
-    /**
-     * Archive of an exact [version].
-     */
-    private fun exactArchive(
-        distribution: JdkDistributionName,
-        version: String,
-        os: OperatingSystem,
-        arch: Arch,
-    ): Archive {
-        val path = jdkDistribution(distribution).path(
-            JdkRelease.builder().version(version).os(os).arch(arch).build()
-        )
-        val format = path.extension().toString()
-        return Archive("${parameters.baseUrl.get().trimEnd('/')}/${path.filename()}.$format", format)
-    }
-
-    /**
-     * Directory the JDK is unpacked into, named the way `gradle-jdks` names it for an exact version, so
-     * that the two share one copy on disk.
-     */
-    private fun homeDirectoryName(
-        distribution: JdkDistributionName,
+    private fun resolve(
+        distributionName: String,
         exact: String?,
-        version: Int,
-        os: OperatingSystem,
-        arch: Arch,
-        caCerts: Map<String, String>,
-    ): String =
+        major: Int,
+        os: JdkOperatingSystem,
+        arch: JdkArchitecture,
+    ): ResolvedJdk {
+        val disco = DiscoClient()
+        val distribution = DiscoClient.getDistributionFromText(distributionName)
+            ?: error(
+                "Unknown JDK distribution '$distributionName': the foojay Disco API does not know a " +
+                    "distribution by that name"
+            )
+        val pkgs = disco.getPkgs(
+            listOf(distribution),
+            requestedVersion(exact, major),
+            if (exact == null) Latest.AVAILABLE else Latest.ALL_OF_VERSION,
+            os,
+            libcTypeOf(os),
+            arch,
+            Bitness.NONE,
+            ArchiveType.NONE,
+            PackageType.JDK,
+            false,
+            true,
+            listOf(ReleaseStatus.GA, ReleaseStatus.EA),
+            TermOfSupport.NONE,
+            listOf(Scope.PUBLIC),
+            Match.ANY,
+        )
+        // The API also offers `.deb`, `.rpm` and other installers, which are not what this source
+        // downloads, and it matches an exact version only down to the release line of the build.
+        val matching = pkgs
+            .filter { it.isPackableArchive() }
+            .filter { exact == null || it.fileName.contains(exact) }
+        val wanted = if (exact == null) "a JDK $major" else "the JDK $exact"
+        val pkg = matching.maxByOrNull { it.javaVersion }
+            ?: error("The foojay Disco API has no $wanted for $distributionName on $os $arch")
+        val url = disco.getPkgDirectDownloadUri(pkg.id)
+        check(url.isNotEmpty()) { "The foojay Disco API returned no download URL for ${pkg.fileName}" }
+        return ResolvedJdk(pkg.homeDirectoryName(), url, formatOf(pkg))
+    }
+
+    /**
+     * Version to ask the Disco API for, which for [exact] is only its feature version.
+     *
+     * The API matches a version down to its release line, never down to a build, so an exact build is
+     * asked for as the line it belongs to and picked out of the builds of that line afterwards.
+     */
+    private fun requestedVersion(exact: String?, major: Int): VersionNumber =
         if (exact == null) {
-            "$distribution-$version-${os.uiName()}-${arch.uiName()}-latest"
+            VersionNumber(major)
         } else {
-            val spec = JdkSpec.builder()
-                .distributionName(distribution)
-                .release(JdkRelease.builder().version(exact).os(os).arch(arch).build())
-                // The certificates take no part in unpacking, but they are part of the name gradle-jdks
-                // gives this JDK, and taking them from the same place is what makes the two agree.
-                .caCerts(CaCerts.from(caCerts))
-                .build()
-            "$distribution-$exact-${spec.consistentShortHash()}"
+            VersionNumber(VersionNumber.fromText(exact).feature.getAsInt())
         }
+
+    /**
+     * Whether this package is a `.zip` or tar archive of the kind this source can unpack, rather than
+     * an installer such as a `.deb` or `.rpm`.
+     */
+    private fun Pkg.isPackableArchive(): Boolean =
+        archiveType == ArchiveType.ZIP || archiveType == ArchiveType.TAR_GZ || archiveType == ArchiveType.TGZ
+
+    /**
+     * How to unpack the archive of [pkg], which is the one the Disco API offers it as.
+     */
+    private fun formatOf(pkg: Pkg): String = when (pkg.archiveType) {
+        ArchiveType.ZIP -> "zip"
+        ArchiveType.TAR_GZ, ArchiveType.TGZ -> "tar.gz"
+        else -> error(
+            "Cannot unpack ${pkg.fileName}: only `.zip` and `.tar.gz` JDK archives are supported, " +
+                "while this one is a ${pkg.archiveType}"
+        )
+    }
 
     /**
      * Downloads the archive and unpacks the JDK in it into [home].
@@ -498,83 +487,29 @@ internal abstract class JdkValueSource : ValueSource<File, JdkValueSource.Parame
 }
 
 /**
- * URL layout of the named distribution, for a JDK of an exact version.
+ * The libc the Disco API should filter [os] by, which only matters where several are published.
  */
-private fun jdkDistribution(name: JdkDistributionName): JdkDistribution =
-    callOn(newJdkDistributions(), "get", name) as JdkDistribution
-
-/**
- * The URL layouts of the distributions, for the `jdks` extension to be created with.
- */
-private fun newJdkDistributions(): Any = construct("com.palantir.gradle.jdks.JdkDistributions")
-
-/**
- * This name as a [JdkDistributionName], listing the known ones when it is not one of them.
- */
-private fun String.toJdkDistribution(): JdkDistributionName {
-    val parsed = JdkDistributionName.fromString(this)
-    return if (parsed.isPresent) {
-        parsed.get()
-    } else {
-        error(
-            "Unknown JDK distribution '$this'; expected one of " +
-                JdkDistributionName.values().joinToString { "'${it.uiName()}'" }
-        )
-    }
+private fun libcTypeOf(os: JdkOperatingSystem): LibCType = when (os) {
+    JdkOperatingSystem.LINUX -> LibCType.GLIBC
+    JdkOperatingSystem.LINUX_MUSL, JdkOperatingSystem.ALPINE_LINUX -> LibCType.MUSL
+    else -> LibCType.NONE
 }
 
 /**
- * Calls the constructor of the named class, failing with an explanation when it has moved.
+ * A JDK the Disco API matched, and where to download it from.
+ *
+ * @property directoryName directory to unpack this JDK into, named after its archive.
  */
-private fun construct(className: String): Any = try {
-    val constructor = loadType(className).declaredConstructors.single { it.parameterCount == 0 }
-    constructor.isAccessible = true
-    constructor.newInstance()
-} catch (e: ReflectiveOperationException) {
-    throw gradleJdksUnexpectedShape(className, e)
-}
+private class ResolvedJdk(val directoryName: String, val url: String, val format: String)
 
 /**
- * Calls the static [methodName] of the named class, failing with an explanation when it has moved.
+ * Name of the directory this package's JDK is unpacked into, which is its archive name without the
+ * extension, so that a JDK is only ever downloaded once.
  */
-private fun callStatic(className: String, methodName: String, vararg arguments: Any): Any = try {
-    val method = loadType(className).declaredMethods.single { it.name == methodName && it.accepts(arguments) }
-    method.isAccessible = true
-    method.invoke(null, *arguments)
-} catch (e: ReflectiveOperationException) {
-    throw gradleJdksUnexpectedShape("$className.$methodName", e)
-}
-
-/**
- * Calls [methodName] on [receiver], failing with an explanation when either has moved.
- */
-private fun callOn(receiver: Any, methodName: String, vararg arguments: Any): Any = try {
-    val method = receiver.javaClass.declaredMethods.single { it.name == methodName && it.accepts(arguments) }
-    method.isAccessible = true
-    method.invoke(receiver, *arguments)
-} catch (e: ReflectiveOperationException) {
-    throw gradleJdksUnexpectedShape("${receiver.javaClass.name}.$methodName", e)
-}
-
-private fun loadType(className: String): Class<*> =
-    Class.forName(className, true, JdkManager::class.java.classLoader)
-
-/**
- * Whether this member takes exactly [arguments], matched against the declared parameter types rather
- * than looked up by them.
- */
-private fun java.lang.reflect.Executable.accepts(arguments: Array<out Any>): Boolean =
-    parameterTypes.size == arguments.size &&
-        parameterTypes.indices.all { parameterTypes[it].isInstance(arguments[it]) }
-
-/**
- * Reports that `gradle-jdks` is not shaped the way this plugin expects, which happens when it changes
- * in a version newer than the one this plugin was built against.
- */
-private fun gradleJdksUnexpectedShape(what: String, cause: ReflectiveOperationException) =
-    IllegalStateException(
-        "Cannot use gradle-jdks to download a JDK: $what is not accessible the way this plugin " +
-            "expects. Pass a javaHome to linkJvm() instead, or report this so that the plugin can be " +
-            "updated for this version of gradle-jdks.",
-        cause
-    )
+private fun Pkg.homeDirectoryName(): String =
+    fileName
+        .removeSuffix(".tar.gz")
+        .removeSuffix(".tar.xz")
+        .removeSuffix(".tgz")
+        .removeSuffix(".zip")
+        .ifEmpty { id }
