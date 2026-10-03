@@ -26,6 +26,8 @@ rootProject.name = "samples"
 // All parent directories are included as projects when specifying a path to a subproject
 include(":basic:native")
 include(":basic:nativeHello")
+include(":android-basic:native")
+include(":android-basic:app")
 
 val host = OperatingSystem.current()!!
 if (host.isWindows) {
