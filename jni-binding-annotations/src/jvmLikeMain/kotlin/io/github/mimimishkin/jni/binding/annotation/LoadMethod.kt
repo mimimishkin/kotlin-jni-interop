@@ -7,8 +7,9 @@ package io.github.mimimishkin.jni.binding.annotation
  *
  * It may optionally have the following String parameters: `os`, `arch`, and `vendor` of a `String` type:
  * - If the `os: String` parameter is present, the OS family will be passed in, or `System.getProperty("os.name")` if
- *   this cannot be determined. These values can be `windows`, `linux`, or `macos`. Other OS families will not be
- *   determined.
+ *   this cannot be determined. These values can be `windows`, `linux`, `macos`, or `android`. Android is reported from
+ *   `System.getProperty("java.vendor")`, since its `os.name` is `Linux` like a desktop's. Other OS families will not
+ *   be determined.
  * - If the `arch: String` parameter is present, the normalized `System.getProperty("os.arch")` will be passed in. That
  *   is, instead of something from "x86", "i386", "ia-32", "i686", "x86-64", "x86_64", "amd64", "x64", "arm-v7",
  *   "armv7", "arm", "arm32", "aarch64", "arm-v8", "arm64", "riscv32", "rv32", "riscv64", "rv64" the list is shortened

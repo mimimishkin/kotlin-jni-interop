@@ -164,7 +164,7 @@ external fun hello(): String
 object Main {
     // Called automatically when the object is first accessed. A library inside a jar cannot be
     // loaded in place, so it is copied to a temp file first. `os` receives the OS family
-    // ("windows", "linux", "macos"), `arch` the normalized architecture ("x86_64", "aarch64", ...).
+    // ("windows", "linux", "macos", "android"), `arch` the normalized architecture ("x86_64", "aarch64", ...).
     @LoadMethod
     private fun load(os: String, arch: String) {
         val libPath = "/natives/$os-$arch/${System.mapLibraryName("native")}"

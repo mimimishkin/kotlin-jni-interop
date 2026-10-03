@@ -229,18 +229,28 @@ internal class PlatformLoadArguments(private val pluginContext: IrPluginContext)
     fun vendor(builder: IrBlockBodyBuilder): IrExpression =
         with(builder) { systemProperty("java.vendor") }
 
-    /** The normalized OS family: `windows`, `macos`, `linux` or the raw lowercased name. */
+    /**
+     * The normalized OS family: `windows`, `macos`, `linux`, `android`, or the raw lowercased name.
+     *
+     * Android is reported from `java.vendor` because its `os.name` is just `Linux`, which would otherwise make an
+     * Android runtime indistinguishable from a desktop one.
+     */
     fun os(builder: IrBlockBodyBuilder): IrExpression = with(builder) {
-        val raw: IrValueDeclaration = createTmpVariable(stringToLowerCase(systemProperty("os.name")))
+        val raw: IrValueDeclaration = createTmpVariable(stringToLowerCase(systemProperty("os.name", "")))
         val lower = irGet(raw)
-        fun contains(needle: String) = stringContains(lower, needle)
+        val vendor: IrValueDeclaration = createTmpVariable(stringToLowerCase(systemProperty("java.vendor", "")))
+        fun contains(receiver: IrExpression, needle: String) = stringContains(receiver, needle)
         irIfThenElse(
             stringType,
-            contains("windows"), irString("windows"),
+            contains(irGet(vendor), "android"), irString("android"),
             irIfThenElse(
                 stringType,
-                contains("mac"), irString("macos"),
-                irIfThenElse(stringType, orElse(contains("nux"), contains("nix")), irString("linux"), lower),
+                contains(lower, "windows"), irString("windows"),
+                irIfThenElse(
+                    stringType,
+                    contains(lower, "mac"), irString("macos"),
+                    irIfThenElse(stringType, orElse(contains(lower, "nux"), contains(lower, "nix")), irString("linux"), lower),
+                ),
             ),
         )
     }
@@ -261,6 +271,13 @@ internal class PlatformLoadArguments(private val pluginContext: IrPluginContext)
     private fun IrBlockBodyBuilder.systemProperty(name: String): IrExpression =
         irCall(function(Symbols.systemGetProperty, irBuiltIns.stringClass)).apply {
             fillArguments(irString(name))
+            type = stringType
+        }
+
+    /** `System.getProperty(name, default)`, which never returns `null`. */
+    private fun IrBlockBodyBuilder.systemProperty(name: String, default: String): IrExpression =
+        irCall(function(Symbols.systemGetProperty, irBuiltIns.stringClass, irBuiltIns.stringClass)).apply {
+            fillArguments(irString(name), irString(default))
             type = stringType
         }
 
