@@ -49,9 +49,10 @@ Step by step:
    **full JVM class name and the function name**; the JVM signature is derived from the Kotlin declaration. A
    declaration without an implementation, or a signature that does not match, is a **compile error** — not a
    `UnsatisfiedLinkError` at runtime.
-4. **`copyToResources()`** puts the per-target binaries into the jar under `natives/<os>-<arch>/`, so that the JVM code
-   can load the entry matching the machine it runs on. Without it nothing is packaged, and the library has to be
-   loaded explicitly.
+4. **`copyToResources()`** puts the per-target binaries into the compilation's resources under
+   `natives/<os>-<arch>/`, so that the JVM code can load the entry matching the machine it runs on. On Android the
+   binaries are packaged among its **assets**. Without this call nothing is packaged, and the library has to be loaded
+   explicitly.
 
 Two additional considerations:
 
@@ -251,13 +252,13 @@ binaries {
 
 One `create` call per native library, on a JVM or Android JVM compilation:
 
-| Option                     | Type                | Default             | Meaning                                                                                                                                 |
-|----------------------------|---------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| `copyToResources()`        | function            | not called          | Package the binaries of every configured target into the jar. Without it nothing is packaged and the library must be loaded explicitly. |
-| `copyToJniLibs()`          | function            | not called          | Android only: package the binaries into `jniLibs/<abi>/` of the APK or the AAR, so that `System.loadLibrary("...")` finds them.         |
-| `resourceDir` (per target) | `Property<String>`  | `natives/$os-$arch` | Path inside the jar the binary is placed at.                                                                                            |
-| `allowExtraActuals`        | `Property<Boolean>` | `false`             | Forbid a native `@JniActual` that has no `@JniExpect` counterpart.                                                                      |
-| `allowAbsentBindings`      | `Property<Boolean>` | `false`             | Skip a target whose bindings are not available instead of failing.                                                                      |
+| Option                     | Type                | Default             | Meaning                                                                                                                                                     |
+|----------------------------|---------------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `copyToResources()`        | function            | not called          | Package the binaries of every configured target under `resourceDir` in the compilation's resources. On Android the binaries go into the APK assets.         |
+| `copyToJniLibs()`          | function            | not called          | Android only: package the binaries into `jniLibs/<abi>/` of the APK or the AAR, so that `System.loadLibrary("...")` finds them. The default Android layout. |
+| `resourceDir` (per target) | `Property<String>`  | `natives/$os-$arch` | Path the binary is placed at by `copyToResources()` - in the resources, or in the Android assets.                                                           |
+| `allowExtraActuals`        | `Property<Boolean>` | `false`             | Forbid a native `@JniActual` that has no `@JniExpect` counterpart.                                                                                          |
+| `allowAbsentBindings`      | `Property<Boolean>` | `false`             | Skip a target whose bindings are not available instead of failing.                                                                                          |
 
 Per target, the source of the bindings is selected as follows:
 

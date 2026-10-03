@@ -17,7 +17,7 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.domainObjectContainer
 import org.gradle.kotlin.dsl.findByType
@@ -82,13 +82,22 @@ public class JniLibraryConfig internal constructor(
         .convention(false)
 
     /**
-     * Directory [importLibTaskProvider] copies the binaries into.
+     * Directory [importLibTaskProvider] mirrors the binaries into.
      *
-     * A desktop consumer registers it among the resources of its compilation (the binaries end up under the target's
-     * [JniBindingTarget.resourceDir]); an Android one registers it among `jniLibs` (the binaries end up under the
-     * target's [JniBindingTarget.abi]).
+     * A desktop consumer registers it among the resources of its compilation; an Android one registers it among
+     * either `jniLibs` ([copyToJniLibs]) or its assets ([copyToResources]). Binaries end up under the target's
+     * [JniBindingTarget.resourceDir] for the resource/asset layout and under its [JniBindingTarget.abi] for `jniLibs`.
      */
-    private val importedLibrariesDir = project.layout.buildDirectory.dir("generated/jniLibs")
+    private val importedLibrariesDir = project.layout.buildDirectory.dir(
+        "generated/jniLibs/${consumerCompilation.disambiguateName(libraryName)}"
+    )
+
+    /**
+     * Whether binaries are laid out for loading from files (a target's [JniBindingTarget.resourceDir]) instead of
+     * for `jniLibs` (an Android target's [JniBindingTarget.abi]).
+     */
+    private val packToResources: Property<Boolean> = project.objects.property<Boolean>()
+        .convention(false)
 
     /**
      * All platform targets of this library. Register new ones with [target] or its shortcuts
@@ -254,16 +263,16 @@ public class JniLibraryConfig internal constructor(
         .convention(false)
 
     /**
-     * Task that copies binaries of this library into the resources of the consumer compilation.
+     * Task that mirrors binaries of this library into the directory the packaging methods register.
      *
-     * Every [target] contributes its binary: a desktop one under its [JniBindingTarget.resourceDir], an Android one
-     * under its [JniBindingTarget.abi]. [copyToResources] and [copyToJniLibs] then register the directory with the
-     * compilation - as resources or as `jniLibs`, respectively.
+     * Every [target] contributes its binary. [copyToResources] lays them out under each target's
+     * [JniBindingTarget.resourceDir] (on Android among the assets), while [copyToJniLibs] lays an Android target out
+     * under its [JniBindingTarget.abi] for `System.loadLibrary`.
      *
      * @see copyToResources
      * @see copyToJniLibs
      */
-    public val importLibTaskProvider: TaskProvider<Copy> = project.tasks.register<Copy>(
+    public val importLibTaskProvider: TaskProvider<Sync> = project.tasks.register<Sync>(
         camelCase(
             "importJniLib",
             libraryName,
@@ -271,7 +280,7 @@ public class JniLibraryConfig internal constructor(
         )
     ) {
         group = "jni interop"
-        description = "Copies binaries of $libraryName to the resource directory."
+        description = "Mirrors binaries of $libraryName to the resource directory."
 
         val targetJvmMajor = project.targetJVM.orNull?.asInt() ?: 0
 
@@ -280,7 +289,7 @@ public class JniLibraryConfig internal constructor(
         // That is why nothing here declares a dependency on the producer's configuration: a `Configuration` is not
         // a serializable task dependency, and passing one is what the configuration cache rejects.
         val destDir = importedLibrariesDir
-        // A `Copy` without any source is reported NO-SOURCE and its actions never run, so every target must
+        // A `Sync` without any source is reported NO-SOURCE and its actions never run, so every target must
         // contribute a source; destinations are relative to this one, per target.
         into(destDir)
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -301,6 +310,13 @@ public class JniLibraryConfig internal constructor(
         inputs.files(allBinaries)
 
         targets.configureEach { target ->
+            // `into` resolves a provider lazily, so the relative path can depend on the layout chosen by
+            // `copyToResources()`/`copyToJniLibs()`, which may be called after this target was configured.
+            val resourcesLayout = packToResources
+            val resourceDir = target.resourceDir
+            val abi = target.abi
+            val isAndroid = target.os == "android"
+
             // `from` is given a file collection rather than a resolved list of files, so that the dependencies
             // the producer attached to its artifacts are kept. It has to stay deferred: `configureEach` runs
             // before the user's configuration lambda, so `source` is not set yet at this point.
@@ -310,7 +326,9 @@ public class JniLibraryConfig internal constructor(
             // destination of the whole task instead of this spec.
             from(binariesOf(target)) { spec ->
                 // The path is relative to the destination set above.
-                spec.into(if (target.os == "android") target.abi else target.resourceDir)
+                spec.into(project.provider {
+                    if (resourcesLayout.get() || !isAndroid) resourceDir.get() else abi
+                })
             }
         }
     }
@@ -359,11 +377,31 @@ public class JniLibraryConfig internal constructor(
     }
 
     /**
-     * Makes `processResources` to copy the JNI library to the resources of the consumer compilation.
+     * Makes the consumer compilation copy the JNI library into its resources (or assets on Android).
      *
      * Libraries are copied to the relative path defined by [JniBindingTarget.resourceDir].
      */
     public fun copyToResources() {
+        packToResources.set(true)
+
+        val android = project.extensions.findByName("android") as? CommonExtension
+        if (android != null) {
+            val sourceSetName = consumerCompilation.compilationName
+            val sourceSet = android.sourceSets.findByName(sourceSetName)
+                ?: error("There is no Android source set '$sourceSetName' to copy $libraryName into")
+            val assetsDir = importedLibrariesDir.get().asFile.absolutePath
+            sourceSet.assets.directories.add(assetsDir)
+
+            // Registering the directory does not make Gradle run the copy task: `importedLibrariesDir` is a plain
+            // build-directory provider with no producer attached, so the dependency has to be declared.
+            val variant = sourceSetName.replaceFirstChar { it.uppercase() }
+            project.tasks.matching { task ->
+                task.name == "merge${variant}Assets" ||
+                    task.name == "package${variant}"
+            }.configureEach { it.dependsOn(importLibTaskProvider) }
+            return
+        }
+
         val resources = consumerCompilation.defaultSourceSet.resources
         if (resources.srcDirs.none { it == importedLibrariesDir.get().asFile }) {
             resources.srcDir(importedLibrariesDir)
@@ -385,9 +423,14 @@ public class JniLibraryConfig internal constructor(
     /**
      * Makes `merge*NativeLibs` to copy the JNI library to the `jniLibs` of the android consumer compilation.
      *
+     * Each binary is placed under its [JniBindingTarget.abi]. This is the default Android layout; call
+     * [copyToResources] instead to load the binary from the assets.
+     *
      * @throws IllegalStateException if the project does not apply an Android plugin.
      */
     public fun copyToJniLibs() {
+        packToResources.set(false)
+
         val android = project.extensions.findByName("android") as? CommonExtension
             ?: error("copyToJniLibs() requires an Android application or library plugin to be applied")
 

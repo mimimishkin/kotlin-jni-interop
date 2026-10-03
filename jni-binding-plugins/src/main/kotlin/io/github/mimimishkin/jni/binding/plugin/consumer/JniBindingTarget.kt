@@ -94,8 +94,8 @@ public interface JniBindingTarget : Named, HasProject {
     public fun fromPrebuiltBinding(bindingsDir: File)
 
     /**
-     * Path of the resource directory (relative to the resources root) the native binary will be copied to
-     * by [io.github.mimimishkin.jni.binding.plugin.consumer.JniLibraryConfig.copyToResources].
+     * Path of the resource directory (relative to the resources root, or to the Android assets root) the native
+     * binary will be copied to by [JniLibraryConfig.copyToResources].
      *
      * By default, it is `"natives/$os-$arch"`.
      */
