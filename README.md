@@ -23,6 +23,7 @@ are matched, built, checked and packaged for you. No C, no handwritten JNI signa
 - [How it works](#how-it-works)
 - [Quick start](#quick-start) — a complete native + JVM pair
 - [Configuration reference](#configuration-reference) — every DSL option of both plugins
+- [Automatic dependencies](#automatic-dependencies) — what the plugins add, and when to add them by hand
 - [Annotations reference](#annotations-reference) — the ten annotations and what they do
 - [Libraries](#libraries) — `jni-binding-raw`, `jni-binding`, `jawt-binding`
 - [Samples](#samples) — runnable examples
@@ -42,7 +43,8 @@ A JNI library is two halves that must agree on names and signatures. This projec
 Step by step:
 
 1. **Native functions are declared** with `@JniActual`. The producer plugin adds `jni-binding` and the annotations to
-   the dependencies of the native module, which makes the JNI API (`JniEnv`, `JString`, `JObject`, ...) available.
+   the dependencies of the native module, which makes the JNI API (`JniEnv`, `JString`, `JObject`, ...) available
+   (see [Automatic dependencies](#automatic-dependencies) if you customize source sets).
 2. **The producer plugin builds** `libnative.so` (or `.dll` / `.dylib`) and exports the list of
    bindings it implemented, together with their JVM signatures.
 3. **The consumer plugin validates** the JVM side against that list while compiling. Bindings are matched by the
@@ -93,7 +95,7 @@ kotlin {
         target.binaries {
             if (target.konanTarget == HostManager.host) {
                 sharedLib("native") { // the shared library base name
-                    linkJvm()         // link the JavaVM/JNI headers into the binary
+                    linkJvm()         // desktop only — Android needs no linkJvm()
                 }
             }
         }
@@ -207,24 +209,47 @@ Note that `@JniExpects` is not applied to nested classes: they are annotated sep
 
 ### Producer: the `jniLibraries` extension
 
-Configured on the native project:
+Configured on the native project. Values below are the defaults:
 
-| Option               | Type                        | Default           | Meaning                                                                                                      |
-|----------------------|-----------------------------|-------------------|--------------------------------------------------------------------------------------------------------------|
-| `expectedJdkVersion` | `Property<Int>`             | `1`               | JDK major version the native library is built against. A consumer compiled against an older JDK is rejected. |
-| `exportMethod`       | `Property<JniExportMethod>` | `ExposeFunctions` | How `external` functions are linked: `RegisterNatives` or `ExposeFunctions`, see [below](#export-methods).   |
-| `allowSeveralHooks`  | `Property<Boolean>`         | `false`           | Allow several `@JniOnLoad`/`@JniOnUnload` functions in one library.                                          |
+```kotlin
+jniLibraries {
+    expectedJdkVersion = 1                          // JDK major version the library is built against;
+                                                    // a consumer compiled against an older JDK is rejected.
+                                                    // Ignored on Android (always JNI_VERSION_1_6).
+    exportMethod = JniExportMethod.ExposeFunctions  // or RegisterNatives - see [Export methods](#export-methods)
+    allowSeveralHooks = false                       // allow several @JniOnLoad/@JniOnUnload in one library
+}
+```
 
 ### Producer: linker helpers
 
-Called inside `binaries { sharedLib(...) { ... } }`:
+Called inside `binaries { sharedLib(...) { ... } }`. On **desktop** (Windows / Linux / macOS) the binary must
+link against a JDK:
 
-| Function            | Adds                                                                                       |
-|---------------------|--------------------------------------------------------------------------------------------|
-| `linkJvm()`         | the JNI headers and `libjvm` of the JDK set by `expectedJdkVersion`                        |
-| `linkJvm(javaHome)` | the `libjvm` of the JDK at that path, which is how a target that is not the host is linked |
-| `linkJAwt()`        | the `libjawt` library; call after `linkJvm()`, which it reuses                             |
-| `linkX11IfLinux()`  | the X11 libraries the AWT runtime needs on Linux                                           |
+```kotlin
+binaries {
+    sharedLib("native") {
+        linkJvm()            // JNI headers + libjvm of expectedJdkVersion
+        // linkJvm(javaHome) // libjvm of a JDK at that path (non-host / cross-compile)
+        // linkJAwt()        // libjawt; call after linkJvm(), which it reuses
+        // linkX11IfLinux()  // X11 libraries the AWT runtime needs on Linux
+    }
+}
+```
+
+On **Android** linking is automatic — do not call `linkJvm()`. Kotlin/Native already provides the JNI headers,
+and there is no `libjvm` to link. A typical Android producer is just:
+
+```kotlin
+listOf(
+    androidNativeArm32(),
+    androidNativeArm64(),
+    androidNativeX86(),
+    androidNativeX64(),
+).forEach {
+    it.binaries.sharedLib("native")
+}
+```
 
 #### Cross-compiling
 
@@ -250,22 +275,28 @@ binaries {
 
 ### Consumer side: `jniLibraries.create`
 
-One `create` call per native library, on a JVM or Android JVM compilation:
+One `create` call per native library, on a JVM or Android JVM compilation. Values below are the defaults
+(packaging helpers are opt-in and not called by default):
 
-| Option                     | Type                | Default             | Meaning                                                                                                                                                     |
-|----------------------------|---------------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `copyToResources()`        | function            | not called          | Package the binaries of every configured target under `resourceDir` in the compilation's resources. On Android the binaries go into the APK assets.         |
-| `copyToJniLibs()`          | function            | not called          | Android only: package the binaries into `jniLibs/<abi>/` of the APK or the AAR, so that `System.loadLibrary("...")` finds them. The default Android layout. |
-| `resourceDir` (per target) | `Property<String>`  | `natives/$os-$arch` | Path the binary is placed at by `copyToResources()` - in the resources, or in the Android assets.                                                           |
-| `allowExtraActuals`        | `Property<Boolean>` | `false`             | Forbid a native `@JniActual` that has no `@JniExpect` counterpart.                                                                                          |
-| `allowAbsentBindings`      | `Property<Boolean>` | `false`             | Skip a target whose bindings are not available instead of failing.                                                                                          |
+```kotlin
+jniLibraries.create("native") {          // must match the sharedLib name in the producer
+    allowExtraActuals = false            // forbid @JniActual without an @JniExpect counterpart
+    allowAbsentBindings = false          // fail when a target's bindings are missing
+    // copyToResources()                 // package binaries under resourceDir into resources
+    //                                   // (or into assets on Android)
+    // copyToJniLibs()                   // Android only: package into jniLibs/<abi>/ so that
+    //                                   // System.loadLibrary("...") finds them
 
-Per target, the source of the bindings is selected as follows:
+    mingwX64 {
+        fromProducer(project(":native"))
+        // fromPrebuiltBinding(dir)  // take bindings + binary from a folder instead
+        // resourceDir = "natives/windows-x86_64"  // default: natives/$os-$arch
+    }
+}
+```
 
-| Function                           | Meaning                                                                                                          |
-|------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| `fromProducer(project("native"))`  | Build that module on this machine; the native binary and its bindings are rebuilt automatically on every change. |
-| `fromPrebuiltBinding(dir)`         | Take bindings and the binary from a folder, e.g. produced on another OS by another build.                        |
+- `fromProducer(project)` — build that module on this machine; the binary and its bindings are rebuilt on every change.
+- `fromPrebuiltBinding(dir)` — take bindings and the binary from a folder, e.g. produced on another OS by another build.
 
 Target helpers: `mingwX64()`, `linuxX64()`, `linuxArm64()`, `macosArm64()`, `androidX86()`, `androidX64()`,
 `androidArm32()`, `androidArm64()`. Each exposes `os`, `arch`, `abi`, `konanTarget` and `resourceDir`, so a
@@ -288,6 +319,32 @@ listOf(
 
 The consumer plugin recompiles the JVM side whenever a native module changes, checks that the JNI version matches
 the JDK the JVM module is compiled against, and reports missing or mismatched bindings as compile errors.
+
+### Automatic dependencies
+
+Both plugins add their libraries to the source set shared by the relevant compilations:
+
+- **Producer** — `jni-binding` and the annotations to the native source sets.
+- **Consumer** — the annotations to the JVM / Android JVM source sets.
+
+With the default Kotlin Multiplatform hierarchy this is enough. With a **custom source set configuration**
+(extra intermediate sets, unusual `dependsOn` edges, mixed JVM+native targets with a non-obvious common
+ancestor) the plugin may not reach every compilation that needs them — add the dependencies manually then:
+
+```kotlin
+kotlin {
+    sourceSets {
+        // producer
+        nativeMain.dependencies {
+            implementation("io.github.mimimishkin:jni-binding:1.0.2")
+        }
+        // consumer
+        jvmMain.dependencies {
+            compileOnly("io.github.mimimishkin:jni-binding-annotations:1.0.2")
+        }
+    }
+}
+```
 
 ### Generating the `@JniActual` stubs
 
@@ -368,9 +425,10 @@ Full reference: [`jni-binding-raw/Module.md`](jni-binding-raw/Module.md).
 
 ### `jni-binding`
 
-`implementation("io.github.mimimishkin:jni-binding:1.0.2")` — added to the dependencies of the native module by the
-producer plugin automatically. It wraps JNI into idiomatic Kotlin without any cinterop configuration: JNI error codes
-become Kotlin exceptions, types are null-safe, and there are helpers such as `String.modifiedUtf8` (see
+`implementation("io.github.mimimishkin:jni-binding:1.0.2")` — added to the native module by the producer plugin
+automatically (see [Automatic dependencies](#automatic-dependencies)). It wraps JNI into idiomatic Kotlin without any
+cinterop configuration: JNI error codes become Kotlin exceptions, types are null-safe, and there are helpers such as
+`String.modifiedUtf8` (see
 [Modified UTF-8 Strings](https://docs.oracle.com/en/java/javase/22/docs/specs/jni/functions.html)).
 Full reference: [`jni-binding/Module.md`](jni-binding/Module.md).
 
