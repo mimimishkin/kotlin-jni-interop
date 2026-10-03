@@ -37,10 +37,12 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirRegularPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
+import org.jetbrains.kotlin.fir.types.builder.buildTypeProjectionWithVariance
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.types.ConstantValueKind
+import org.jetbrains.kotlin.types.Variance
 
 /**
  * Assembles the FIR bodies of facades (the `@CName`-exported functions), `RegisterNatives` bridge lambdas, and
@@ -338,7 +340,7 @@ internal class FirJniFacades(
         val receiverParam = builder.buildFnValueParameter(containingSymbol, receiverName, receiverType.coneType)
         val regularParams = facadeValueParameters(containingSymbol, actualFn)
 
-        val forwardingCall = buildForwardingCall(
+        val forwardingCall = buildForwardingExpression(
             actualFn = actualFn,
             actualSymbol = actualSymbol,
             container = container,
@@ -358,10 +360,93 @@ internal class FirJniFacades(
     }
 
     /**
+     * The forwarding expression of a facade or `staticCFunction` lambda: a call to the actual. When the actual
+     * declares a native-placement `context` parameter (`AutofreeScope`/`NativePlacement`/`ArenaBase`/`MemScope`),
+     * the call is wrapped in `kotlinx.cinterop.memScoped { ... }` and the scope is forwarded as that context
+     * argument, while the `JniEnv` context parameter still reads the facade's `env`.
+     */
+    private fun buildForwardingExpression(
+        actualFn: FirNamedFunction,
+        actualSymbol: FirCallableSymbol<*>,
+        container: FirRegularPropertySymbol?,
+        envParamSymbol: FirValueParameterSymbol,
+        receiverParamSymbol: FirValueParameterSymbol,
+        receiverType: ConeKotlinType,
+        envType: ConeKotlinType,
+        facadeParams: List<FirValueParameter>,
+    ): FirExpression {
+        if (actualFn.contextParameters.none { it.returnTypeRef.coneType.isNativePlacementType() }) {
+            return buildForwardingCall(
+                actualFn = actualFn,
+                actualSymbol = actualSymbol,
+                container = container,
+                envParamSymbol = envParamSymbol,
+                receiverParamSymbol = receiverParamSymbol,
+                receiverType = receiverType,
+                envType = envType,
+                facadeParams = facadeParams,
+                placementRead = null,
+            )
+        }
+
+        val lambdaSymbol = FirAnonymousFunctionSymbol()
+        val memScopeType = Symbols.MemScope.constructClassLikeType()
+        val receiverParameter = builder.buildReceiverParameter(
+            containingSymbol = lambdaSymbol,
+            typeRef = buildResolvedTypeRef { coneType = memScopeType },
+        )
+        val placementRead = builder.thisReceiverRead(receiverParameter.symbol, memScopeType)
+        val call = buildForwardingCall(
+            actualFn = actualFn,
+            actualSymbol = actualSymbol,
+            container = container,
+            envParamSymbol = envParamSymbol,
+            receiverParamSymbol = receiverParamSymbol,
+            receiverType = receiverType,
+            envType = envType,
+            facadeParams = facadeParams,
+            placementRead = placementRead,
+        )
+        val lambda = builder.buildLambda(
+            lambdaSymbol = lambdaSymbol,
+            functionType = builder.functionTypeCone(
+                receiverType = memScopeType,
+                returnType = actualSymbol.resolvedReturnType,
+            ),
+            returnTypeRef = buildResolvedTypeRef { coneType = actualSymbol.resolvedReturnType },
+            receiverParameter = receiverParameter,
+        ) { returnTarget ->
+            buildBlock {
+                statements += buildReturnExpression {
+                    target = returnTarget
+                    result = call
+                }
+            }
+        }
+        return buildFunctionCall {
+            calleeReference = buildResolvedNamedReference {
+                name = builder.memScopedFunction.name
+                resolvedSymbol = builder.memScopedFunction
+            }
+            coneTypeOrNull = actualSymbol.resolvedReturnType
+            typeArguments += buildTypeProjectionWithVariance {
+                typeRef = buildResolvedTypeRef { coneType = actualSymbol.resolvedReturnType }
+                variance = Variance.INVARIANT
+            }
+            argumentList = buildResolvedArgumentList(
+                original = null,
+                linkedMapOf(
+                    builder.lambdaExpression(lambda) to builder.memScopedFunction.valueParameterSymbols[0].fir,
+                ),
+            )
+        }
+    }
+
+    /**
      * The call body shared by facades and `staticCFunction` lambdas: reads the facade parameters,
      * converts `kotlin.Boolean` inputs to the JNI `jboolean` representation, forwards the actual's
      * `context` parameters to `env`, and dispatches on the container instance / object qualifier /
-     * nothing.
+     * nothing. A native-placement context parameter is forwarded from [placementRead] instead of `env`.
      */
     private fun buildForwardingCall(
         actualFn: FirNamedFunction,
@@ -372,6 +457,7 @@ internal class FirJniFacades(
         receiverType: ConeKotlinType,
         envType: ConeKotlinType,
         facadeParams: List<FirValueParameter>,
+        placementRead: FirExpression?,
     ): FirExpression {
         val actualParams = actualFn.valueParameters
         val regularArguments = List(actualParams.size) { index ->
@@ -387,8 +473,12 @@ internal class FirJniFacades(
             regularMapping[regularArguments[index]] = param
         }
 
-        val contextArgumentsValue = actualFn.contextParameters.map {
-            builder.paramRead(envParamSymbol, envType)
+        val contextArgumentsValue = actualFn.contextParameters.map { contextParam ->
+            if (placementRead != null && contextParam.returnTypeRef.coneType.isNativePlacementType()) {
+                placementRead
+            } else {
+                builder.paramRead(envParamSymbol, envType)
+            }
         }
         val extensionReceiver = actualFn.receiverParameter?.let {
             builder.paramRead(receiverParamSymbol, receiverType)
@@ -715,4 +805,18 @@ internal class FirJniFacades(
         }
         return builder.resolvedStaticCFunction(lambda)
     }
+
+    /** Whether [this] is a native-memory placement type an actual may take as an additional `context` parameter. */
+    private fun ConeKotlinType.isNativePlacementType(): Boolean {
+        val id = classId ?: return false
+        return id in NATIVE_PLACEMENT_CLASS_IDS
+    }
 }
+
+/** The native-memory placement types accepted as an additional `context` parameter of an actual. */
+private val NATIVE_PLACEMENT_CLASS_IDS = setOf(
+    Symbols.NativePlacement,
+    Symbols.AutofreeScope,
+    Symbols.ArenaBase,
+    Symbols.MemScope,
+)

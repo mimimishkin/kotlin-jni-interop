@@ -98,8 +98,12 @@ class JniBindingProducerCompilationTest {
             typealias CPointerVar<T> = CPointerVarOf<CPointer<T>> 
             typealias COpaquePointer = CPointer<Nothing>
 
-            open class AutofreeScope
-            open class MemScope : AutofreeScope()
+            open class NativePlacement
+            open class AutofreeScope : NativePlacement()
+            open class ArenaBase : AutofreeScope()
+            open class MemScope : ArenaBase()
+
+            fun <R> memScoped(block: MemScope.() -> R): R = TODO()
 
             class CFunction<out R : Function<*>>
             """.trimIndent(),
@@ -415,6 +419,59 @@ class JniBindingProducerCompilationTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val method = result.getFacadeMethod("test_valueJniBinding")
         assertEquals("Java_com_example_Native_value", cNameValue(method))
+    }
+
+    @Test
+    fun `AutofreeScope context parameter is supplied from memScoped`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Main.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.JniEnv
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+                import kotlinx.cinterop.AutofreeScope
+
+                @JniActual(className = "com.example.Native")
+                context(env: JniEnv, autofreeScope: AutofreeScope)
+                fun value(): Int = 42
+                """.trimIndent(),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val method = result.getFacadeMethod("test_valueJniBinding")
+        assertEquals("Java_com_example_Native_value", cNameValue(method))
+    }
+
+    @Test
+    fun `AutofreeScope context parameter is supplied from memScoped under register natives`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Main.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.JavaVM
+                import io.github.mimimishkin.jni.binding.JniEnv
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+                import io.github.mimimishkin.jni.binding.annotation.JniOnLoad
+                import kotlinx.cinterop.AutofreeScope
+
+                @JniOnLoad
+                fun onLoad(vm: JavaVM) {}
+
+                @JniActual(className = "com.example.Native")
+                context(env: JniEnv, autofreeScope: AutofreeScope)
+                fun value(): Int = 42
+                """.trimIndent(),
+            ),
+            allowSeveralHooks = true,
+            useRegisterNatives = true,
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
     }
 
     @Test

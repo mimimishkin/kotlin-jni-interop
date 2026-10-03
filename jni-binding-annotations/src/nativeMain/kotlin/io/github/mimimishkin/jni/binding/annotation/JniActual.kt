@@ -6,8 +6,11 @@ package io.github.mimimishkin.jni.binding.annotation
  *
  * Should be applied to functions that:
  * - are top-level
- * - have no one or a single context parameter of type `JniEnv`
+ * - have no context parameter or a single one of type `JniEnv`
  * - have a receiver of type `JObject` or `JClass` or don't have any receiver.
+ *
+ * A function may also declare a native-memory placement context parameter: `AutofreeScope`, `NativePlacement`,
+ * `ArenaBase` or `MemScope`. So the body can allocate through the placement.
  *
  * @property className The fully qualified name of the class. E.g., `"com.example.NativeHelper"`
  * @property methodName The name of the method in the class, no mater static or instance. E.g., `"nativeComputation"`.

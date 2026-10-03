@@ -267,9 +267,14 @@ internal class FirBuilder(
     /**
      * The JNI env parameter type of a facade: the actual's `context(env)` parameter type, or
      * `CPointerVarOf<CPointer<Raw_JniNativeInterface>>` - the expansion of the `JniEnv` type alias - if absent.
+     *
+     * A native-placement `context` parameter (`AutofreeScope`/`NativePlacement`/`ArenaBase`/`MemScope`) is skipped:
+     * an actual may declare it alone or before the env one, and the facade's env parameter must stay a `JniEnv`.
      */
     fun envTypeRef(actualFn: FirNamedFunction): FirResolvedTypeRef {
-        val contextType = actualFn.contextParameters.firstOrNull()?.returnTypeRef?.coneType
+        val contextType = actualFn.contextParameters
+            .map { it.returnTypeRef.coneType }
+            .firstOrNull { it.isJniEnvType() }
         return if (contextType != null) {
             buildResolvedTypeRef { coneType = contextType }
         } else {
@@ -418,6 +423,15 @@ internal class FirBuilder(
     /** The `context(MemScope, JniEnv) findClass(name)` function resolving a JVM class by its internal name. */
     val findClassFunction: FirFunctionSymbol<*> by lazy {
         contextTopLevelFunctionOn(Symbols.bindingPackage, "findClass")
+    }
+    /**
+     * The `kotlinx.cinterop.memScoped` function (`inline fun <R> memScoped(block: MemScope.() -> R): R`),
+     * used to provide a native allocation scope to actuals declaring a placement `context` parameter.
+     */
+    val memScopedFunction: FirFunctionSymbol<*> by lazy {
+        topLevelFunctionSymbol(Symbols.cinteropPackage, "memScoped") {
+            it.valueParameterSymbols.size == 1 && it.typeParameterSymbols.size == 1
+        }
     }
     /**
      * The `JNINativeMethodRegistry.register(name, signature, functionPtr)` DSL function from

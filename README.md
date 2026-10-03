@@ -110,11 +110,16 @@ jniLibraries {
 // native/src/nativeMain/kotlin/Main.kt
 
 // `context(env: JniEnv)` and an explicit JObject/JClass receiver are optional and
-// are only required when the body needs them.
+// are only required when the body needs them. A native allocation scope can be
+// requested the same way — see the note below.
 @JniActual(className = "org.sample.MainKt", methodName = "hello")
-context(env: JniEnv)
+context(env: JniEnv, autofreeScope: AutofreeScope)
 fun hello(): JString? = "Hello from Kotlin/Native".toJString()
 ```
+
+Besides `JniEnv`, an actual may declare a second `context` parameter of a native-memory placement type: `AutofreeScope`,
+`NativePlacement`, `ArenaBase`, or `MemScope`. The body can allocate through the placement — and use helpers such as
+`String.toJString()`, which requires an `AutofreeScope` — without opening a scope itself.
 
 ### 2. JVM module — the consumer
 
