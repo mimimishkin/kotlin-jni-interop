@@ -361,10 +361,16 @@ public typealias JString = @WithJvmType("java.lang.String") JRef<_jstring>
  */
 context(env: JniEnv, placement: NativePlacement)
 public inline fun JString.toKString(): String? {
+    val length = this.length
     val (chars, _) = this.getChars() ?: return null
-    val res = chars.toKString()
+    val result = CharArray(length)
+    var index = 0
+    while (index < length) {
+        result[index] = chars[index].toInt().toChar()
+        ++index
+    }
     this.releaseChars(chars)
-    return res
+    return result.concatToString()
 }
 
 /**

@@ -46,8 +46,6 @@ public val String.modifiedUtf8: CValues<ByteVar>
 
         override fun place(placement: CPointer<ByteVar>): CPointer<ByteVar> {
             for (i in 0..<size) placement[i] = bytes[i]
-            // Null-terminate
-            placement[size] = 0
             return placement
         }
     }
