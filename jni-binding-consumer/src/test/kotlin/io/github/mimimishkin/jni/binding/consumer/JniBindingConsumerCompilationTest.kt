@@ -444,6 +444,77 @@ class JniBindingConsumerCompilationTest {
         assertNotNull(instance.javaClass.getMethod("getLoaded").invoke(instance))
     }
 
+    @Test
+    fun `a LoadMethod on a top-level function is injected into the file facade`() {
+        // A top-level `@LoadMethod` needs no container at all: it is called from the `<clinit>` of the file facade
+        // the backend generates for the file's top-level declarations. That is the only way to load a library bound
+        // to top-level external functions, which have no class to inject into.
+        //
+        // The recorded value lives in a separate file: a top-level property initializer of this file would land in
+        // the same `<clinit>`, and property initializers run *after* the load call, wiping what it recorded.
+        val storage = SourceFile.kotlin(
+            "Storage.kt",
+            """
+            package test
+
+            object Storage {
+                var loaded: String? = null
+            }
+            """.trimIndent(),
+        )
+        val source = SourceFile.kotlin(
+            "Loader.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.LoadMethod
+
+            @LoadMethod
+            fun load(os: String, arch: String) {
+                Storage.loaded = "${'$'}os/${'$'}arch"
+            }
+
+            fun loadedPlatform(): String? = Storage.loaded
+            """.trimIndent(),
+        )
+
+        val result = compile(source, storage, actualsJson = EMPTY_ACTUALS).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        val loader = URLClassLoader(arrayOf(result.outputDirectory.toURI().toURL()), javaClass.classLoader)
+        // Calling a static method is an active use, which is what runs the facade's `<clinit>`.
+        val loaded = loader.loadClass("test.LoaderKt").getMethod("loadedPlatform").invoke(null)
+        // Called during the facade's initialization, with the host platform the plugin derives.
+        assertNotNull(loaded)
+    }
+
+    @Test
+    fun `a top-level LoadMethod with an unfillable parameter is reported`() {
+        val source = SourceFile.kotlin(
+            "Loader.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.LoadMethod
+
+            @LoadMethod
+            fun load(prefix: String) = Unit
+            """.trimIndent(),
+        )
+
+        val result = compile(source, actualsJson = EMPTY_ACTUALS).compile()
+
+        // Otherwise the function would silently never be called, which is the failure mode this diagnostic exists for.
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(
+            result.messages.contains(
+                "@LoadMethod function must declare only `os`, `arch`, `vendor` parameters " +
+                        "(no extension/context receivers), but has: `prefix`.",
+            ),
+            result.messages,
+        )
+    }
+
     // ── expects.json ─────────────────────────────────────────────────────────
 
     @Test

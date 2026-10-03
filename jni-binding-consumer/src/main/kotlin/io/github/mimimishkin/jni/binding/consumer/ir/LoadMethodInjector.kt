@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.ir.builders.irTrue
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrConstructor
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
+import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrParameterKind
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueDeclaration
@@ -50,9 +51,13 @@ import org.jetbrains.kotlin.name.Name
  * For a Kotlin object, the `@LoadMethod` functions live in the object itself; the calls are injected into the
  * object's `<init>` (primary constructor) body, dispatching on `this`.
  *
- * Every `@LoadMethod` function is called with the owning container as the dispatch receiver, passing only the
- * `os`/`arch`/`vendor` String parameters it declares. The values are computed by [PlatformLoadArguments] and only
- * for the parameters some `@LoadMethod` function actually requires.
+ * For a top-level function, the `@LoadMethod` functions live in the file itself; the calls are added to a static
+ * [org.jetbrains.kotlin.ir.declarations.IrAnonymousInitializer] of that file, which the JVM backend emits into the
+ * `<clinit>` of the file facade class it generates for the file's top-level declarations.
+ *
+ * Every `@LoadMethod` function is called with the owning container as the dispatch receiver - none, for a top-level
+ * function - passing only the `os`/`arch`/`vendor` String parameters it declares. The values are computed by
+ * [PlatformLoadArguments] and only for the parameters some `@LoadMethod` function actually requires.
  */
 internal class LoadMethodInjector(private val pluginContext: IrPluginContext) {
 
@@ -61,12 +66,49 @@ internal class LoadMethodInjector(private val pluginContext: IrPluginContext) {
 
     /**
      * Generates and appends the loading call for every `@LoadMethod` function of [declaration] to the appropriate
-     * place: `<clinit>` for a regular class (via its companion), `<init>` for a Kotlin object.
+     * place: `<clinit>` for a regular class (via its companion), `<init>` for a Kotlin object, `<clinit>` of the
+     * file facade for a top-level function.
      *
      * @return `true` if a loading call was injected.
      */
     fun inject(declaration: IrClass): Boolean =
         if (declaration.isObject) injectIntoObject(declaration) else injectIntoClass(declaration)
+
+    /**
+     * Top-level function: finds `@LoadMethod` functions declared directly in the file and adds a static
+     * [org.jetbrains.kotlin.ir.declarations.IrAnonymousInitializer] to the file itself, which the JVM backend
+     * (`FileFacadeClassBuilder`) emits into the `<clinit>` of the file facade class it generates for the file's
+     * top-level declarations.
+     *
+     * The facade class itself does not exist yet at this phase - it is created by a later lowering from the file's
+     * top-level declarations - which is why the initializer is added to the [IrFile] and not to a class.
+     */
+    fun injectIntoFile(file: IrFile): Boolean {
+        val loadMethods = file.loadMethods()
+        if (loadMethods.isEmpty()) return false
+
+        val builder = DeclarationIrBuilder(
+            pluginContext,
+            file.symbol,
+            file.startOffset,
+            file.endOffset,
+        )
+
+        val initializer = irFactory.createAnonymousInitializer(
+            startOffset = file.startOffset,
+            endOffset = file.endOffset,
+            origin = IrDeclarationOrigin.DEFINED,
+            symbol = IrAnonymousInitializerSymbolImpl(),
+            isStatic = true,
+        ).also { it.parent = file }
+
+        initializer.body = builder.irBlockBody {
+            buildLoadCalls(loadMethods, dispatchReceiver = null)
+        }
+
+        file.declarations += initializer
+        return true
+    }
 
     /**
      * Regular class: finds `@LoadMethod` functions in the companion object and adds a static `<clinit>` initializer
@@ -128,29 +170,38 @@ internal class LoadMethodInjector(private val pluginContext: IrPluginContext) {
 
     /** `@LoadMethod` functions declared directly in this container (its own declarations, not a companion). */
     private fun IrClass.loadMethods(): List<IrSimpleFunction> =
-        declarations.filterIsInstance<IrSimpleFunction>().mapNotNull { fn ->
-            if (fn.correspondingPropertySymbol != null ||
-                fn.isSuspend ||
-                !fn.hasAnnotation(Symbols.LoadMethod.asSingleFqName())
-            ) {
-                null
-            } else {
-                val illegal = fn.parameters.filter { param ->
-                    // The member `this` (IrParameterKind.DispatchReceiver) is fine: the injector fills it via the
-                    // object/class receiver.
-                    // Only out-of-scope value parameters and extension/context receivers are not.
-                    (param.kind == IrParameterKind.Regular && param.name !in Symbols.loadMethodParameters) ||
-                        param.kind == IrParameterKind.ExtensionReceiver ||
-                        param.kind == IrParameterKind.Context
-                }
-                if (illegal.isNotEmpty()) {
-                    reportIllegalParameters(fn, illegal)
-                    null
-                } else {
-                    fn
-                }
-            }
+        declarations.filterIsInstance<IrSimpleFunction>().mapNotNull(::loadMethodOrNull)
+
+    /** `@LoadMethod` functions declared directly in this file (top-level). */
+    private fun IrFile.loadMethods(): List<IrSimpleFunction> =
+        declarations.filterIsInstance<IrSimpleFunction>().mapNotNull(::loadMethodOrNull)
+
+    /**
+     * [fn] as a `@LoadMethod` to inject, or `null` if it is not one or cannot be called by the loader.
+     *
+     * A member `this` ([IrParameterKind.DispatchReceiver]) is fine: the injector fills it via the object/class
+     * receiver, and a top-level function simply has none. Only out-of-scope value parameters and
+     * extension/context receivers are not.
+     */
+    private fun loadMethodOrNull(fn: IrSimpleFunction): IrSimpleFunction? {
+        if (fn.correspondingPropertySymbol != null ||
+            fn.isSuspend ||
+            !fn.hasAnnotation(Symbols.LoadMethod.asSingleFqName())
+        ) {
+            return null
         }
+        val illegal = fn.parameters.filter { param ->
+            (param.kind == IrParameterKind.Regular && param.name !in Symbols.loadMethodParameters) ||
+                param.kind == IrParameterKind.ExtensionReceiver ||
+                param.kind == IrParameterKind.Context
+        }
+        return if (illegal.isNotEmpty()) {
+            reportIllegalParameters(fn, illegal)
+            null
+        } else {
+            fn
+        }
+    }
 
     /**
      * Reports [JniBindingConsumerErrors.ILLEGAL_LOAD_METHOD_PARAMETERS] for an `@LoadMethod` function whose declared
@@ -176,8 +227,9 @@ internal class LoadMethodInjector(private val pluginContext: IrPluginContext) {
 
     /** 
      * Emits the calls to every [loadMethods], passing the `os`/`arch`/`vendor` values it declares.
+     * [dispatchReceiver] is `null` for top-level functions (no receiver).
      */
-    private fun IrBlockBodyBuilder.buildLoadCalls(loadMethods: List<IrSimpleFunction>, dispatchReceiver: IrExpression) {
+    private fun IrBlockBodyBuilder.buildLoadCalls(loadMethods: List<IrSimpleFunction>, dispatchReceiver: IrExpression?) {
         val needOs = loadMethods.any { it.hasName(Symbols.osParameter) }
         val needArch = loadMethods.any { it.hasName(Symbols.archParameter) }
         val needVendor = loadMethods.any { it.hasName(Symbols.vendorParameter) }
@@ -188,7 +240,9 @@ internal class LoadMethodInjector(private val pluginContext: IrPluginContext) {
 
         for (fn in loadMethods) {
             val call = irCall(fn.symbol)
-            call.dispatchReceiver = dispatchReceiver
+            if (dispatchReceiver != null) {
+                call.dispatchReceiver = dispatchReceiver
+            }
             call.type = fn.returnType
             for (param in fn.regularParameters()) {
                 val value = when (param.name) {

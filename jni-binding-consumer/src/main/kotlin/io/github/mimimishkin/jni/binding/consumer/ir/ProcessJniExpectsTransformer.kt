@@ -41,6 +41,11 @@ internal class ProcessJniExpectsTransformer(
      */
     private val loadMethodClasses = mutableSetOf<IrClass>()
 
+    /**
+     * Files that declare a top-level `@LoadMethod`.
+     */
+    private val loadMethodFiles = mutableSetOf<IrFile>()
+
     override fun visitSimpleFunction(declaration: IrSimpleFunction): IrStatement {
         val parentClass = declaration.parent as? IrClass
         val parentFile = declaration.parent as? IrFile
@@ -51,7 +56,11 @@ internal class ProcessJniExpectsTransformer(
 
         if (declaration.hasAnnotation(Symbols.LoadMethod.asSingleFqName())) {
             val container = (parentClass?.parent as? IrClass) ?: parentClass
-            if (container != null) loadMethodClasses += container
+            if (container != null) {
+                loadMethodClasses += container
+            } else if (parentFile != null) {
+                loadMethodFiles += parentFile
+            }
         }
 
         if (implicitJniExpect || explicitJniExpect) {
@@ -75,6 +84,7 @@ internal class ProcessJniExpectsTransformer(
         }
         val result = super.visitModuleFragment(declaration)
         loadMethodClasses.forEach { loadMethodInjector.inject(it) }
+        loadMethodFiles.forEach { loadMethodInjector.injectIntoFile(it) }
         return result
     }
 }

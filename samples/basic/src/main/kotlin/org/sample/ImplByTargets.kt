@@ -21,20 +21,20 @@ external fun linuxX64Hello(): String
 @JniExpect("linuxArm64")
 external fun linuxArm64Hello(): String
 
-// Top-level external functions have no `@JniExpects` container to inject a `@LoadMethod` into, so the "hello" library
-// is loaded manually before the functions above are called (see [JniBindingTest]).
-object HelloNative {
-    @Suppress("UnsafeDynamicallyLoadedCode")
-    @LoadMethod
-    fun load(os: String, arch: String) {
-        val libPath = "/natives/$os-$arch/${mapLibraryName("hello")}"
-        val libStream = HelloNative::class.java.getResourceAsStream(libPath)
-            ?: error("No native library found at $libPath")
-        val outputPath = Files.createTempFile(null, libPath.substringAfterLast('/'))
-        libStream.use { input ->
-            Files.copy(input, outputPath, StandardCopyOption.REPLACE_EXISTING)
-        }
-        outputPath.toFile().deleteOnExit()
-        System.load(outputPath.absolutePathString())
+// The functions above are top-level, so they are not members of a `@JniExpects` class/object and there is no
+// container to inject a load call into. A top-level `@LoadMethod` needs none: the plugin adds a static initializer to
+// this file's facade class (`org.sample.ImplByTargetsKt`), which runs on the first call of any of the functions
+// above, so simply using this file is enough to load the library.
+@Suppress("UnsafeDynamicallyLoadedCode")
+@LoadMethod
+private fun loadHello(os: String, arch: String) {
+    val libPath = "/natives/$os-$arch/${mapLibraryName("hello")}"
+    val libStream = object {}.javaClass.getResourceAsStream(libPath)
+        ?: error("No native library found at $libPath")
+    val outputPath = Files.createTempFile(null, libPath.substringAfterLast('/'))
+    libStream.use { input ->
+        Files.copy(input, outputPath, StandardCopyOption.REPLACE_EXISTING)
     }
+    outputPath.toFile().deleteOnExit()
+    System.load(outputPath.absolutePathString())
 }

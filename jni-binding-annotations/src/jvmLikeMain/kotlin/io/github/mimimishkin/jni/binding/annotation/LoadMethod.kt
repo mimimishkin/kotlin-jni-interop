@@ -4,6 +4,8 @@ package io.github.mimimishkin.jni.binding.annotation
  * Annotates a function that loads the native library:
  * - In a companion object of a class. It will be called in the parent class's `<clinit>`.
  * - In an `object`. It will be called in the object's `<init>`.
+ * - At the top level of a file. It will be called in the `<clinit>` of the file facade class the top-level
+ *   declarations of that file compile to.
  *
  * It may optionally have the following String parameters: `os`, `arch`, and `vendor` of a `String` type:
  * - If the `os: String` parameter is present, the OS family will be passed in, or `System.getProperty("os.name")` if
@@ -33,6 +35,14 @@ package io.github.mimimishkin.jni.binding.annotation
  *             System.load(lib.absolutePath)
  *         }
  *     }
+ * }
+ * ```
+ *
+ * Or at the top level, to load a library bound to top-level external functions, which have no class to inject into:
+ * ```kotlin
+ * @LoadMethod
+ * private fun load(os: String, arch: String) {
+ *     System.load("natives/$os-$arch/${mapLibraryName("native")}")
  * }
  * ```
  */

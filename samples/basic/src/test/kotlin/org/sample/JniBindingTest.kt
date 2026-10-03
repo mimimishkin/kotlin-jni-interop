@@ -55,8 +55,6 @@ class JniBindingTest {
 
     @Test
     fun `hello library platform-specific function works`() {
-        @Suppress("UnusedExpression") HelloNative // just access to cause library loading
-
         val osName = System.getProperty("os.name").lowercase()
         val archName = System.getProperty("os.arch").lowercase()
         val result = when {
