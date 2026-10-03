@@ -482,6 +482,49 @@ public inline fun JByteArray.toKArray(length: Int = this.length): ByteArray {
 }
 
 /**
+ * Writes a region of the Kotlin [source] array into this JVM `byte[]` starting at [offset] using [setRegion].
+ *
+ * @param source the source Kotlin array.
+ * @param offset the starting index in this JVM array.
+ * @param startIndex the first index of [source] to copy.
+ * @param endIndex the last (exclusive) index of [source] to copy.
+ *
+ * @throws IndexOutOfBoundsException if either region is out of bounds.
+ */
+context(env: JniEnv)
+public inline fun JByteArray.set(
+    source: ByteArray,
+    offset: Int = 0,
+    startIndex: Int = 0,
+    endIndex: Int = source.size,
+) {
+    val length = endIndex - startIndex
+    source.usePinned { setRegion(offset, length, it.addressOf(startIndex)) }
+}
+
+/**
+ * Copies a region of this JVM `byte[]` into [destination] using [getRegion] and returns [destination].
+ *
+ * @param destination the destination Kotlin array.
+ * @param destinationOffset the first index of [destination] to write to.
+ * @param startIndex the first index of this JVM array to copy.
+ * @param endIndex the last (exclusive) index of this JVM array to copy.
+ *
+ * @throws IndexOutOfBoundsException if either region is out of bounds.
+ */
+context(env: JniEnv)
+public inline fun JByteArray.copyInto(
+    destination: ByteArray,
+    destinationOffset: Int = 0,
+    startIndex: Int = 0,
+    endIndex: Int = this.length,
+): ByteArray {
+    val length = endIndex - startIndex
+    destination.usePinned { getRegion(startIndex, length, it.addressOf(destinationOffset)) }
+    return destination
+}
+
+/**
  * The underlying opaque type for [JCharArray].
  *
  * This type must not be used directly, it's only for type-safety of [JRef] usage.

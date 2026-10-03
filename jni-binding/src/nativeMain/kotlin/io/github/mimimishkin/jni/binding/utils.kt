@@ -60,6 +60,17 @@ public inline fun <R> JavaVM.useEnv(version: JniVersion, block: context(MemScope
 }
 
 /**
+ * Alias for `memScoped { vm.withEnvAttaching(version) { /* your code */ } }` allowing to write less boilerplate code.
+ */
+public inline fun <R> JavaVM.useEnvAttaching(version: JniVersion, block: context(MemScope, JniEnv) () -> R): R {
+    return memScoped {
+        withEnvAttaching(version) {
+            block()
+        }
+    }
+}
+
+/**
  * Allows declaring lazy values that requires [JniEnv] to be initialized.
  *
  * To create an instance of [JniLazy] use the [jniLazy] function.
