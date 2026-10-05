@@ -31,12 +31,13 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget.*
 import java.io.File
 import java.util.Properties
+import java.util.concurrent.Callable
 
 /**
  * Configuration of a single JNI library used by a JVM/Android compilation.
  *
- * Configures per-platform binding sources (see [targets]), extra actuals policy, the load method, and copying of
- * binaries into resources.
+ * Configures per-platform binding sources (see [targets]), extra actuals policy, and where the binaries of the
+ * individual targets are packaged (see [JniBindingTarget.copyToResources] and [JniBindingTarget.copyToJniLibs]).
  */
 @Suppress("UnstableApiUsage")
 public class JniLibraryConfig internal constructor(
@@ -83,21 +84,15 @@ public class JniLibraryConfig internal constructor(
 
     /**
      * Directory [importLibTaskProvider] mirrors the binaries into.
-     *
-     * A desktop consumer registers it among the resources of its compilation; an Android one registers it among
-     * either `jniLibs` ([copyToJniLibs]) or its assets ([copyToResources]). Binaries end up under the target's
-     * [JniBindingTarget.resourceDir] for the resource/asset layout and under its [JniBindingTarget.abi] for `jniLibs`.
      */
     private val importedLibrariesDir = project.layout.buildDirectory.dir(
         "generated/jniLibs/${consumerCompilation.disambiguateName(libraryName)}"
     )
 
     /**
-     * Whether binaries are laid out for loading from files (a target's [JniBindingTarget.resourceDir]) instead of
-     * for `jniLibs` (an Android target's [JniBindingTarget.abi]).
+     * The Android extension of this project, or `null` if this is a plain JVM one.
      */
-    private val packToResources: Property<Boolean> = project.objects.property<Boolean>()
-        .convention(false)
+    private val androidExtension: CommonExtension? = project.extensions.findByName("android") as? CommonExtension
 
     /**
      * All platform targets of this library. Register new ones with [target] or its shortcuts
@@ -160,8 +155,13 @@ public class JniLibraryConfig internal constructor(
                 fromPrebuiltBinding(project.layout.dir(project.provider { bindingsDir }))
             }
 
-            override val resourceDir: Property<String> = project.objects.property<String>()
-                .convention("natives/$os-$arch")
+            override fun copyToResources(resourceDir: String) {
+                importTarget(this, BinaryLayout.RESOURCES, resourceDir)
+            }
+
+            override fun copyToJniLibs() {
+                importTarget(this, BinaryLayout.JNI_LIBS, this.abi)
+            }
         }
         targets += target
         configure.execute(target)
@@ -263,14 +263,11 @@ public class JniLibraryConfig internal constructor(
         .convention(false)
 
     /**
-     * Task that mirrors binaries of this library into the directory the packaging methods register.
+     * Task that mirrors the binaries of this library's packaged targets into [importedLibrariesDir].
      *
-     * Every [target] contributes its binary. [copyToResources] lays them out under each target's
-     * [JniBindingTarget.resourceDir] (on Android among the assets), while [copyToJniLibs] lays an Android target out
-     * under its [JniBindingTarget.abi] for `System.loadLibrary`.
-     *
-     * @see copyToResources
-     * @see copyToJniLibs
+     * A target contributes a source when it called [JniBindingTarget.copyToResources] or
+     * [JniBindingTarget.copyToJniLibs]; the targets that did not are not packaged at all. A library none of whose
+     * targets was packaged has no source either, and this task is skipped.
      */
     public val importLibTaskProvider: TaskProvider<Sync> = project.tasks.register<Sync>(
         camelCase(
@@ -289,8 +286,9 @@ public class JniLibraryConfig internal constructor(
         // That is why nothing here declares a dependency on the producer's configuration: a `Configuration` is not
         // a serializable task dependency, and passing one is what the configuration cache rejects.
         val destDir = importedLibrariesDir
-        // A `Sync` without any source is reported NO-SOURCE and its actions never run, so every target must
-        // contribute a source; destinations are relative to this one, per target.
+        // A `Sync` without any source is reported NO-SOURCE and its actions never run, which is exactly what a
+        // library none of whose targets asked to be packaged should do. The per-target destinations are relative
+        // to this one.
         into(destDir)
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         outputs.dir(destDir)
@@ -305,32 +303,11 @@ public class JniLibraryConfig internal constructor(
         // is picked up by this task rather than by the compiler alone.
         inputs.files(actualsFiles)
 
-        // Resolving the binaries schedules the producers' exportJniBinding tasks as well, so the files
-        // are guaranteed to exist on disk when this task executes.
+        // Every configured target's binaries are an input, including those that are not packaged: resolving them
+        // schedules the producers' exportJniBinding tasks as well, so the files that are packaged are guaranteed to
+        // exist on disk when this task executes, and a target whose bindings are missing altogether fails the build
+        // rather than being silently skipped.
         inputs.files(allBinaries)
-
-        targets.configureEach { target ->
-            // `into` resolves a provider lazily, so the relative path can depend on the layout chosen by
-            // `copyToResources()`/`copyToJniLibs()`, which may be called after this target was configured.
-            val resourcesLayout = packToResources
-            val resourceDir = target.resourceDir
-            val abi = target.abi
-            val isAndroid = target.os == "android"
-
-            // `from` is given a file collection rather than a resolved list of files, so that the dependencies
-            // the producer attached to its artifacts are kept. It has to stay deferred: `configureEach` runs
-            // before the user's configuration lambda, so `source` is not set yet at this point.
-            //
-            // The child spec is taken as a lambda parameter on purpose: a Kotlin lambda passed to a Java
-            // SAM parameter has no receiver, so a bare `into(...)` here would silently configure the
-            // destination of the whole task instead of this spec.
-            from(binariesOf(target)) { spec ->
-                // The path is relative to the destination set above.
-                spec.into(project.provider {
-                    if (resourcesLayout.get() || !isAndroid) resourceDir.get() else abi
-                })
-            }
-        }
     }
 
     /**
@@ -377,92 +354,177 @@ public class JniLibraryConfig internal constructor(
     }
 
     /**
-     * Makes the consumer compilation copy the JNI library into its resources (or assets on Android).
+     * Every target that asked to be packaged, with the destination it is packaged into.
      *
-     * Libraries are copied to the relative path defined by [JniBindingTarget.resourceDir].
+     * The destination is mutable because a target may ask to be packaged more than once, in which case the last
+     * request wins. A [Sync] task cannot drop a copy spec it has been given, so the spec of a target is registered
+     * once and reads its destination from here when the task runs; packaging the same target again therefore moves
+     * its binary rather than adding a second copy of it.
      */
-    public fun copyToResources() {
-        packToResources.set(true)
+    private val packagedTargets = mutableMapOf<JniBindingTarget, PackagedDestination>()
 
-        val android = project.extensions.findByName("android") as? CommonExtension
-        if (android != null) {
-            val sourceSetName = consumerCompilation.compilationName
-            val sourceSet = android.sourceSets.findByName(sourceSetName)
-                ?: error("There is no Android source set '$sourceSetName' to copy $libraryName into")
-            val assetsDir = importedLibrariesDir.get().asFile.absolutePath
-            sourceSet.assets.directories.add(assetsDir)
+    /**
+     * The layout and path a packaged target's binary goes to, both of which a later request may replace.
+     */
+    private class PackagedDestination(var layout: BinaryLayout, var path: String)
 
-            // Registering the directory does not make Gradle run the copy task: `importedLibrariesDir` is a plain
-            // build-directory provider with no producer attached, so the dependency has to be declared.
-            val variant = sourceSetName.replaceFirstChar { it.uppercase() }
-            project.tasks.matching { task ->
-                task.name == "merge${variant}Assets" ||
-                    task.name == "package${variant}"
-            }.configureEach { it.dependsOn(importLibTaskProvider) }
+    /**
+     * Layouts whose staging directory has been registered with the packaging machinery already.
+     */
+    private val registeredLayouts = mutableSetOf<BinaryLayout>()
+
+    init {
+        packImportedLibraries()
+    }
+
+    /**
+     * Makes the packaging of this library depend on [importLibTaskProvider] having run.
+     *
+     * Registering a directory does not make Gradle run the task producing it: the staging directories are plain
+     * build-directory providers with no producer attached, so the dependency has to be declared. A desktop project
+     * reads them in `processResources`; an Android one reads them in the `merge*` tasks of the variant, which are the
+     * last ones to do so before the variant is packaged.
+     */
+    private fun packImportedLibraries() {
+        val sourceSetName = consumerCompilation.compilationName
+
+        if (androidExtension == null) {
+            val processResources = if (project.extensions.findByType<KotlinMultiplatformExtension>() != null) {
+                consumerCompilation.disambiguateName("processResources")
+            } else {
+                camelCase(
+                    sourceSetName.takeIf { it != KotlinCompilation.MAIN_COMPILATION_NAME },
+                    "processResources"
+                )
+            }
+            project.tasks.named(processResources).configure { it.dependsOn(importLibTaskProvider) }
             return
         }
 
-        val resources = consumerCompilation.defaultSourceSet.resources
-        if (resources.srcDirs.none { it == importedLibrariesDir.get().asFile }) {
-            resources.srcDir(importedLibrariesDir)
+        val variant = sourceSetName.replaceFirstChar { it.uppercase() }
+        project.tasks.named { name ->
+            name in setOf(
+                "merge${variant}Assets",
+                "merge${variant}NativeLibs",
+                "merge${variant}JniLibFolders",
+                "package${variant}",
+            )
+        }.configureEach { it.dependsOn(importLibTaskProvider) }
+    }
+
+    /**
+     * Mirrors [target]'s binary into [importedLibrariesDir], laid out as [layout] requires.
+     *
+     * [pathInStagingDir] is where the binary goes within the layout's own directory, e.g. `natives/linux-x86_64` for
+     * the resources. It is taken as given, so that a target may be packaged into a path of its own choosing. Asking
+     * for the same target again replaces the destination asked for before, be it another path or another layout.
+     *
+     * The binaries are resolved lazily, because a target's `copyToResources()`/`copyToJniLibs()` may well be called
+     * before its [JniBindingTarget.source] is configured.
+     */
+    private fun importTarget(target: JniBindingTarget, layout: BinaryLayout, pathInStagingDir: String) {
+        // The path is accepted the way it is written in the JVM code that loads the binary, that is with a leading
+        // slash and without a trailing one, and the staging directory must not be escaped either.
+        val path = pathInStagingDir.trim('/')
+        require(path.isNotEmpty()) {
+            "Target '${target.name}' of $libraryName is to be packaged at an empty path"
         }
 
-        val processResources = if (project.extensions.findByType<KotlinMultiplatformExtension>() != null) {
-            consumerCompilation.disambiguateName("processResources")
-        } else {
-            camelCase(
-                consumerCompilation.compilationName.takeIf { it != KotlinCompilation.MAIN_COMPILATION_NAME },
-                "processResources"
-            )
+        val destination = packagedTargets[target]
+        if (destination != null) {
+            destination.layout = layout
+            destination.path = path
+            registerStagingDir(layout)
+            return
         }
-        project.tasks.named(processResources).configure {
-            it.dependsOn(importLibTaskProvider)
+
+        val registered = PackagedDestination(layout, path)
+        packagedTargets[target] = registered
+        registerStagingDir(layout)
+
+        importLibTaskProvider.configure { task ->
+            // `from` is given a file collection rather than a resolved list of files, so that the dependencies the
+            // producer attached to its artifacts are kept.
+            //
+            // The child spec is taken as a lambda parameter on purpose: a Kotlin lambda passed to a Java SAM
+            // parameter has no receiver, so a bare `into(...)` here would silently configure the destination of the
+            // whole task instead of this spec. Its path is relative to the destination set for the task as a whole,
+            // and is resolved when the task runs rather than now, which is what lets a target be packaged again.
+            task.from(project.provider { binariesOf(target) }) { spec ->
+                spec.into(Callable { "${registered.layout.stagingDir}/${registered.path}" })
+            }
         }
     }
 
     /**
-     * Makes `merge*NativeLibs` to copy the JNI library to the `jniLibs` of the android consumer compilation.
+     * Registers the directory [importLibTaskProvider] mirrors the binaries of [layout] into with the packaging
+     * machinery of this project.
      *
-     * Each binary is placed under its [JniBindingTarget.abi]. This is the default Android layout; call
-     * [copyToResources] instead to load the binary from the assets.
+     * A desktop project takes the `resources` subdirectory, which holds a directory of the target's own for every
+     * packaged target and is therefore registered as a whole, while an Android one takes it among the assets.
+     * Registering happens along with the first target of a layout, so that a library is not declared in a place it
+     * is not packaged into.
      *
-     * @throws IllegalStateException if the project does not apply an Android plugin.
+     * @throws IllegalStateException if [layout] is [BinaryLayout.JNI_LIBS] and the project does not apply an Android
+     * plugin.
      */
-    public fun copyToJniLibs() {
-        packToResources.set(false)
+    private fun registerStagingDir(layout: BinaryLayout) {
+        if (!registeredLayouts.add(layout)) return
 
-        val android = project.extensions.findByName("android") as? CommonExtension
-            ?: error("copyToJniLibs() requires an Android application or library plugin to be applied")
+        val android = androidExtension
+        val stagingDir = stagingDirOf(layout)
+
+        if (android == null) {
+            if (layout != BinaryLayout.RESOURCES) {
+                error("copyToJniLibs() requires an Android application or library plugin to be applied")
+            }
+            val resources = consumerCompilation.defaultSourceSet.resources
+            if (resources.srcDirs.none { it == stagingDir }) {
+                resources.srcDir(stagingDir)
+            }
+            return
+        }
 
         val sourceSetName = consumerCompilation.compilationName
         val sourceSet = android.sourceSets.findByName(sourceSetName)
             ?: error("There is no Android source set '$sourceSetName' to copy $libraryName into")
 
-        val jniLibsDir = importedLibrariesDir.get().asFile.absolutePath
-        if (sourceSet.jniLibs.directories.none { it == jniLibsDir }) {
-            sourceSet.jniLibs.directories.add(jniLibsDir)
+        // Both of these are plain string sets, hence the paths.
+        val directories = when (layout) {
+            BinaryLayout.RESOURCES -> sourceSet.assets.directories
+            BinaryLayout.JNI_LIBS -> sourceSet.jniLibs.directories
         }
-
-        // Registering the directory does not make Gradle run the copy task: `importedLibrariesDir` is a plain
-        // build-directory provider with no producer attached, so the dependency has to be declared. The merge task is
-        // the last one that reads `jniLibs` before packaging, which makes it the safe place to hook.
-        val variant = sourceSetName.replaceFirstChar { it.uppercase() }
-        val mergeTasks = project.tasks.matching { task ->
-            task.name == "merge${variant}NativeLibs" ||
-                task.name == "merge${variant}JniLibFolders" ||
-                task.name == "package${variant}"
+        val dir = stagingDir.absolutePath
+        if (directories.none { it == dir }) {
+            directories.add(dir)
         }
-        mergeTasks.configureEach { it.dependsOn(importLibTaskProvider) }
     }
+
+    /**
+     * Absolute path of the directory [importLibTaskProvider] mirrors the binaries of [layout] into.
+     */
+    private fun stagingDirOf(layout: BinaryLayout): File =
+        importedLibrariesDir.get().asFile.resolve(layout.stagingDir)
 }
+
+/**
+ * Where a target's binary is packaged: among the resources of the compilation (or, on Android, among its assets), or
+ * into the `jniLibs` of the APK/AAR.
+ */
+private enum class BinaryLayout(val stagingDir: String) {
+    RESOURCES("resources"),
+    JNI_LIBS("jniLibs")
+}
+
+/**
+ * The directory, under a producer's build directory, that `JniLibProducerPlugin` writes its output into.
+ */
+private const val PRODUCER_OUTPUT_DIR = "jniBindings"
 
 /**
  * Checks each producer `info.properties` against the project's target JVM: the requested JNI version must be
  * no newer than the target JDK.
  */
-/** The directory, under a producer's build directory, that `JniLibProducerPlugin` writes its output into. */
-private const val PRODUCER_OUTPUT_DIR = "jniBindings"
-
 private fun validateBindingInfoFiles(files: FileCollection, targetJvmMajor: Int) {
     if (targetJvmMajor <= 0) return
     for (file in files) {
@@ -471,8 +533,8 @@ private fun validateBindingInfoFiles(files: FileCollection, targetJvmMajor: Int)
         if (targetJvmMajor < jniVersion) {
             error(
                 "The binding $file requests JNI version $jniVersion, which needs JDK $jniVersion or newer, " +
-                    "but the project's target JVM is $targetJvmMajor. Lower `jniLibraries.jniVersion` in the " +
-                    "producer or increase `jvmToolchain` in the consumer."
+                        "but the project's target JVM is $targetJvmMajor. Lower `jniLibraries.jniVersion` in the " +
+                        "producer or increase `jvmToolchain` in the consumer."
             )
         }
     }

@@ -40,18 +40,16 @@ kotlin {
                         it.fromPrebuiltBinding(rootDir.resolve("jniBindings/${it.os}-${it.arch}"))
                     }
 
-                    // We also must set up [resourceDir] where the native binary will be copied to.
+                    // We also must set up directory where the native binary will be copied to.
                     // In this example there will be this layout:
                     // generated/ressources/natives
                     //  |- windows-x86_64/native.dll
                     //  |- linux-x86_64/libnative.so
                     //  |- linux-aarch64/libnative.so
                     //  |- macos-aarch64/libnative.dylib
-                    it.resourceDir = "natives/${it.os}-${it.arch}"
+                    it.copyToResources("natives/${it.os}-${it.arch}")
                 }
 
-                // Makes `processResources` to copy the JNI library to the resources of the consumer compilation.
-                copyToResources()
                 // Do not allow JniActual without JniExpect counterpart.
                 allowExtraActuals = false
 
@@ -73,10 +71,9 @@ kotlin {
                     } else {
                         it.fromPrebuiltBinding(rootDir.resolve("jniBindings/${it.os}-${it.arch}"))
                     }
-                    it.resourceDir = "natives/${it.os}-${it.arch}"
+                    it.copyToResources()
                 }
 
-                copyToResources()
                 if (!isCI) allowAbsentBindings = true
             }
 
@@ -95,10 +92,9 @@ kotlin {
                     } else {
                         it.fromPrebuiltBinding(rootDir.resolve("jniBindings/${it.os}-${it.arch}"))
                     }
-                    it.resourceDir = "natives/${it.os}-${it.arch}"
+                    it.copyToResources()
                 }
 
-                copyToResources()
                 if (!isCI) allowAbsentBindings = true
             }
         }

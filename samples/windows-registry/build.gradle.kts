@@ -24,10 +24,9 @@ kotlin {
             jniLibraries.create("native") {
                 mingwX64 {
                     fromProducer(project)
-                    resourceDir = "natives/"
+                    copyToResources("natives/")
                 }
 
-                copyToResources()
                 allowExtraActuals = false
             }
         }

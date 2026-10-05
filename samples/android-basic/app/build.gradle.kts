@@ -36,9 +36,8 @@ kotlin {
                     androidX64(),
                 ).forEach {
                     it.fromProducer(project(":android-basic:native"))
+                    it.copyToJniLibs()
                 }
-
-                copyToJniLibs()
             }
         }
     }

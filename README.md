@@ -86,8 +86,10 @@ kotlin {
     target { // or jvm { ... } in a multiplatform project
         compilations.named("main") {
             jniLibraries.create("native") {     // same name as sharedLib("native")
-                mingwX64().fromProducer(project(":native"))
-                copyToResources()               // puts the binary into jar resources
+                mingwX64 {
+                    fromProducer(project(":native")) // sync natives
+                    copyToResources()                // puts the binary into jar resources
+                }
             }
         }
     }
@@ -101,10 +103,10 @@ kotlin {
 external fun hello(): String
 
 @LoadMethod
-private fun load(os: String, arch: String) { 
+private fun load(os: String, arch: String) {
     // `os` receives the OS family ("windows", "linux", "macos", "android"),
     // `arch` the normalized architecture ("x86_64", "aarch64", ...).
-    
+
     // After copyToResources() the binary is at /natives/$os-$arch/...
     // Copy it out of the jar and System.load(...). Full example: samples/basic.
 }
@@ -123,6 +125,7 @@ Group several functions with `@JniActuals` so you write the class name once:
 ```kotlin
 @JniActuals(className = "org.sample.HelloKt")
 object Hello {
+    context(env: JniEnv, autofreeScope: AutofreeScope)
     fun hello(): JString? = "Hello".toJString()
 }
 ```
@@ -152,11 +155,14 @@ pass a target JDK with `linkJvm(downloadCompatibleJdk())` — see [`samples/basi
 
 ```kotlin
 jniLibraries.create("native") {
-    mingwX64().fromProducer(project(":native"))           // build here
-    // linuxX64().fromPrebuiltBinding(prebuiltDir)        // or take a binary built elsewhere
-
-    copyToResources()       // into jar resources / Android assets
-    // copyToJniLibs()      // Android: jniLibs/<abi>/ for System.loadLibrary
+    mingwX64() {
+        fromProducer(project("native"))     // build here
+        copyToResources()       // copy lib into jar resources / Android assets
+    }
+    androidArm32() {
+        fromPrebuiltBinding(prebuiltDir)     // or take a binary built elsewhere
+        copyToJniLibs()      // Android only: copy to jniLibs/<abi>/ for System.loadLibrary
+    }
 
     allowExtraActuals = false
     allowAbsentBindings = false
@@ -210,8 +216,8 @@ See [`samples/basic`](samples/basic) for every supported shape.
 
 ## Critical natives
 
-This is optimization for faster JNI function calls. A `@CriticalNative` is called **without a `JniEnv` and without a 
-class/object reference**. Only primitives / primitive arrays (On JDK only - each array arrives as a `(length, pointer)` 
+This is optimization for faster JNI function calls. A `@CriticalNative` is called **without a `JniEnv` and without a
+class/object reference**. Only primitives / primitive arrays (On JDK only - each array arrives as a `(length, pointer)`
 pair), `static` and non-`synchronized` on the JVM side. Also, the method must never call back into the JVM.
 
 ```kotlin

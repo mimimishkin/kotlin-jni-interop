@@ -64,7 +64,7 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                 },
             ) ?: continue
             sourceSet.dependencies {
-                implementation(ANNOTATIONS_ID)
+                compileOnly(ANNOTATIONS_ID)
             }
         }
     }
@@ -125,9 +125,14 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
         // their hash changes, and the consumer recompiles.
         kotlinCompilation.compileTaskProvider.configure { compileTask ->
             compileTask.dependsOn(importTaskProvider)
+            // The actuals are tracked as the file collections themselves rather than as the files they hold at
+            // configuration time: a collection resolved here would resolve the producers' configurations while this
+            // project is still being configured, which neither the configuration cache nor isolated projects accept.
+            // The dependencies the producers attached to their artifacts ride along with the collections and are
+            // honored when the task's inputs are snapshotted, before it runs.
             compileTask.inputs.files(
                 project.files(
-                    kotlinCompilation.jniLibrariesProvider.orNull.orEmpty().flatMap { it.actualsFiles.files }
+                    kotlinCompilation.jniLibrariesProvider.orNull.orEmpty().flatMap { it.actualsFiles }
                 )
             )
         }
@@ -162,9 +167,9 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                             // produces them - the compiler reads the file once the tasks have run, and reports
                             // what it finds there.
                             val outOfScope = actualsFile != null &&
-                                !actualsFile.exists() &&
-                                source?.producedByThisBuild == false &&
-                                library.allowAbsentBindings.get()
+                                    !actualsFile.exists() &&
+                                    source?.producedByThisBuild == false &&
+                                    library.allowAbsentBindings.get()
                             if (actualsFile != null && !outOfScope) {
                                 add(SubpluginOption("actualsFile", "${target.name}:${actualsFile.path}"))
                             }

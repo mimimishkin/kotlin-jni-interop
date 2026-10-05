@@ -13,8 +13,8 @@ import java.io.File
 /**
  * A single platform target of a JNI library binding.
  *
- * Describes where the compiled native binary for this platform comes from
- * (see [fromProducer] and [fromPrebuiltBinding]) and where it must be placed inside resources.
+ * Describes where the compiled native binary for this platform comes from (see [fromProducer] and
+ * [fromPrebuiltBinding]) and where it must be packaged (see [copyToResources] and [copyToJniLibs]).
  */
 public interface JniBindingTarget : Named, HasProject {
     /**
@@ -94,12 +94,30 @@ public interface JniBindingTarget : Named, HasProject {
     public fun fromPrebuiltBinding(bindingsDir: File)
 
     /**
-     * Path of the resource directory (relative to the resources root, or to the Android assets root) the native
-     * binary will be copied to by [JniLibraryConfig.copyToResources].
+     * Packages this target's binary into the resources of the consumer compilation, so that the JVM code can load it
+     * from the classpath. On Android the binary goes into the assets of the variant instead.
      *
-     * By default, it is `"natives/$os-$arch"`.
+     * Only the targets this is called for are packaged; the rest of the library's targets are left out.
+     *
+     * @param resourceDir path to package the binary at, relative to the resources root (or to the Android assets
+     * root). The default is what the target's own [os] and [arch] imply:
+     *
+     * ```kotlin
+     * // the linux-x86_64 binary of the `native` library
+     * getResourceAsStream("/natives/linux-x86_64/libnative.so")
+     * ```
      */
-    public val resourceDir: Property<String>
+    public fun copyToResources(resourceDir: String = "natives/$os-$arch")
+
+    /**
+     * Packages this target's binary into `jniLibs/<abi>` of the APK or AAR of the Android consumer compilation, so
+     * that `System.loadLibrary("<library name>")` finds it without extracting it by hand.
+     *
+     * Only the targets this is called for are packaged; the rest of the library's targets are left out.
+     *
+     * @throws IllegalStateException if the project does not apply an Android plugin.
+     */
+    public fun copyToJniLibs()
 }
 
 /**
