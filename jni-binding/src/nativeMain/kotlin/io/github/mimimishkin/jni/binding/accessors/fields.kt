@@ -32,6 +32,7 @@ import io.github.mimimishkin.jni.binding.getStaticLongField
 import io.github.mimimishkin.jni.binding.getStaticObjectField
 import io.github.mimimishkin.jni.binding.getStaticShortField
 import io.github.mimimishkin.jni.binding.javaClass
+import io.github.mimimishkin.jni.binding.modifiedUtf8
 import io.github.mimimishkin.jni.binding.setBooleanField
 import io.github.mimimishkin.jni.binding.setByteField
 import io.github.mimimishkin.jni.binding.setCharField
@@ -97,6 +98,22 @@ public inline fun JObject.booleanField(name: CValuesRef<ByteVar>): ReadWriteProp
 }
 
 /**
+ * Returns a [ReadWriteProperty] for `boolean` field of the object with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Boolean] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.booleanField(name: String): ReadWriteProperty<Any?, Boolean> {
+    return booleanField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for `byte` field of the object with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -130,6 +147,22 @@ public fun JObject.byteField(fieldId: JFieldID): ReadWriteProperty<Any?, Byte> {
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JObject.byteField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Byte>? {
     return byteField(javaClass.fieldId(name, "B".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for `byte` field of the object with the specified [name].
+ *
+ * @param name the static field name .
+ *
+ * @return a delegatable property of [Byte] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.byteField(name: String): ReadWriteProperty<Any?, Byte> {
+    return byteField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
 }
 
 /**
@@ -169,6 +202,22 @@ public inline fun JObject.charField(name: CValuesRef<ByteVar>): ReadWritePropert
 }
 
 /**
+ * Returns a [ReadWriteProperty] for `char` field of the object with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Char] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.charField(name: String): ReadWriteProperty<Any?, Char> {
+    return charField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for `short` field of the object with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -202,6 +251,22 @@ public fun JObject.shortField(fieldId: JFieldID): ReadWriteProperty<Any?, Short>
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JObject.shortField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Short>? {
     return shortField(javaClass.fieldId(name, "S".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for `short` field of the object with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Short] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.shortField(name: String): ReadWriteProperty<Any?, Short> {
+    return shortField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
 }
 
 /**
@@ -241,6 +306,22 @@ public inline fun JObject.intField(name: CValuesRef<ByteVar>): ReadWriteProperty
 }
 
 /**
+ * Returns a [ReadWriteProperty] for `int` field of the object with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Int] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.intField(name: String): ReadWriteProperty<Any?, Int> {
+    return intField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for `long` field of the object with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -274,6 +355,22 @@ public fun JObject.longField(fieldId: JFieldID): ReadWriteProperty<Any?, Long> {
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JObject.longField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Long>? {
     return longField(javaClass.fieldId(name, "J".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for `long` field of the object with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Long] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.longField(name: String): ReadWriteProperty<Any?, Long> {
+    return longField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
 }
 
 /**
@@ -313,6 +410,22 @@ public inline fun JObject.floatField(name: CValuesRef<ByteVar>): ReadWriteProper
 }
 
 /**
+ * Returns a [ReadWriteProperty] for `float` field of the object with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Float] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.floatField(name: String): ReadWriteProperty<Any?, Float> {
+    return floatField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for `double` field of the object with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -346,6 +459,22 @@ public fun JObject.doubleField(fieldId: JFieldID): ReadWriteProperty<Any?, Doubl
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JObject.doubleField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Double>? {
     return doubleField(javaClass.fieldId(name, "D".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for `double` field of the object with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Double] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.doubleField(name: String): ReadWriteProperty<Any?, Double> {
+    return doubleField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
 }
 
 /**
@@ -386,6 +515,23 @@ public inline fun JObject.objectField(name: CValuesRef<ByteVar>, sig: CValuesRef
 }
 
 /**
+ * Returns a [ReadWriteProperty] for `Object` field of the object with the specified [name] and [sig].
+ *
+ * @param name the static field name.
+ * @param sig the field signature.
+ *
+ * @return a delegatable property of [JObject]`?` type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.objectField(name: String, sig: String): ReadWriteProperty<Any?, JObject?> {
+    return objectField(name.modifiedUtf8, sig.modifiedUtf8) ?: error("Cannot find field '$name$sig'")
+}
+
+/**
  * Casts to any [JObject] descendant.
  */
 public inline fun <T : JRef<O>, O : _jobject> ReadWriteProperty<Any?, JObject?>.asType(): ReadWriteProperty<Any?, T?> {
@@ -399,6 +545,14 @@ public inline fun <T : JRef<O>, O : _jobject> ReadWriteProperty<Any?, JObject?>.
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JObject.stringField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, JString?>? {
     return objectField(name, "Ljava/lang/String;".utf8)?.asType()
+}
+
+/**
+ * Alias for [objectField] with `sig = "Ljava/lang/String;"`.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JObject.stringField(name: String): ReadWriteProperty<Any?, JString?> {
+    return stringField(name.modifiedUtf8) ?: error("Cannot find field '$name'")
 }
 
 /**
@@ -459,6 +613,22 @@ public inline fun JClass.staticBooleanField(name: CValuesRef<ByteVar>): ReadWrit
 }
 
 /**
+ * Returns a [ReadWriteProperty] for static `boolean` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Boolean] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticBooleanField(name: String): ReadWriteProperty<Any?, Boolean> {
+    return staticBooleanField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for static `byte` field of the class with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -492,6 +662,22 @@ public fun JClass.staticByteField(fieldId: JFieldID): ReadWriteProperty<Any?, By
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JClass.staticByteField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Byte>? {
     return staticByteField(this.staticFieldId(name, "B".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for static `byte` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Byte] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticByteField(name: String): ReadWriteProperty<Any?, Byte> {
+    return staticByteField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
 }
 
 /**
@@ -531,6 +717,22 @@ public inline fun JClass.staticCharField(name: CValuesRef<ByteVar>): ReadWritePr
 }
 
 /**
+ * Returns a [ReadWriteProperty] for static `char` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Char] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticCharField(name: String): ReadWriteProperty<Any?, Char> {
+    return staticCharField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for static `short` field of the class with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -564,6 +766,22 @@ public fun JClass.staticShortField(fieldId: JFieldID): ReadWriteProperty<Any?, S
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JClass.staticShortField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Short>? {
     return staticShortField(this.staticFieldId(name, "S".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for static `short` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Short] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticShortField(name: String): ReadWriteProperty<Any?, Short> {
+    return staticShortField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
 }
 
 /**
@@ -603,6 +821,22 @@ public inline fun JClass.staticIntField(name: CValuesRef<ByteVar>): ReadWritePro
 }
 
 /**
+ * Returns a [ReadWriteProperty] for static `int` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Int] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticIntField(name: String): ReadWriteProperty<Any?, Int> {
+    return staticIntField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for static `long` field of the class with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -636,6 +870,22 @@ public fun JClass.staticLongField(fieldId: JFieldID): ReadWriteProperty<Any?, Lo
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JClass.staticLongField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Long>? {
     return staticLongField(this.staticFieldId(name, "J".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for static `long` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Long] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticLongField(name: String): ReadWriteProperty<Any?, Long> {
+    return staticLongField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
 }
 
 /**
@@ -675,6 +925,22 @@ public inline fun JClass.staticFloatField(name: CValuesRef<ByteVar>): ReadWriteP
 }
 
 /**
+ * Returns a [ReadWriteProperty] for static `float` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Float] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticFloatField(name: String): ReadWriteProperty<Any?, Float> {
+    return staticFloatField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
+}
+
+/**
  * Returns a [ReadWriteProperty] for static `double` field of the class with the specified [fieldId].
  */
 context(env: JniEnv)
@@ -708,6 +974,22 @@ public fun JClass.staticDoubleField(fieldId: JFieldID): ReadWriteProperty<Any?, 
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JClass.staticDoubleField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, Double>? {
     return staticDoubleField(this.staticFieldId(name, "D".utf8) ?: return null)
+}
+
+/**
+ * Returns a [ReadWriteProperty] for static `double` field of the class with the specified [name].
+ *
+ * @param name the static field name.
+ *
+ * @return a delegatable property of [Double] type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticDoubleField(name: String): ReadWriteProperty<Any?, Double> {
+    return staticDoubleField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
 }
 
 /**
@@ -748,11 +1030,36 @@ public inline fun JClass.staticObjectField(name: CValuesRef<ByteVar>, sig: CValu
 }
 
 /**
+ * Returns a [ReadWriteProperty] for static `Object` field of the class with the specified [name] and [sig].
+ *
+ * @param name the static field name.
+ * @param sig the field signature.
+ *
+ * @return a delegatable property of [JObject]`?` type.
+ *
+ * @throws NoSuchFieldError if the specified field cannot be found.
+ * @throws ExceptionInInitializerError if the class initializer fails due to an exception.
+ * @throws OutOfMemoryError if the system runs out of memory.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticObjectField(name: String, sig: String): ReadWriteProperty<Any?, JObject?> {
+    return staticObjectField(name.modifiedUtf8, sig.modifiedUtf8) ?: error("Cannot find static field '$name$sig'")
+}
+
+/**
  * Alias for [staticObjectField] with `sig = "Ljava/lang/String;"`.
  */
 context(env: JniEnv, autofreeScope: AutofreeScope)
 public inline fun JClass.staticStringField(name: CValuesRef<ByteVar>): ReadWriteProperty<Any?, JString?>? {
     return staticObjectField(name, "Ljava/lang/String;".utf8)?.asType()
+}
+
+/**
+ * Alias for [staticObjectField] with `sig = "Ljava/lang/String;"`.
+ */
+context(env: JniEnv, autofreeScope: AutofreeScope)
+public inline fun JClass.staticStringField(name: String): ReadWriteProperty<Any?, JString?> {
+    return staticStringField(name.modifiedUtf8) ?: error("Cannot find static field '$name'")
 }
 
 /**
