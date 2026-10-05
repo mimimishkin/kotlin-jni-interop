@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="windows-registry-jvm">
+    <output-path>$PROJECT_DIR$/samples/windows-registry/build/libs</output-path>
+    <root id="archive" name="windows-registry-jvm.jar">
+      <element id="module-output" name="samples.windows-registry.jvmMain" />
+    </root>
+  </artifact>
+</component>
