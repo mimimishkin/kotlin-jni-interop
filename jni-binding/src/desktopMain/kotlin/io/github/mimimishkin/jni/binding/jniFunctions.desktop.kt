@@ -269,8 +269,6 @@ internal actual inline val JniEnv.GetMethodID: CPointer<CFunction<(CPointer<JniE
     get() = pointed!!.GetMethodID?.reinterpret()
 internal actual inline val JniEnv.CallIntMethodA: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<_jMethodID>?, JArguments?) -> Int>>?
     get() = pointed!!.CallIntMethodA?.reinterpret()
-internal actual inline val JniEnv.DefineClass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?, COpaquePointer?, CPointer<ByteVar>?, Int) -> COpaquePointer?>>?
-    get() = pointed!!.DefineClass?.reinterpret()
 internal actual inline val JniEnv.GetStringChars: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<UByteVar>?) -> CPointer<UShortVar>?>>?
     get() = pointed!!.GetStringChars?.reinterpret()
 internal actual inline val JniEnv.GetIntArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, Int, Int, CPointer<IntVar>?) -> Unit>>?
@@ -338,6 +336,7 @@ internal actual inline val JniEnv.ReleaseLongArrayElements: CPointer<CFunction<(
 internal actual inline val JniEnv.CallNonvirtualBooleanMethodA: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, COpaquePointer?, CPointer<_jMethodID>?, JArguments?) -> UByte>>?
     get() = pointed!!.CallNonvirtualBooleanMethodA?.reinterpret()
 
+internal inline val JniEnv.DefineClass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?, COpaquePointer?, CPointer<ByteVar>?, Int) -> COpaquePointer?>>? get() = pointed!!.DefineClass?.reinterpret()
 internal inline val JniEnv.GetStringUTFLengthAsLong: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?) -> Long>>? get() = pointed!!.GetStringUTFLengthAsLong?.reinterpret()
 internal inline val JniEnv.GetModule: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?) -> COpaquePointer?>>? get() = pointed!!.GetModule?.reinterpret()
 internal inline val JniEnv.IsVirtualThread: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?) -> UByte>>? get() = pointed!!.IsVirtualThread?.reinterpret()

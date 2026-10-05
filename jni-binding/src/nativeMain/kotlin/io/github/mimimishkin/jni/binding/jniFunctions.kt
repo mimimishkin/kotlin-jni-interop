@@ -135,7 +135,6 @@ internal expect inline val JniEnv.MonitorExit: CPointer<CFunction<(CPointer<JniE
 internal expect inline val JniEnv.CallNonvirtualLongMethodA: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, COpaquePointer?, CPointer<_jMethodID>?, JArguments?) -> Long>>?
 internal expect inline val JniEnv.GetMethodID: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<ByteVar>?, CPointer<ByteVar>?) -> CPointer<_jMethodID>?>>?
 internal expect inline val JniEnv.CallIntMethodA: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<_jMethodID>?, JArguments?) -> Int>>?
-internal expect inline val JniEnv.DefineClass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?, COpaquePointer?, CPointer<ByteVar>?, Int) -> COpaquePointer?>>?
 internal expect inline val JniEnv.GetStringChars: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<UByteVar>?) -> CPointer<UShortVar>?>>?
 internal expect inline val JniEnv.GetIntArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, Int, Int, CPointer<IntVar>?) -> Unit>>?
 internal expect inline val JniEnv.CallDoubleMethodA: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<_jMethodID>?, JArguments?) -> Double>>?

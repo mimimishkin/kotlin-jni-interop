@@ -18,32 +18,6 @@ public val jniVersion: JniVersion get() {
 }
 
 /**
- * Loads a class from a [classBuf] of raw class data.
- *
- * The buffer containing the raw class data is not referenced by the VM after the [defineClass] call returns, and it may
- * be discarded if desired.
- *
- * @param name the name of the class or interface to be defined. May be `null`, or it must match the name encoded within
- * the class file data. Must be encoded in the null-terminated modified UTF-8. Use [String.modifiedUtf8] to get it or
- * **if you are sure that your string doesn't have illegal characters** you may use optimized [String.utf8].
- * @param loader a class loader assigned to the defined class. May be `null`, indicating the "null class loader" (or
- * "bootstrap class loader").
- * @param classBuf buffer containing the `.class` file data.
- * @param classBufLen buffer length.
- *
- * @return a Java class object or `null` if an error occurs.
- *
- * @throws ClassFormatError if the class data does not specify a valid class.
- * @throws ClassCircularityError if a class or interface is its own superclass or superinterface.
- * @throws OutOfMemoryError if the system runs out of memory.
- * @throws SecurityException if the caller attempts to define a class in the "java" package tree.
- */
-context(env: JniEnv, autofreeScope: AutofreeScope)
-public fun defineClass(name: CValuesRef<ByteVar>?, loader: JObject?, classBuf: CPointer<ByteVar>, classBufLen: Int): JClass? {
-    return env.DefineClass!!(env.ptr, name?.getPointer(autofreeScope), loader.c, classBuf, classBufLen).wrap()
-}
-
-/**
  * In JDK release 1.1, this function loads a locally defined class. It searches the directories and zip files specified
  * by the CLASSPATH environment variable for the class with the specified name.
  *

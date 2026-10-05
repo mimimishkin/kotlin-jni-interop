@@ -268,8 +268,6 @@ internal actual inline val JniEnv.GetMethodID: CPointer<CFunction<(CPointer<JniE
     get() = pointed!!.GetMethodID?.reinterpret()
 internal actual inline val JniEnv.CallIntMethodA: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<_jMethodID>?, JArguments?) -> Int>>?
     get() = pointed!!.CallIntMethodA?.reinterpret()
-internal actual inline val JniEnv.DefineClass: CPointer<CFunction<(CPointer<JniEnv>?, CPointer<ByteVar>?, COpaquePointer?, CPointer<ByteVar>?, Int) -> COpaquePointer?>>?
-    get() = pointed!!.DefineClass
 internal actual inline val JniEnv.GetStringChars: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, CPointer<UByteVar>?) -> CPointer<UShortVar>?>>?
     get() = pointed!!.GetStringChars
 internal actual inline val JniEnv.GetIntArrayRegion: CPointer<CFunction<(CPointer<JniEnv>?, COpaquePointer?, Int, Int, CPointer<IntVar>?) -> Unit>>?
