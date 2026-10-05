@@ -21,6 +21,9 @@ external fun linuxX64Hello(): String
 @JniExpect("linuxArm64")
 external fun linuxArm64Hello(): String
 
+@JniExpect("macosArm64")
+external fun macosArm64Hello(): String
+
 // The functions above are top-level, so they are not members of a `@JniExpects` class/object and there is no
 // container to inject a load call into. A top-level `@LoadMethod` needs none: the plugin adds a static initializer to
 // this file's facade class (`org.sample.ImplByTargetsKt`), which runs on the first call of any of the functions

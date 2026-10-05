@@ -59,6 +59,7 @@ class JniBindingTest {
         val archName = System.getProperty("os.arch").lowercase()
         val result = when {
             osName.contains("win") -> windowsHello()
+            osName.contains("mac") -> macosArm64Hello()
             archName in listOf("aarch64", "arm64") -> linuxArm64Hello()
             else -> linuxX64Hello()
         }

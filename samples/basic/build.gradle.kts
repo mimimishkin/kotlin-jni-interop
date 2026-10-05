@@ -66,6 +66,7 @@ kotlin {
                     mingwX64(),
                     linuxX64(),
                     linuxArm64(),
+                    macosArm64()
                 ).forEach {
                     if (it.konanTarget?.family == HostManager.host.family) {
                         it.fromProducer(project("nativeHello"))
