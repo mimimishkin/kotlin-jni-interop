@@ -76,7 +76,28 @@ kotlin {
                 }
 
                 copyToResources()
-                allowExtraActuals = false
+                if (!isCI) allowAbsentBindings = true
+            }
+
+            // A third library, built by the `nativeCritical` producer module. It is the only one exported with
+            // `ExposeFunctions` instead of `RegisterNatives`, because a critical native is bound by symbol name and
+            // `RegisterNatives` cannot express one.
+            jniLibraries.create("critical") {
+                listOf(
+                    mingwX64(),
+                    linuxX64(),
+                    linuxArm64(),
+                    macosArm64()
+                ).forEach {
+                    if (it.konanTarget?.family == HostManager.host.family) {
+                        it.fromProducer(project("nativeCritical"))
+                    } else {
+                        it.fromPrebuiltBinding(rootDir.resolve("jniBindings/${it.os}-${it.arch}"))
+                    }
+                    it.resourceDir = "natives/${it.os}-${it.arch}"
+                }
+
+                copyToResources()
                 if (!isCI) allowAbsentBindings = true
             }
         }
@@ -96,4 +117,15 @@ powerAssert {
         "kotlin.test.assertEquals",
         "kotlin.test.assertNotEquals",
     )
+}
+
+// By default, the tests in this module - `CriticalTest` included - reach the natives through the ordinary
+// `Java_<class>_<method>` entry points, which is what a JVM does in practice. The critical entry point needs both
+// the flag below and a call site that has been compiled and inlined, so `-XX:+CriticalJNINatives` is all this adds.
+tasks.withType<Test>().configureEach {
+    val testJavaVersion = javaLauncher.get().metadata.languageVersion.asInt()
+    // Critical JNI Natives was dropped in JDK 22, so check
+    if (testJavaVersion <= 22) {
+        jvmArgs("-XX:+CriticalJNINatives")
+    }
 }

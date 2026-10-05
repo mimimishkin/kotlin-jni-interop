@@ -87,6 +87,34 @@ internal object JniBindingConsumerErrors : KtDiagnosticsContainer() {
                         "receivers), but has: {0}.",
                 Renderer { it }
             )
+            map.put(
+                CRITICAL_NATIVE_ANNOTATION_MISSING,
+                "@JniExpect must be annotated @CriticalNative because its @JniActual is a critical native: the two " +
+                        "sides must agree on the calling convention."
+            )
+            map.put(
+                CRITICAL_NATIVE_MUST_BE_STATIC,
+                "@JniExpect must be static because its @JniActual is a critical native: a critical native is " +
+                        "invoked without a class/object reference."
+            )
+            map.put(
+                CRITICAL_NATIVE_MUST_NOT_BE_SYNCHRONIZED,
+                "@JniExpect must not be synchronized because its @JniActual is a critical native: it must not be " +
+                        "able to block."
+            )
+            map.put(
+                CRITICAL_NATIVE_REFERENCE_ON_ANDROID,
+                "@JniExpect must not take or return a reference on Android because its @JniActual is a critical " +
+                        "native, and the two sides must agree on the calling convention.\n" +
+                        "Found {0} in {1}. Use primitives only, or declare it as an ordinary native.",
+                CommonRenderers.STRING,
+                CommonRenderers.STRING,
+            )
+            map.put(
+                CRITICAL_NATIVE_UNEXPECTED,
+                "@JniExpect must not be annotated @CriticalNative because its @JniActual is not a critical " +
+                        "native: the two sides disagree about the calling convention."
+            )
         }
     }
 
@@ -99,4 +127,9 @@ internal object JniBindingConsumerErrors : KtDiagnosticsContainer() {
     val NON_EXTERNAL_JNI_EXPECT by error0<KtElement>(DECLARATION_NAME)
     val EXTRA_JNI_ACTUALS by warningWithoutSource()
     val ILLEGAL_LOAD_METHOD_PARAMETERS by error1<KtElement, String>(DECLARATION_SIGNATURE)
+    val CRITICAL_NATIVE_ANNOTATION_MISSING by error0<KtElement>(DECLARATION_NAME)
+    val CRITICAL_NATIVE_MUST_BE_STATIC by error0<KtElement>(DECLARATION_NAME)
+    val CRITICAL_NATIVE_MUST_NOT_BE_SYNCHRONIZED by error0<KtElement>(DECLARATION_NAME)
+    val CRITICAL_NATIVE_REFERENCE_ON_ANDROID by error2<KtElement, String, String>(DECLARATION_SIGNATURE)
+    val CRITICAL_NATIVE_UNEXPECTED by error0<KtElement>(DECLARATION_NAME)
 }

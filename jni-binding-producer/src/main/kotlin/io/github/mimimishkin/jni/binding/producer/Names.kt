@@ -33,14 +33,30 @@ internal fun jniCName(
     jvmClass: String,
     method: String,
     parameters: List<ActualParameterType> = emptyList(),
+): String = jniCName("Java_", jvmClass, method, parameters)
+
+/**
+ * The `JavaCritical_`-prefixed variant of [jniCName]: the entry point a JVM resolves for a `@CriticalNative` method.
+ */
+internal fun jniCriticalCName(
+    jvmClass: String,
+    method: String,
+    parameters: List<ActualParameterType> = emptyList(),
+): String = jniCName("JavaCritical_", jvmClass, method, parameters)
+
+private fun jniCName(
+    prefix: String,
+    jvmClass: String,
+    method: String,
+    parameters: List<ActualParameterType>,
 ): String {
     val clazz = jvmClass.split('.').joinToString("_") { it.escapeSignature() }
     val method = method.escapeSignature()
-    if (parameters.isNotEmpty()) {
+    return if (parameters.isNotEmpty()) {
         val parameters = ActualParameterType.mapSignature(parameters, returnType = null).escapeSignature()
-        return "Java_${clazz}_${method}__$parameters"
+        "${prefix}${clazz}_${method}__$parameters"
     } else {
-        return "Java_${clazz}_${method}"
+        "${prefix}${clazz}_${method}"
     }
 }
 

@@ -13,4 +13,5 @@ into the APK with no `CMakeLists.txt`, `Android.mk` or manual `jniLibs` copying.
 - exceptions thrown from native and caught from Java;
 - calls into plain Java/Android types (`StringBuilder`, `HashMap`, `ArrayList`, `android.util.Log`) the plugin never
   bound;
+- critical natives, bound both ways;
 - the ABIs the device supports.

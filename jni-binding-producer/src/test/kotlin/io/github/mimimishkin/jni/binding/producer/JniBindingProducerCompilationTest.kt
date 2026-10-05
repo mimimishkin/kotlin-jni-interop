@@ -37,19 +37,34 @@ class JniBindingProducerCompilationTest {
             import kotlinx.cinterop.CFunction
             import kotlinx.cinterop.CPointer
             import kotlinx.cinterop.CPointerVar
+            import kotlinx.cinterop.CPrimitiveVar
             import kotlinx.cinterop.AutofreeScope
+            import kotlinx.cinterop.DoubleVar
+            import kotlinx.cinterop.IntVar
+            import kotlinx.cinterop.LongVar
             import kotlinx.cinterop.MemScope
 
             class _jobject
             class _jclass
+            class _jstring
+            open class _jarray
+            open class _jprimitiveArray<T : CPrimitiveVar> : _jarray()
+            class _jintArray : _jprimitiveArray<IntVar>()
+            class _jlongArray : _jprimitiveArray<LongVar>()
+            class _jdoubleArray : _jprimitiveArray<DoubleVar>()
 
             typealias JniEnv = CPointerVar<jni.JNINativeInterface_>
             typealias JavaVM = CPointerVar<jni.JNIInvokeInterface_>
 
             typealias JObject = @WithJvmType("java.lang.Object") CPointer<out _jobject>
             typealias JClass = @WithJvmType("java.lang.Class") CPointer<out _jclass>
+            typealias JString = @WithJvmType("java.lang.String") CPointer<out _jstring>
+            typealias JArray = CPointer<out _jarray>
+            typealias JPrimitiveArray<T> = CPointer<out _jprimitiveArray<T>>
 
             typealias JBoolean = UByte
+
+            enum class ApplyChangesMode { Commit, Abort, FinalCommit }
 
             inline fun Boolean.toJBoolean(): JBoolean = if (this) 1u else 0u
             inline fun JBoolean.toKBoolean(): Boolean = this == 1u.toUByte()
@@ -61,6 +76,18 @@ class JniBindingProducerCompilationTest {
             class ByteBuf
 
             val String.modifiedUtf8: ByteBuf get() = TODO()
+
+            // `JString.length` deliberately precedes `JArray.length`: both are `length` extension properties of this
+            // package, so resolving the wrong one is not a compile error but a silently mis-generated facade. They only
+            // differ by their JVM signature on purpose - the real library is Kotlin/Native, where erasure cannot clash -
+            // so both `@JvmName`s below only exist to keep this JVM test module compilable.
+            context(env: JniEnv)
+            @get:JvmName("jStringLength")
+            val JString.length: Int get() = TODO()
+
+            context(env: JniEnv)
+            @get:JvmName("jArrayLength")
+            val JArray.length: Int get() = TODO()
 
             fun JavaVM.useEnv(version: Int, block: context(MemScope, JniEnv) () -> Unit): Unit = TODO()
 
@@ -92,11 +119,38 @@ class JniBindingProducerCompilationTest {
             """
             package kotlinx.cinterop
 
+            interface CPointed
+
+            interface CPrimitiveVar : CPointed
+
+            // `XxxVar` is a typealias for `XxxVarOf<T>` in cinterop, and it is the aliased class a resolved type
+            // argument carries, so the stubs have to spell it the same way. Interfaces keep them constructible-free,
+            // which the `_j*Array` stubs below do not need.
+            interface CPrimitiveVarOf<T> : CPrimitiveVar
+            interface ByteVarOf<T> : CPrimitiveVarOf<T>
+            interface UByteVarOf<T> : CPrimitiveVarOf<T>
+            interface ShortVarOf<T> : CPrimitiveVarOf<T>
+            interface UShortVarOf<T> : CPrimitiveVarOf<T>
+            interface IntVarOf<T> : CPrimitiveVarOf<T>
+            interface LongVarOf<T> : CPrimitiveVarOf<T>
+            interface FloatVarOf<T> : CPrimitiveVarOf<T>
+            interface DoubleVarOf<T> : CPrimitiveVarOf<T>
+
+            typealias ByteVar = ByteVarOf<Byte>
+            typealias UByteVar = UByteVarOf<UByte>
+            typealias ShortVar = ShortVarOf<Short>
+            typealias UShortVar = UShortVarOf<UShort>
+            typealias IntVar = IntVarOf<Int>
+            typealias LongVar = LongVarOf<Long>
+            typealias FloatVar = FloatVarOf<Float>
+            typealias DoubleVar = DoubleVarOf<Double>
+
             class CPointer<out T>
             class CPointerVarOf<T : CPointer<*>>
 
             typealias CPointerVar<T> = CPointerVarOf<CPointer<T>> 
             typealias COpaquePointer = CPointer<Nothing>
+            typealias CArrayPointer<T> = CPointer<T>
 
             open class NativePlacement
             open class AutofreeScope : NativePlacement()
@@ -106,6 +160,31 @@ class JniBindingProducerCompilationTest {
             fun <R> memScoped(block: MemScope.() -> R): R = TODO()
 
             class CFunction<out R : Function<*>>
+            """.trimIndent(),
+        ),
+        SourceFile.kotlin(
+            "stubs/accessors.kt",
+            """
+            package io.github.mimimishkin.jni.binding.accessors
+
+            import io.github.mimimishkin.jni.binding.ApplyChangesMode
+            import io.github.mimimishkin.jni.binding.JPrimitiveArray
+            import io.github.mimimishkin.jni.binding.JniEnv
+            import kotlinx.cinterop.CArrayPointer
+            import kotlinx.cinterop.CPrimitiveVar
+            import kotlinx.cinterop.NativePlacement
+
+            typealias ModifyingArrayScope = (ApplyChangesMode) -> Unit
+
+            inline fun ModifyingArrayScope.finalize(): Unit = this(ApplyChangesMode.FinalCommit)
+
+            inline fun ModifyingArrayScope.commit(): Unit = this(ApplyChangesMode.Commit)
+
+            context(env: JniEnv, placement: NativePlacement)
+            inline fun <T : CPrimitiveVar> JPrimitiveArray<T>.modifyCritical(
+                onError: () -> Unit,
+                block: ModifyingArrayScope.(carray: CArrayPointer<*>, isCopy: Boolean) -> Unit,
+            ): Unit = TODO()
             """.trimIndent(),
         ),
         SourceFile.kotlin(
@@ -147,6 +226,20 @@ class JniBindingProducerCompilationTest {
             @Target(AnnotationTarget.FUNCTION)
             @Retention(AnnotationRetention.SOURCE)
             annotation class WithJvmSignature(vararg val parameterTypes: String, val returnType: String)
+
+            @Target(AnnotationTarget.FUNCTION)
+            @Retention(AnnotationRetention.SOURCE)
+            annotation class CriticalNative
+            """.trimIndent(),
+        ),
+        SourceFile.kotlin(
+            "stubs/dalvik.kt",
+            """
+            package dalvik.annotation.optimization
+
+            @Target(AnnotationTarget.FUNCTION)
+            @Retention(AnnotationRetention.SOURCE)
+            annotation class CriticalNative
             """.trimIndent(),
         ),
         SourceFile.kotlin(
@@ -1590,5 +1683,208 @@ class JniBindingProducerCompilationTest {
         assertFalse(result.hasFacadeMethod("test_addJniBinding"))
         assertFalse(result.hasFacadeMethod("test_subJniBinding_II_I"))
         assertFalse(result.hasFacadeMethod("test_subJniBinding"))
+    }
+
+    private val criticalActual = SourceFile.kotlin(
+        "Critical.kt",
+        """
+        package test
+
+        import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+        import io.github.mimimishkin.jni.binding.annotation.JniActual
+        import kotlinx.cinterop.CArrayPointer
+        import kotlinx.cinterop.IntVar
+
+        @JniActual(className = "com.example.Native")
+        @CriticalNative
+        fun sum(size: Int, values: CArrayPointer<IntVar>): Long = 42L
+        """.trimIndent(),
+    )
+
+    @Test
+    fun `critical native generates both the plain and the critical facade`() {
+        val result = compile(criticalActual).compile()
+
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "CRITICAL_FACADES:\n" + result.messages }
+        assertEquals(
+            "Java_com_example_Native_sum",
+            cNameValue(result.getFacadeMethod("test_sumJniBinding")),
+        )
+        assertEquals(
+            "JavaCritical_com_example_Native_sum",
+            cNameValue(result.getFacadeMethod("test_sumCriticalJniBinding")),
+        )
+    }
+
+    @Test
+    fun `critical native fallback pins the array it forwards`() {
+        // The generated `Java_` facade has to read `values.length` and hold a critical region open while the actual
+        // runs, so the facade body must link: this fails at IR linkage if the `length` accessor the generator picked
+        // is not called with a receiver, or if its `context(env)` argument is missing.
+        val result = compile(criticalActual).compile()
+
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "CRITICAL_FALLBACK:\n" + result.messages }
+    }
+
+    @Test
+    fun `isCritical is recorded in the actuals file`() {
+        val actualsFile = File.createTempFile("actuals", ".json")
+        val result = compileWithActualsFile(actualsFile, criticalActual).compile()
+
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "CRITICAL_ACTUALS:\n" + result.messages }
+        val info = Json.decodeFromString<List<JniActualInfo>>(actualsFile.readText()).single()
+        assertEquals(true, info.isCritical)
+        assertEquals("com.example.Native", info.className)
+        assertEquals(listOf("int[]"), info.parameterTypes)
+    }
+
+    @Test
+    fun `a regular actual is recorded as not critical`() {
+        val actualsFile = File.createTempFile("actuals", ".json")
+        val result = compileWithActualsFile(
+            actualsFile,
+            SourceFile.kotlin(
+                "Main.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+
+                @JniActual(className = "com.example.Native")
+                fun add(a: Int, b: Int): Int = a + b
+                """.trimIndent(),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        assertEquals(false, Json.decodeFromString<List<JniActualInfo>>(actualsFile.readText()).single().isCritical)
+    }
+
+    @Test
+    fun `critical native with a context parameter is rejected`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Critical.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.JniEnv
+                import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+                import kotlinx.cinterop.CArrayPointer
+                import kotlinx.cinterop.IntVar
+
+                @JniActual(className = "com.example.Native")
+                @CriticalNative
+                context(env: JniEnv)
+                fun sum(size: Int, values: CArrayPointer<IntVar>): Long = 42L
+                """.trimIndent(),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+    }
+
+    @Test
+    fun `critical native with a receiver is rejected`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Critical.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+
+                @JniActual(className = "com.example.Native")
+                @CriticalNative
+                fun JniEnv.sum(a: Int): Int = a
+                """.trimIndent(),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+    }
+
+    @Test
+    fun `critical native with a non-primitive parameter is rejected`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Critical.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.JObject
+                import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+
+                @JniActual(className = "com.example.Native")
+                @CriticalNative
+                fun sum(value: JObject): Int = 0
+                """.trimIndent(),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+    }
+
+    @Test
+    fun `critical native with an array that is not preceded by its length is rejected`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Critical.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+                import kotlinx.cinterop.CArrayPointer
+                import kotlinx.cinterop.IntVar
+
+                @JniActual(className = "com.example.Native")
+                @CriticalNative
+                fun sum(values: CArrayPointer<IntVar>, size: Int): Long = 42L
+                """.trimIndent(),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+    }
+
+    @Test
+    fun `critical native combined with register natives is rejected`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Critical.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.JavaVM
+                import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+                import io.github.mimimishkin.jni.binding.annotation.JniOnLoad
+                import kotlinx.cinterop.CArrayPointer
+                import kotlinx.cinterop.IntVar
+
+                @JniOnLoad
+                fun onLoad(vm: JavaVM) {}
+
+                @JniActual(className = "com.example.Native")
+                @CriticalNative
+                fun sum(size: Int, values: CArrayPointer<IntVar>): Long = 42L
+                """.trimIndent(),
+            ),
+            allowSeveralHooks = true,
+            useRegisterNatives = true,
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+    }
+
+    @Test
+    fun `critical native is rejected for an expected JDK 22 or newer`() {
+        val result = compile(criticalActual, expectedJdkVersion = 22).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
     }
 }

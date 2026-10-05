@@ -1,5 +1,15 @@
 package io.github.mimimishkin.jni.binding.producer.fir
 
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_ARRAY_WITHOUT_LENGTH
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_CONTEXT_PARAMETERS
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_RECEIVER
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_REFERENCE_UNSUPPORTED_ON_ANDROID
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_UNRESOLVED_TYPE
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_UNSUPPORTED_ARRAY_ELEMENT
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_UNSUPPORTED_BY_JDK_VERSION
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_UNSUPPORTED_BY_REGISTER_NATIVES
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_UNSUPPORTED_PARAMETER_TYPE
+import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.CRITICAL_UNSUPPORTED_RETURN_TYPE
 import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.DEFAULT_PARAMETERS_IN_JNI_ACTUAL
 import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.HOOK_EXTENSION_FUNCTION
 import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.HOOK_INVALID_PARAMETER
@@ -29,6 +39,7 @@ import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.VARAR
 import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.MULTIPLE_ON_LOAD_HOOKS
 import io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors.WITH_JVM_SIGNATURE_ON_NON_JNI_ACTUAL
 import io.github.mimimishkin.jni.binding.producer.Symbols
+import io.github.mimimishkin.jni.binding.producer.ident
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
@@ -47,6 +58,7 @@ import org.jetbrains.kotlin.fir.declarations.FirConstructor
 import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirNamedFunction
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.analysis.extensions.FirAdditionalCheckersExtension
 import org.jetbrains.kotlin.fir.declarations.FirPropertyAccessor
 import org.jetbrains.kotlin.fir.declarations.constructors
@@ -67,13 +79,20 @@ import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.fir.types.isMarkedNullable
 import org.jetbrains.kotlin.fir.types.type
 import org.jetbrains.kotlin.name.StandardClassIds
+import org.jetbrains.kotlin.name.Name
 
 /**
  * Validates `@JniActual`/`@JniActuals`/`@JniOnLoad`/`@JniOnUnload` declarations during FIR analysis
  * and reports a diagnostic at the offending declaration (see
  * [io.github.mimimishkin.jni.binding.producer.JniBindingProducerErrors]).
  */
-public class FirJniBindingUseChecker(session: FirSession, private val allowSeveralHooks: Boolean) : FirAdditionalCheckersExtension(session) {
+public class FirJniBindingUseChecker(
+    session: FirSession,
+    private val allowSeveralHooks: Boolean,
+    private val useRegisterNatives: Boolean,
+    private val expectedJdkVersion: Int,
+    private val isAndroid: Boolean,
+) : FirAdditionalCheckersExtension(session) {
     override val declarationCheckers: DeclarationCheckers = object : DeclarationCheckers() {
         override val functionCheckers: Set<FirFunctionChecker>
             get() = setOf(FunctionDeclarationChecker())
@@ -122,12 +141,20 @@ public class FirJniBindingUseChecker(session: FirSession, private val allowSever
             var signatureParamCountMatches = true
 
             if (isActual) {
-                val signatureInfo = jvmSignatureProvider.signatureInfo(declaration)
-                signatureParamCountMatches = !signatureInfo.hasSignatureAnnotation ||
-                    signatureInfo.signatureParameterCount == declaration.valueParameters.size
+                // A `@CriticalNative` actual replaces the standard rules below: it takes no context parameters and no
+                // receiver, and its parameters are primitives or `(length, array)` pairs whose JVM types come from the
+                // collapsed layout rather than from a per-parameter mapping.
+                val criticalLayout = jvmSignatureProvider.criticalLayout(declaration)
+                val isCritical = criticalLayout != null
 
-                if (!signatureParamCountMatches) {
-                    reporter.reportOn(declaration.source, JVM_SIGNATURE_PARAMETER_COUNT_MISMATCH, context)
+                if (!isCritical) {
+                    val signatureInfo = jvmSignatureProvider.signatureInfo(declaration)
+                    signatureParamCountMatches = !signatureInfo.hasSignatureAnnotation ||
+                        signatureInfo.signatureParameterCount == declaration.valueParameters.size
+
+                    if (!signatureParamCountMatches) {
+                        reporter.reportOn(declaration.source, JVM_SIGNATURE_PARAMETER_COUNT_MISMATCH, context)
+                    }
                 }
 
                 if (declaration.typeParameters.isNotEmpty()) {
@@ -136,17 +163,19 @@ public class FirJniBindingUseChecker(session: FirSession, private val allowSever
                 if (declaration.status.isSuspend) {
                     reporter.reportOn(declaration.source, JNI_ACTUAL_SUSPEND, context)
                 }
-                declaration.receiverParameter?.let { receiver ->
-                    val receiverType = receiver.typeRef.coneType
-                    val pointed = receiverType.typeArguments.singleOrNull()?.type?.classId
-                        .takeIf { receiverType.classId == Symbols.CPointer }
-                    if (
-                        pointed != Symbols.JObjectRaw &&
-                        pointed != Symbols.JClassRaw &&
-                        pointed != Symbols.JObjectWrapped &&
-                        pointed != Symbols.JClassWrapped
-                    ) {
-                        reporter.reportOn(declaration.receiverParameter?.source ?: declaration.source, NOT_STATIC_OR_INSTANCE, receiverType.toString(), context)
+                if (!isCritical) {
+                    declaration.receiverParameter?.let { receiver ->
+                        val receiverType = receiver.typeRef.coneType
+                        val pointed = receiverType.typeArguments.singleOrNull()?.type?.classId
+                            .takeIf { receiverType.classId == Symbols.CPointer }
+                        if (
+                            pointed != Symbols.JObjectRaw &&
+                            pointed != Symbols.JClassRaw &&
+                            pointed != Symbols.JObjectWrapped &&
+                            pointed != Symbols.JClassWrapped
+                        ) {
+                            reporter.reportOn(declaration.receiverParameter?.source ?: declaration.source, NOT_STATIC_OR_INSTANCE, receiverType.toString(), context)
+                        }
                     }
                 }
                 for ((index, param) in declaration.valueParameters.withIndex()) {
@@ -160,6 +189,7 @@ public class FirJniBindingUseChecker(session: FirSession, private val allowSever
                     if (paramType.isMarkedNullable && paramType.classId in primitiveClassIds) {
                         reporter.reportOn(param.source, PRIMITIVE_NULLABLE_TYPE, paramType.classId?.asString().orEmpty(), context)
                     }
+                    if (isCritical) continue
                     if (!isSupportedNativeType(paramType, isReturnType = false)) {
                         reporter.reportOn(param.source, UNSUPPORTED_TYPE, paramType.toString(), context)
                     } else if (signatureParamCountMatches) {
@@ -169,14 +199,17 @@ public class FirJniBindingUseChecker(session: FirSession, private val allowSever
                         }
                     }
                 }
+
+                if (criticalLayout != null) {
+                    reportCritical(declaration, criticalLayout, context, reporter)
+                }
             }
 
             val returnConeType = declaration.returnTypeRef.coneType
-            if (isActual && !isSupportedNativeType(returnConeType, isReturnType = true)) {
-                reporter.reportOn(declaration.source, UNSUPPORTED_TYPE, returnConeType.toString(), context)
-            }
-            if (isActual && isSupportedNativeType(returnConeType, isReturnType = true) && signatureParamCountMatches) {
-                if (jvmSignatureProvider.signatureInfo(declaration).returnType == null) {
+            if (isActual && jvmSignatureProvider.criticalLayout(declaration) == null) {
+                if (!isSupportedNativeType(returnConeType, isReturnType = true)) {
+                    reporter.reportOn(declaration.source, UNSUPPORTED_TYPE, returnConeType.toString(), context)
+                } else if (signatureParamCountMatches && jvmSignatureProvider.signatureInfo(declaration).returnType == null) {
                     reporter.reportOn(declaration.source, UNKNOWN_JVM_RETURN_TYPE, context)
                 }
             }
@@ -240,6 +273,97 @@ public class FirJniBindingUseChecker(session: FirSession, private val allowSever
 
             if (declaration.hasAnnotation(Symbols.WithJvmSignature, context.session) && !isActual) {
                 reporter.reportOn(declaration.source, WITH_JVM_SIGNATURE_ON_NON_JNI_ACTUAL, context)
+            }
+        }
+    }
+
+    /**
+     * Reports everything that makes a `@CriticalNative` actual unusable: the platform/mode combinations that do not
+     * support it, and every structural problem [layout] collected while pairing `(length, array)` parameters.
+     *
+     * Android supports critical natives in both binding modes, so the mode and JDK-version checks are skipped there -
+     * but it takes no references, an array included, which rules out the `(length, array)` shape the desktop checks
+     * accept.
+     */
+    private fun reportCritical(
+        declaration: FirFunction,
+        layout: CriticalLayout,
+        context: CheckerContext,
+        reporter: DiagnosticReporter,
+    ) {
+        if (!isAndroid) {
+            if (useRegisterNatives) {
+                reporter.reportOn(declaration.source, CRITICAL_UNSUPPORTED_BY_REGISTER_NATIVES, context)
+            }
+            if (expectedJdkVersion >= MIN_JDK_VERSION_WITHOUT_CRITICAL_NATIVES) {
+                reporter.reportOn(
+                    declaration.source,
+                    CRITICAL_UNSUPPORTED_BY_JDK_VERSION,
+                    expectedJdkVersion,
+                    context,
+                )
+            }
+        }
+
+        val parameters = declaration.valueParameters
+        // `param?.name ?: "".ident()` would infer `Comparable<String & Name>` instead of `Name`.
+        fun nameOf(param: FirValueParameter?): Name = param?.name ?: Name.identifier("param")
+        for (issue in layout.issues) {
+            val param = issue.parameterIndex?.let { parameters.getOrNull(it) }
+            when (issue.problem) {
+                CriticalProblem.ContextParameters ->
+                    reporter.reportOn(declaration.source, CRITICAL_CONTEXT_PARAMETERS, context)
+                CriticalProblem.Receiver ->
+                    reporter.reportOn(declaration.receiverParameter?.source ?: declaration.source, CRITICAL_RECEIVER, context)
+                CriticalProblem.ArrayWithoutLength ->
+                    reporter.reportOn(param?.source ?: declaration.source, CRITICAL_ARRAY_WITHOUT_LENGTH, nameOf(param), context)
+                CriticalProblem.UnsupportedParameterType ->
+                    reporter.reportOn(
+                        param?.source ?: declaration.source,
+                        CRITICAL_UNSUPPORTED_PARAMETER_TYPE,
+                        nameOf(param),
+                        param?.returnTypeRef?.coneType?.toString() ?: declaration.returnTypeRef.coneType.toString(),
+                        context,
+                    )
+                CriticalProblem.UnsupportedArrayElement ->
+                    reporter.reportOn(
+                        param?.source ?: declaration.source,
+                        CRITICAL_UNSUPPORTED_ARRAY_ELEMENT,
+                        nameOf(param),
+                        param?.returnTypeRef?.coneType?.toString() ?: "unknown",
+                        context,
+                    )
+                CriticalProblem.UnsupportedReturnType ->
+                    reporter.reportOn(
+                        declaration.source,
+                        CRITICAL_UNSUPPORTED_RETURN_TYPE,
+                        declaration.returnTypeRef.coneType.toString(),
+                        context,
+                    )
+                CriticalProblem.UnresolvedType ->
+                    reporter.reportOn(
+                        declaration.source,
+                        CRITICAL_UNRESOLVED_TYPE,
+                        jvmSignatureProvider.signatureInfo(declaration).signatureParameterCount,
+                        layout.slots.size,
+                        context,
+                    )
+            }
+        }
+
+        // The pair was accepted structurally; only the target makes it unusable. Reported on the pointer half, because
+        // that is the parameter that has to go.
+        if (isAndroid) {
+            for (slot in layout.slots) {
+                if (slot is CriticalSlot.Array) {
+                    val array = parameters.getOrNull(slot.arrayIndex)
+                    reporter.reportOn(
+                        array?.source ?: declaration.source,
+                        CRITICAL_REFERENCE_UNSUPPORTED_ON_ANDROID,
+                        nameOf(array),
+                        context,
+                    )
+                }
             }
         }
     }
@@ -316,6 +440,12 @@ public class FirJniBindingUseChecker(session: FirSession, private val allowSever
         }
     }
 }
+
+/**
+ * The first JDK major version that cannot bind a `JavaCritical_` symbol at all, so `expectedJdkVersion` above it makes
+ * `@CriticalNative` unusable.
+ */
+private const val MIN_JDK_VERSION_WITHOUT_CRITICAL_NATIVES = 22
 
 /** The Kotlin primitives with a JNI binary representation. */
 private val primitiveClassIds = setOf(

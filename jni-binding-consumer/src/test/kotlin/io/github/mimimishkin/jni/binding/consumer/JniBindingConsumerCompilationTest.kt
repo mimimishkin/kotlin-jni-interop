@@ -70,11 +70,13 @@ class JniBindingConsumerCompilationTest {
         parameterTypes: String = "",
         className: String = "test.Wrap",
         isStatic: Boolean? = false,
+        isCritical: Boolean = false,
     ): String =
         """
         {
-            "needEnv": true,
+            "needEnv": ${!isCritical},
             "isStatic": ${isStatic?.toString() ?: "null"},
+            "isCritical": $isCritical,
             "className": "$className",
             "methodName": "$methodName",
             "parameterTypes": ${parameterTypesJson(parameterTypes)},
@@ -1179,5 +1181,226 @@ class JniBindingConsumerCompilationTest {
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
         assertFalse(result.messages.contains("for name 'setX' in target 'linuxX64'"), result.messages)
         assertTrue(result.messages.contains("for name 'setX' in target 'mingwX64'"), result.messages)
+    }
+
+    // ── @CriticalNative ─────────────────────────────────────────────────────────────────────────────────────
+
+    /** A critical native is invoked with the array pinned and without a JniEnv, so it must not be able to block. */
+    private val CRITICAL_SYNCHRONIZED_EXPECT_SOURCE =
+        SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            @CriticalNative
+            @Synchronized
+            @JniExpect(targets = ["test"])
+            external fun sum(values: IntArray): Long
+            """.trimIndent(),
+        )
+
+    private val CRITICAL_EXPECT_SOURCE =
+        SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            @CriticalNative
+            @JniExpect(targets = ["test"])
+            external fun sum(values: IntArray): Long
+            """.trimIndent(),
+        )
+
+    private val SYNCHRONIZED_NON_CRITICAL_EXPECT_SOURCE =
+        SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            @Synchronized
+            @JniExpect(targets = ["test"])
+            external fun sum(values: IntArray): Long
+            """.trimIndent(),
+        )
+
+    /** A top-level `external fun` is static, which a critical native must be; see [STATIC_EXPECT_SOURCE]. */
+    private fun criticalActual() =
+        actual(
+            methodName = "sum",
+            className = "test.WrapKt",
+            returnType = "long",
+            parameterTypes = "int[]",
+            isStatic = true,
+            isCritical = true,
+        )
+
+    @Test
+    fun `a synchronized critical expect is rejected`() {
+        val result = compile(
+            CRITICAL_SYNCHRONIZED_EXPECT_SOURCE,
+            actualsJson = actuals(criticalActual()),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(result.messages.contains("must not be synchronized"), result.messages)
+        // The expect itself is well-formed otherwise, so nothing else may be reported about it.
+        assertFalse(result.messages.contains("doesn't have a corresponding"), result.messages)
+    }
+
+    @Test
+    fun `a synchronized non-critical expect is accepted`() {
+        // `synchronized` is only illegal for a critical native: an ordinary JNI call may block on a monitor freely,
+        // because it holds no pinned array while it does.
+        val result = compile(
+            SYNCHRONIZED_NON_CRITICAL_EXPECT_SOURCE,
+            actualsJson = actuals(
+                actual(methodName = "sum", className = "test.WrapKt", returnType = "long", parameterTypes = "int[]", isStatic = true),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        assertFalse(result.messages.contains("must not be synchronized"), result.messages)
+    }
+
+    @Test
+    fun `a non-synchronized critical expect is accepted`() {
+        val result = compile(
+            CRITICAL_EXPECT_SOURCE,
+            actualsJson = actuals(criticalActual()),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        assertFalse(result.messages.contains("must not be synchronized"), result.messages)
+    }
+
+    // ── @CriticalNative and references, on Android ────────────────────────────────────────────────────────
+
+    private val CRITICAL_ARRAY_EXPECT_SOURCE =
+        SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            @CriticalNative
+            @JniExpect
+            external fun sum(values: IntArray): Long
+            """.trimIndent(),
+        )
+
+    private fun criticalArrayActual(target: String) =
+        actual(
+            methodName = "sum",
+            className = "test.WrapKt",
+            returnType = "long",
+            parameterTypes = "int[]",
+            isStatic = true,
+            isCritical = true,
+        )
+
+    @Test
+    fun `a critical expect taking an array is rejected on an Android target`() {
+        val result = compileMulti(
+            CRITICAL_ARRAY_EXPECT_SOURCE,
+            actualsByTarget = mapOf("androidNativeArm64" to actuals(criticalArrayActual("androidNativeArm64"))),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(result.messages.contains("must not take or return a reference on Android"), result.messages)
+        // The offending types are named, so it is clear which argument has to change.
+        assertTrue(result.messages.contains("int[]"), result.messages)
+    }
+
+    @Test
+    fun `a critical expect taking an array is accepted on a desktop target`() {
+        // The `(length, pointer)` shape is exactly what a desktop JVM supports, so the same declaration must not be
+        // rejected when none of its targets is an Android one.
+        val result = compileMulti(
+            CRITICAL_ARRAY_EXPECT_SOURCE,
+            actualsByTarget = mapOf("mingwX64" to actuals(criticalArrayActual("mingwX64"))),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        assertFalse(result.messages.contains("must not take or return a reference on Android"), result.messages)
+    }
+
+    @Test
+    fun `a critical expect is rejected when only one of its targets is Android`() {
+        // An unrestricted expect applies to every target the build has bindings for, so a single Android target among
+        // them is enough to make the declaration unusable.
+        val result = compileMulti(
+            CRITICAL_ARRAY_EXPECT_SOURCE,
+            actualsByTarget = mapOf(
+                "mingwX64" to actuals(criticalArrayActual("mingwX64")),
+                "androidNativeArm64" to actuals(criticalArrayActual("androidNativeArm64")),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode, result.messages)
+        assertTrue(result.messages.contains("must not take or return a reference on Android"), result.messages)
+    }
+
+    @Test
+    fun `an array expect is accepted when the Android target is excluded by a target restriction`() {
+        val source = SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.CriticalNative
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            @CriticalNative
+            @JniExpect(targets = ["mingwX64"])
+            external fun sum(values: IntArray): Long
+            """.trimIndent(),
+        )
+        val result = compileMulti(
+            source,
+            actualsByTarget = mapOf(
+                "mingwX64" to actuals(criticalArrayActual("mingwX64")),
+                "androidNativeArm64" to EMPTY_ACTUALS,
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        assertFalse(result.messages.contains("must not take or return a reference on Android"), result.messages)
+    }
+
+    @Test
+    fun `a non-critical expect taking an array is accepted on an Android target`() {
+        // An ordinary native is free to take references on Android; only the critical convention forbids it.
+        val source = SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            @JniExpect
+            external fun sum(values: IntArray): Long
+            """.trimIndent(),
+        )
+        val result = compileMulti(
+            source,
+            actualsByTarget = mapOf(
+                "androidNativeArm64" to actuals(
+                    actual(methodName = "sum", className = "test.WrapKt", returnType = "long", parameterTypes = "int[]", isStatic = true),
+                ),
+            ),
+        ).compile()
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
+        assertFalse(result.messages.contains("must not take or return a reference on Android"), result.messages)
     }
 }

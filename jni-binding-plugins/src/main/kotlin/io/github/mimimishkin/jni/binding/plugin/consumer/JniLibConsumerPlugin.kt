@@ -64,7 +64,7 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
                 },
             ) ?: continue
             sourceSet.dependencies {
-                compileOnly(ANNOTATIONS_ID)
+                implementation(ANNOTATIONS_ID)
             }
         }
     }

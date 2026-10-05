@@ -49,6 +49,7 @@ internal class FirJniBindingGenerator(
     session: FirSession,
     private val jniVersion: JniVersion,
     private val useRegisterNatives: Boolean,
+    private val isAndroid: Boolean,
     private val actualsFile: File,
 ) : FirDeclarationGenerationExtension(session) {
 
@@ -188,12 +189,88 @@ internal class FirJniBindingGenerator(
      * dispatch is inlined into the `staticCFunction` lambdas of the `RegisterNatives` block instead). The facade
      * callable id of an overloaded actual carries the mangled parameter signature, so its overloads generate one
      * facade each.
+     *
+     * A `@CriticalNative` actual's facades depend on where the runtime looks for the critical convention. A desktop
+     * JVM exports both `Java_<class>_<method>` - which has to work on its own, so it wraps each array in a critical
+     * region itself - and `JavaCritical_<class>_<method>`. Android resolves the method under the plain `Java_` name and
+     * calls it with the critical convention, so that is the only symbol it gets.
      */
-    private val facadeMapping: Map<CallableId, FunLocation> by lazy {
+    private val facadeMapping: Map<CallableId, FacadeRequest> by lazy {
         if (useRegisterNatives) emptyMap()
-        else mappableActuals.associateBy { location ->
-            if (location.isOverloaded()) location.facadeCallableId(location.overloadSignature())
-            else location.facadeCallableId()
+        else buildMap {
+            mappableActuals.forEach { location ->
+                val includeSignature = location.isOverloaded()
+                val id = if (includeSignature) {
+                    location.facadeCallableId(location.overloadSignature())
+                } else {
+                    location.facadeCallableId()
+                }
+                val critical = (location.fn.fir as FirNamedFunction).isCriticalNative(session)
+                when {
+                    !critical -> put(id, FacadeRequest(location, FacadeKind.NORMAL, includeSignature))
+                    isAndroid -> put(id, FacadeRequest(location, FacadeKind.CRITICAL, includeSignature))
+                    else -> {
+                        put(id, FacadeRequest(location, FacadeKind.CRITICAL_FALLBACK, includeSignature))
+                        put(
+                            location.criticalFacadeCallableId(
+                                if (includeSignature) location.overloadSignature() else "",
+                            ),
+                            FacadeRequest(location, FacadeKind.CRITICAL, includeSignature),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Which of the entry points of one actual a generated facade is.
+     */
+    private enum class FacadeKind {
+        /**
+         * A regular `Java_<class>_<method>` facade.
+         */
+        NORMAL,
+
+        /**
+         * The critical calling convention, exported as `JavaCritical_` on a desktop JVM and as `Java_` on Android.
+         */
+        CRITICAL,
+
+        /**
+         * The `Java_<class>_<method>` entry point of a `@CriticalNative` actual: it wraps the arrays in critical
+         * regions.
+         */
+        CRITICAL_FALLBACK,
+    }
+
+    /**
+     * One facade to generate: the actual it forwards to and which kind of facade it is.
+     */
+    private class FacadeRequest(
+        val location: FunLocation,
+        val kind: FacadeKind,
+        val includeSignature: Boolean,
+    )
+
+    /**
+     * Builds the facade described by [request], memoized inside [FirJniFacades].
+     */
+    private fun buildFacade(callableId: CallableId, request: FacadeRequest): FirNamedFunctionSymbol {
+        val location = request.location
+        if (request.kind == FacadeKind.NORMAL) {
+            return facades.facade(callableId, location, request.includeSignature)
+        }
+        val fn = location.fn.fir as FirNamedFunction
+        val layout = session.jvmSignatureProvider.criticalLayout(fn)
+        check(layout != null && layout.isValid) {
+            "@CriticalNative actual ${location.fn.name.asString()} has an invalid parameter layout; " +
+                    "see the compiler diagnostics"
+        }
+        return if (request.kind == FacadeKind.CRITICAL) {
+            facades.criticalFacade(callableId, location, layout, request.includeSignature, !isAndroid)
+        } else {
+            facades.criticalFallbackFacade(callableId, location, layout, request.includeSignature)
         }
     }
     /** Callable id → generated container instance property. */
@@ -331,8 +408,7 @@ internal class FirJniBindingGenerator(
                 generateHookStep(stepMapping[callableId]!!)
             }
             callableId in facadeMapping -> {
-                val location = facadeMapping[callableId]!!
-                listOf(facades.facade(callableId, location, location.isOverloaded()))
+                listOf(buildFacade(callableId, facadeMapping[callableId]!!))
             }
             else -> emptyList()
         }
@@ -436,6 +512,7 @@ internal class FirJniBindingGenerator(
             JniActualInfo(
                 needEnv = needEnv,
                 isStatic = isStatic,
+                isCritical = fn.isCriticalNative(session),
                 className = className,
                 methodName = methodName,
                 parameterTypes = jvmParameterTypes.mapNotNull { it },

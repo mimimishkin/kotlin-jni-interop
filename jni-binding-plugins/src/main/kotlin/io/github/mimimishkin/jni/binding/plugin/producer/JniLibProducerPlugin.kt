@@ -156,11 +156,10 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
 
     private fun Project.addJniLibrariesAsDependencies() {
         val kotlin = extensions.findByType<KotlinMultiplatformExtension>() ?: return
-        val nativeCompilations = kotlin.targets.asSequence()
-            .flatMap { it.compilations.asSequence() }
+        val nativeCompilations = kotlin.targets
+            .flatMap { it.compilations }
             .filterIsInstance<KotlinNativeCompilation>()
-            .toList()
-        if (nativeCompilations.isEmpty()) return
+            .ifEmpty { return }
 
         // `commonMain`/`commonTest` is only shared by these dependencies if nothing else compiles against it: with a
         // JVM target next to the native ones, those dependencies must not reach that target's compilation. The lowest
@@ -177,16 +176,7 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
             ) ?: continue
             sourceSet.dependencies {
                 implementation(BuildConfig.WRAPPER_ID)
-                compileOnly(BuildConfig.ANNOTATIONS_ID)
-                if (compilationName == KotlinCompilation.MAIN_COMPILATION_NAME) {
-                    // Using compileOnly dependencies in these targets is not currently supported, because compileOnly
-                    // dependencies must be present during the compilation of projects that depend on this project.
-                    // To ensure consistent compilation behavior, compileOnly dependencies should be exposed as api
-                    // dependencies.
-                    api(BuildConfig.ANNOTATIONS_ID)
-                } else {
-                    implementation(BuildConfig.ANNOTATIONS_ID)
-                }
+                implementation(BuildConfig.ANNOTATIONS_ID)
             }
         }
     }

@@ -22,6 +22,7 @@ public data class JniExpectDeclaration(
     val parameterTypes: List<JavaType>,
     val returnType: JavaType,
     val targets: List<String> = emptyList(),
+    val isCritical: Boolean,
 ) {
     /**
      * Identity of the declaration as a JVM method: the same method reached through two expects restricted to different

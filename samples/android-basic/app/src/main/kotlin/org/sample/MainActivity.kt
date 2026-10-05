@@ -30,6 +30,7 @@ class MainActivity : Activity() {
         column.addView(button("callbacks") { runCallbacks() })
         column.addView(button("threads") { runThreads() })
         column.addView(button("memory") { runMemory() })
+        column.addView(button("critical natives") { runCritical() })
         column.addView(button("exceptions") { runExceptions() })
         column.addView(button("Java / Android API") { runAndroidApi() })
         column.addView(button("packaging") { runPackaging() })
@@ -118,6 +119,39 @@ class MainActivity : Activity() {
         report("release($token) = ${Memory.release(token)}; isRetained = ${Memory.isRetained(token)}")
 
         report("localFrameStress(100, 100) created ${Memory.localFrameStress(100, 100)} locals in 100 frames")
+    }
+
+    private fun runCritical() {
+        runGroup("critical natives") {
+            var hypot = 0.0
+            var mix = 0L
+            var odd = 0
+            var scale = 0L
+            repeat(10_000) {
+                hypot += criticalHypot(3.0, 4.0)
+                mix += criticalMix(1, 100)
+                if (criticalIsOdd(7)) odd++
+                scale += criticalScale(21L, 2)
+                criticalBurn(1, 100)
+            }
+            report("  hypot sum  = $hypot (50000.0)")
+            report("  mix sum    = $mix")
+            report("  isOdd hits = $odd (10000)")
+            report("  scale sum  = $scale (420000)")
+        }
+    }
+
+    /**
+     * Runs [block] under a heading and turns any refusal by the runtime into a reported line.
+     */
+    private fun runGroup(title: String, block: () -> Unit) {
+        report("[$title]")
+        try {
+            block()
+            report("  ok")
+        } catch (e: Throwable) {
+            report("  ${e.javaClass.simpleName}: ${e.message?.lines()?.firstOrNull()}")
+        }
     }
 
     private fun runExceptions() {

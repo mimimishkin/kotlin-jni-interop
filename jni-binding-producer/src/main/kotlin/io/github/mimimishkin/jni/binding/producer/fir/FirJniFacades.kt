@@ -3,6 +3,7 @@ package io.github.mimimishkin.jni.binding.producer.fir
 import io.github.mimimishkin.jni.binding.producer.Symbols
 import io.github.mimimishkin.jni.binding.producer.ident
 import io.github.mimimishkin.jni.binding.producer.jniCName
+import io.github.mimimishkin.jni.binding.producer.jniCriticalCName
 import io.github.mimimishkin.jni.binding.producer.model.ActualParameterType
 import io.github.mimimishkin.jni.binding.producer.model.JniVersion
 import org.jetbrains.kotlin.descriptors.ClassKind
@@ -117,6 +118,403 @@ internal class FirJniFacades(
         facadeFunctions[callableId] = functionSymbol
         return functionSymbol
     }
+
+    // ------------------------------------------------------------------
+    // Critical natives
+    // ------------------------------------------------------------------
+
+    /**
+     * The critical entry point of a `@CriticalNative` actual: a function with the actual's own parameter list, because
+     * that is the calling convention - every array argument arrives as a `(length: Int, CArrayPointer<T>)` pair, and
+     * neither a `JniEnv` nor a class/object reference is passed. An array is therefore forwarded unchanged, and the
+     * only conversion left is a `kotlin.Boolean`, which crosses the C boundary as the JNI `jboolean` (`UByte`).
+     *
+     * [underJavaCriticalName] picks the symbol it is exported as, which is where the two platforms differ: a desktop
+     * JVM resolves `JavaCritical_<class>_<method>`, Android resolves the same function under `Java_<class>_<method>`.
+     */
+    fun criticalFacade(
+        callableId: CallableId,
+        actualLocation: FunLocation,
+        layout: CriticalLayout,
+        includeSignature: Boolean,
+        underJavaCriticalName: Boolean = true,
+    ): FirNamedFunctionSymbol {
+        facadeFunctions[callableId]?.let { return it }
+        val (jvmClass, jvmMethod) = jniActualArguments(actualLocation.fn)
+            ?: error("Missing JNI target for $callableId")
+        val functionSymbol = FirNamedFunctionSymbol(callableId)
+        val forwarding = criticalForwarding(functionSymbol, actualLocation, layout)
+        val overloads = layout.signatureParameters(includeSignature)
+        val cName = if (underJavaCriticalName) {
+            jniCriticalCName(jvmClass, jvmMethod, overloads)
+        } else {
+            jniCName(jvmClass, jvmMethod, overloads)
+        }
+
+        builder.buildGeneratedFunction(
+            functionSymbol = functionSymbol,
+            visibility = Public,
+            returnTypeRef = builder.resolvedTypeRef(layout.nativeReturnClassId()),
+            valueParameters = forwarding.params,
+            annotations = listOf(builder.cNameAnnotation(cName)),
+        ) { returnTarget ->
+            buildBlock {
+                statements += buildReturnExpression { target = returnTarget; result = forwarding.returned }
+            }
+        }
+
+
+        facadeFunctions[callableId] = functionSymbol
+        return functionSymbol
+    }
+
+    /**
+     * The ordinary `Java_<class>_<method>` entry point of a `@CriticalNative` actual, which has to work whether or not
+     * the critical symbol is ever taken.
+     *
+     * Here the parameters are the *JVM* ones, so every array arrives as a `jarray`. Each becomes the
+     * `(length, CArrayPointer<TVar>)` pair the actual declares by entering a critical region with `modifyCritical`,
+     * released again with `finalize()` from a `finally`, so an actual that throws cannot leave the caller's array
+     * pinned. The result cannot travel out through the region call, so it is assigned to a local and returned after.
+     */
+    fun criticalFallbackFacade(
+        callableId: CallableId,
+        actualLocation: FunLocation,
+        layout: CriticalLayout,
+        includeSignature: Boolean,
+    ): FirNamedFunctionSymbol {
+        facadeFunctions[callableId]?.let { return it }
+        val (jvmClass, jvmMethod) = jniActualArguments(actualLocation.fn)
+            ?: error("Missing JNI target for $callableId")
+        val actualFn = actualLocation.fn.fir as FirNamedFunction
+        val functionSymbol = FirNamedFunctionSymbol(callableId)
+
+        val envTypeRef = builder.envTypeRef(actualFn)
+        val envParam = builder.buildFnValueParameter(functionSymbol, "env".ident(), envTypeRef.coneType)
+        val receiverParam = builder.buildFnValueParameter(
+            functionSymbol,
+            "classOrObject".ident(),
+            builder.resolvedTypeRef(Symbols.COpaquePointer).coneType,
+        )
+
+        // One facade parameter per collapsed JVM parameter: a scalar as its primitive, an array pair as the jarray.
+        val slotParams = layout.slots.map { slot ->
+            val param = actualFn.valueParameters[slot.nativeLengthIndex]
+            val coneType = when (slot) {
+                is CriticalSlot.Scalar ->
+                    if (slot.type == ActualParameterType.BooleanIn) {
+                        StandardClassIds.UByte.constructClassLikeType()
+                    } else {
+                        param.returnTypeRef.coneType
+                    }
+                // The jarray arrives as a raw pointer, i.e. the `J<element>Array` alias
+                // `CPointer<out _j<element>Array>` - not the `_j<element>Array` class it is named
+                // after: that one is a `CPointed`, and the `JArray.length`/`.c` accessors the facade
+                // reads the array through cast their receiver to a `CPointer`, which a `CPointed` is
+                // not. The alias' `CPointer` form is, so the parameter is wrapped in `CArrayPointer`
+                // (the alias of `CPointer`) exactly like the regular facade's array parameters.
+                is CriticalSlot.Array -> Symbols.CArrayPointer.constructClassLikeType(
+                    arrayOf(slot.element.arrayClassId.constructClassLikeType()),
+                )
+            }
+            builder.buildFnValueParameter(functionSymbol, param.name, coneType)
+        }
+
+        // Pre-create the `carray` read of every region, so the actual's call can be built before the regions
+        // themselves: the pointer of a region is only in scope inside that region's block.
+        val regions = layout.slots.mapIndexedNotNull { slotIndex, slot ->
+            val element = (slot as? CriticalSlot.Array)?.element ?: return@mapIndexedNotNull null
+            val lambdaSymbol = FirAnonymousFunctionSymbol()
+            val scopeType = builder.modifyingArrayScopeType
+            val scopeReceiver = builder.buildReceiverParameter(
+                containingSymbol = lambdaSymbol,
+                typeRef = buildResolvedTypeRef { coneType = scopeType },
+            )
+            val carrayParam = builder.buildFnValueParameter(
+                lambdaSymbol,
+                "carray".ident(),
+                // `modifyCritical` declares its pointer as `CArrayPointer<*>`, but nothing about the *runtime* pointer
+                // changes: it is the very same address. The region therefore declares it with the element type the
+                // actual wants, which is what a `reinterpret` cast would have produced - only without a reified call,
+                // which the backend cannot lower for a plugin-generated symbol.
+                elementPointerType(element),
+            )
+            val isCopyParam = builder.buildFnValueParameter(
+                lambdaSymbol,
+                "isCopy".ident(),
+                StandardClassIds.Boolean.constructClassLikeType(),
+            )
+            CriticalRegion(
+                slotIndex = slotIndex,
+                element = element,
+                lambdaSymbol = lambdaSymbol,
+                scopeReceiver = scopeReceiver,
+                carrayParam = carrayParam,
+                isCopyParam = isCopyParam,
+                carrayRead = builder.paramRead(carrayParam.symbol, carrayParam.returnTypeRef.coneType),
+            )
+        }
+        fun regionOf(slotIndex: Int): CriticalRegion = regions.single { it.slotIndex == slotIndex }
+
+        val slotRead = { slotIndex: Int ->
+            val param = slotParams[slotIndex]
+            builder.paramRead(param.symbol, param.returnTypeRef.coneType)
+        }
+        val envRead = builder.paramRead(envParam.symbol, envParam.returnTypeRef.coneType)
+        val argOf = { index: Int ->
+            val slot = layout.slotAt(index)!!
+            val slotIndex = layout.slots.indexOf(slot)
+            when (slot) {
+                is CriticalSlot.Scalar -> {
+                    val scalarParam = slotParams[slotIndex]
+                    val read = builder.paramRead(scalarParam.symbol, scalarParam.returnTypeRef.coneType)
+                    if (slot.type == ActualParameterType.BooleanIn) builder.toKBoolean(read) else read
+                }
+                is CriticalSlot.Array -> {
+                    if (index == slot.lengthIndex) {
+                        buildPropertyAccessExpression {
+                            coneTypeOrNull = builder.jArrayLength.resolvedReturnType
+                            // `JArray.length` is a `context(env: JniEnv)` extension property. The env has to be passed
+                            // explicitly, and first: the backend fills the accessor's value parameters positionally and
+                            // does not treat a context receiver specially, so leaving the env out makes the array
+                            // stand in for it and leaves `<this>` unfilled - which no earlier phase reports.
+                            contextArguments += envRead
+                            // The receiver belongs in `extensionReceiver` and not in `explicitReceiver`: only the
+                            // former is recognized as the accessor's receiver when the expected receiver type is
+                            // worked out, and the latter would be converted as a qualifier of its own.
+                            extensionReceiver = slotRead(slotIndex)
+                            calleeReference = buildResolvedNamedReference {
+                                name = builder.jArrayLength.name
+                                resolvedSymbol = builder.jArrayLength
+                            }
+                        }
+                    } else {
+                        regionOf(slotIndex).carrayRead
+                    }
+                }
+            }
+        }
+
+        val returnType = layout.nativeReturnClassId()
+        val returnConeType = returnType.constructClassLikeType()
+
+        // `modifyCritical`'s block is `Unit`-returning, so the value the actual computes cannot travel out through the
+        // surrounding `memScoped` call. It is parked in a local that outlives the regions, and read back after them.
+        val resultVar = builder.buildLocalVar("result".ident(), builder.resolvedTypeRef(returnType))
+        val resultRead = { builder.localVarRead(resultVar.symbol, returnConeType) }
+
+        val scoped = builder.memScopedCall(builder.unitConeType()) { placementRead, _ ->
+            buildBlock {
+                coneTypeOrNull = builder.unitConeType()
+                var computed: FirExpression = actualCall(
+                    actualFn = actualFn,
+                    actualSymbol = actualLocation.fn,
+                    container = actualLocation.container,
+                    arguments = actualFn.valueParameters.indices.map { argOf(it) },
+                )
+                if (layout.isBooleanReturn) computed = builder.toJBoolean(computed)
+                // Assigned from inside the innermost region: assigning the region call itself would store the `Unit` it
+                // returns. A statement, so the region receives it wrapped in a block.
+                val assignment = buildVariableAssignment {
+                    lValue = resultRead()
+                    rValue = computed
+                }
+                if (regions.isEmpty()) {
+                    statements += assignment
+                } else {
+                    var body: FirExpression = buildBlock {
+                        coneTypeOrNull = returnConeType
+                        statements += assignment
+                    }
+                    for (region in regions.asReversed()) {
+                        val nested = body
+                        body = criticalRegion(
+                            arrayRead = slotRead(region.slotIndex),
+                            region = region,
+                            body = nested,
+                            envRead = envRead,
+                            placementRead = placementRead,
+                        )
+                    }
+                    statements += body
+                }
+            }
+        }
+
+        builder.buildGeneratedFunction(
+            functionSymbol = functionSymbol,
+            visibility = Public,
+            returnTypeRef = builder.resolvedTypeRef(returnType),
+            valueParameters = listOf(envParam, receiverParam) + slotParams,
+            annotations = listOf(builder.cNameAnnotation(
+                jniCName(jvmClass, jvmMethod, layout.signatureParameters(includeSignature)),
+            )),
+        ) { returnTarget ->
+            buildBlock {
+                statements += resultVar
+                statements += scoped
+                statements += buildReturnExpression { target = returnTarget; result = resultRead() }
+            }
+        }
+
+        facadeFunctions[callableId] = functionSymbol
+        return functionSymbol
+    }
+
+    /**
+     * The pre-built half of one `modifyCritical` region: the scope receiver, the `carray`/`isCopy` value parameters and
+     * the read of `carray`.
+     *
+     * Everything the region needs is built before its block, because the actual's call - which reads the pointer - has
+     * to be complete before the block that releases the region can be built around it. Crucially all of it is bound to
+     * one [lambdaSymbol]: a value parameter whose `containingDeclarationSymbol` is a throwaway symbol would leave
+     * FIR2IR unable to resolve it.
+     */
+    private class CriticalRegion(
+        val slotIndex: Int,
+        val element: CriticalElement,
+        val lambdaSymbol: FirAnonymousFunctionSymbol,
+        val scopeReceiver: FirReceiverParameter,
+        val carrayParam: FirValueParameter,
+        val isCopyParam: FirValueParameter,
+        val carrayRead: FirExpression,
+    )
+    /**
+     * `array.modifyCritical({ error(...) }) { carray, _ -> try { body } finally { finalize() } }`.
+     */
+    private fun criticalRegion(
+        arrayRead: FirExpression,
+        region: CriticalRegion,
+        body: FirExpression,
+        envRead: FirExpression,
+        placementRead: FirExpression,
+    ): FirExpression {
+        val scopeType = builder.modifyingArrayScopeType
+
+        val tryExpression = buildTryExpression {
+            // A generated try/finally is a statement, so it has no type of its own; FIR2IR needs it stated explicitly.
+            coneTypeOrNull = builder.unitConeType()
+            tryBlock = buildBlock {
+                coneTypeOrNull = builder.unitConeType()
+                statements += body
+            }
+            finallyBlock = buildBlock {
+                coneTypeOrNull = builder.unitConeType()
+                statements += buildFunctionCall {
+                    calleeReference = buildResolvedNamedReference {
+                        name = builder.finalizeFunction.name
+                        resolvedSymbol = builder.finalizeFunction
+                    }
+                    coneTypeOrNull = builder.unitConeType()
+                    extensionReceiver = builder.thisReceiverRead(region.scopeReceiver.symbol, scopeType)
+                    argumentList = FirEmptyArgumentList
+                }
+            }
+        }
+        val blockLambda = builder.buildLambda(
+            lambdaSymbol = region.lambdaSymbol,
+            functionType = builder.functionTypeCone(
+                receiverType = scopeType,
+                valueParameters = listOf(
+                    // The block carries `modifyCritical`'s own `CArrayPointer<*>` parameter type,
+                    // not the region's element-typed `CArrayPointer<T>`: the two differ only in the
+                    // projection, and the element type is applied where the region's `carray` is
+                    // declared, so the actual's call needs no cast.
+                    builder.modifyingArrayCarrayType,
+                    region.isCopyParam.returnTypeRef.coneType,
+                ),
+                returnType = builder.unitConeType(),
+            ),
+            returnTypeRef = builder.resolvedTypeRef(StandardClassIds.Unit),
+            valueParameters = listOf(region.carrayParam, region.isCopyParam),
+            receiverParameter = region.scopeReceiver,
+        ) { _ -> buildBlock { statements += tryExpression } }
+
+        return buildFunctionCall {
+            calleeReference = buildResolvedNamedReference {
+                name = builder.modifyCriticalFunction.name
+                resolvedSymbol = builder.modifyCriticalFunction
+            }
+            coneTypeOrNull = builder.unitConeType()
+            extensionReceiver = arrayRead
+            contextArguments += envRead
+            contextArguments += placementRead
+            argumentList = buildResolvedArgumentList(
+                original = null,
+                linkedMapOf(
+                    builder.lambdaExpression(onErrorLambda()) to
+                        builder.modifyCriticalFunction.valueParameterSymbols[0].fir,
+                    builder.lambdaExpression(blockLambda) to
+                        builder.modifyCriticalFunction.valueParameterSymbols[1].fir,
+                ),
+            )
+        }
+    }
+
+    /**
+     * The `onError` argument of `modifyCritical`: a `() -> Unit` that aborts, since a critical region is mandatory.
+     */
+    private fun onErrorLambda(): FirAnonymousFunction {
+        val symbol = FirAnonymousFunctionSymbol()
+        return builder.buildLambda(
+            lambdaSymbol = symbol,
+            functionType = builder.functionTypeCone(returnType = builder.unitConeType()),
+            returnTypeRef = builder.resolvedTypeRef(StandardClassIds.Unit),
+        ) { _ ->
+            buildBlock {
+                statements += buildFunctionCall {
+                    calleeReference = buildResolvedNamedReference {
+                        name = builder.errorFunction.name
+                        resolvedSymbol = builder.errorFunction
+                    }
+                    coneTypeOrNull = builder.unitConeType()
+                    argumentList = buildResolvedArgumentList(
+                        original = null,
+                        linkedMapOf(
+                            buildLiteralExpression(
+                                null,
+                                ConstantValueKind.String,
+                                "Cannot obtain a critical pointer for a @CriticalNative array argument",
+                                setType = true,
+                            ) to builder.errorFunction.valueParameterSymbols[0].fir,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * A call to [actualSymbol] forwarding [arguments], dispatching on the container instance / object qualifier.
+     */
+    private fun actualCall(
+        actualFn: FirNamedFunction,
+        actualSymbol: FirCallableSymbol<*>,
+        container: FirRegularPropertySymbol?,
+        arguments: List<FirExpression>,
+    ): FirExpression {
+        val mapping = LinkedHashMap<FirExpression, FirValueParameter>()
+        actualFn.valueParameters.forEachIndexed { index, param -> mapping[arguments[index]] = param }
+        val dispatch = dispatchReceiver(actualFn, container)
+        return buildFunctionCall {
+            calleeReference = buildResolvedNamedReference {
+                name = actualFn.name
+                resolvedSymbol = actualSymbol
+            }
+            coneTypeOrNull = actualSymbol.resolvedReturnType
+            argumentList = buildResolvedArgumentList(null, mapping)
+            if (dispatch != null) {
+                this.dispatchReceiver = dispatch
+            }
+        }
+    }
+
+
+    /**
+     * `CArrayPointer<TVar>`: the typed form of the pointer a critical region of [element] yields.
+     */
+    private fun elementPointerType(element: CriticalElement): ConeKotlinType =
+        Symbols.CArrayPointer.constructClassLikeType(arrayOf(element.varClassId.constructClassLikeType()))
 
     // ------------------------------------------------------------------
     // Container instance properties
@@ -766,13 +1164,25 @@ internal class FirJniFacades(
     }
 
     /**
-     * The `staticCFunction` block forwarded to the actual: `(env, objectOrClass, args...) -> JVM-return`. Unlike the
-     * expose-function mode (which emits a `@CName` facade), here the whole dispatch - parameter conversion, the
-     * object/instance resolution and the Boolean wrap - is inlined into the lambda body, so no facade is emitted.
+     * The `staticCFunction` block forwarded to the actual: `(env, objectOrClass, args...) -> JVM-return` for
+     * a regular actual. A critical native is different: the function pointer a `RegisterNatives` block
+     * registers is called with the *critical* ABI - no `JniEnv`, no class/object reference, every array as
+     * the `(length, CArrayPointer)` pair the actual declares - so its lambda takes the `JniActual`'s own
+     * parameter list and forwards to it directly (see [criticalForwardingLambda]).
      */
     private fun buildForwardingLambda(actual: FunLocation): FirExpression {
-        val lambdaSymbol = FirAnonymousFunctionSymbol()
         val fn = actual.fn.fir as FirNamedFunction
+
+        val layout = session.jvmSignatureProvider.criticalLayout(fn)
+        if (layout != null) {
+            check(layout.isValid) {
+                "@CriticalNative actual ${actual.fn.name.asString()} has an invalid parameter layout; " +
+                        "see the compiler diagnostics"
+            }
+            return criticalForwardingLambda(actual, layout)
+        }
+
+        val lambdaSymbol = FirAnonymousFunctionSymbol()
 
         val receiverTypeRef = fn.receiverParameter?.typeRef as? FirResolvedTypeRef
             ?: builder.resolvedTypeRef(Symbols.COpaquePointer)
@@ -805,6 +1215,67 @@ internal class FirJniFacades(
         }
         return builder.resolvedStaticCFunction(lambda)
     }
+
+    /**
+     * The `staticCFunction` block of a critical native registered with `RegisterNatives`: the registered pointer is
+     * called with the critical convention, so the lambda takes the actual's own parameters and forwards to it.
+     */
+    private fun criticalForwardingLambda(actual: FunLocation, layout: CriticalLayout): FirExpression {
+        val lambdaSymbol = FirAnonymousFunctionSymbol()
+        val forwarding = criticalForwarding(lambdaSymbol, actual, layout)
+
+        val lambda = builder.buildLambda(
+            lambdaSymbol = lambdaSymbol,
+            functionType = builder.functionTypeCone(
+                valueParameters = forwarding.params.map { it.returnTypeRef.coneType },
+                returnType = layout.nativeReturnClassId().constructClassLikeType(),
+            ),
+            returnTypeRef = builder.resolvedTypeRef(layout.nativeReturnClassId()),
+            valueParameters = forwarding.params,
+        ) { returnTarget ->
+            buildBlock {
+                statements += buildReturnExpression { target = returnTarget; result = forwarding.returned }
+            }
+        }
+        return builder.resolvedStaticCFunction(lambda)
+    }
+
+    /**
+     * The parameters of a critical entry point plus the call to the actual that reads them back, with the result
+     * narrowed to the native return type.
+     */
+    private fun criticalForwarding(
+        containingSymbol: FirCallableSymbol<*>,
+        actual: FunLocation,
+        layout: CriticalLayout,
+    ): CriticalForwarding {
+        val fn = actual.fn.fir as FirNamedFunction
+        val params = fn.valueParameters.indices.map { index ->
+            val param = fn.valueParameters[index]
+            val coneType = if (layout.scalarTypeAt(index) == ActualParameterType.BooleanIn) {
+                StandardClassIds.UByte.constructClassLikeType()
+            } else {
+                param.returnTypeRef.coneType
+            }
+            builder.buildFnValueParameter(containingSymbol, param.name, coneType)
+        }
+        val call = actualCall(
+            actualFn = fn,
+            actualSymbol = actual.fn,
+            container = actual.container,
+            arguments = fn.valueParameters.indices.map { index ->
+                val read = builder.paramRead(params[index].symbol, params[index].returnTypeRef.coneType)
+                if (layout.scalarTypeAt(index) == ActualParameterType.BooleanIn) builder.toKBoolean(read) else read
+            },
+        )
+        return CriticalForwarding(
+            params = params,
+            returned = if (layout.isBooleanReturn) builder.toJBoolean(call) else call,
+        )
+    }
+
+    /** The parameter list of a critical entry point and the expression its body returns. */
+    private class CriticalForwarding(val params: List<FirValueParameter>, val returned: FirExpression)
 
     /** Whether [this] is a native-memory placement type an actual may take as an additional `context` parameter. */
     private fun ConeKotlinType.isNativePlacementType(): Boolean {

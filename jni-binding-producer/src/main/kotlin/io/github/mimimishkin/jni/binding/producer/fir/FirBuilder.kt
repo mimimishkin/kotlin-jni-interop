@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.builtins.functions.FunctionTypeKind
 import org.jetbrains.kotlin.descriptors.EffectiveVisibility
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibility
+import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.FirFunctionTarget
 import org.jetbrains.kotlin.fir.FirImplementationDetail
 import org.jetbrains.kotlin.fir.FirSession
@@ -15,11 +16,13 @@ import org.jetbrains.kotlin.fir.declarations.FirAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.FirFunction
 import org.jetbrains.kotlin.fir.declarations.FirNamedFunction
+import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirReceiverParameter
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.declarations.FirValueParameterKind
 import org.jetbrains.kotlin.fir.declarations.builder.buildAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.builder.buildNamedFunction
+import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
 import org.jetbrains.kotlin.fir.declarations.builder.buildReceiverParameter
 import org.jetbrains.kotlin.fir.declarations.builder.buildValueParameter
 import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
@@ -28,6 +31,7 @@ import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.expressions.FirEmptyArgumentList
 import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.expressions.FirPropertyAccessExpression
 import org.jetbrains.kotlin.fir.expressions.buildResolvedArgumentList
 import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotationArgumentMapping
 import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotationCall
@@ -36,6 +40,7 @@ import org.jetbrains.kotlin.fir.expressions.builder.buildBlock
 import org.jetbrains.kotlin.fir.expressions.builder.buildFunctionCall
 import org.jetbrains.kotlin.fir.expressions.builder.buildLiteralExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildPropertyAccessExpression
+import org.jetbrains.kotlin.fir.expressions.builder.buildReturnExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildThisReceiverExpression
 import org.jetbrains.kotlin.fir.moduleData
 import org.jetbrains.kotlin.fir.references.builder.buildImplicitThisReference
@@ -50,10 +55,12 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirLocalPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirReceiverParameterSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirValueParameterSymbol
 import org.jetbrains.kotlin.fir.types.ConeAttributes
+import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.CompilerConeAttributes
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
@@ -246,12 +253,48 @@ internal class FirBuilder(
      * An expression reading a value parameter as a property access on its symbol, e.g. `env` or `vm`
      * inside a generated body. [coneType] is the declared type of the parameter.
      */
-    fun paramRead(paramSymbol: FirValueParameterSymbol, coneType: ConeKotlinType): FirExpression =
+    /** An expression reading a value parameter as a property access on its symbol, e.g. `env` or `vm`. */
+    fun paramRead(paramSymbol: FirValueParameterSymbol, coneType: ConeKotlinType): FirPropertyAccessExpression =
+        symbolRead(paramSymbol, paramSymbol.fir.name, coneType)
+
+    /**
+     * A local `var` of the generated body, bound to a fresh symbol and readable through [localVarRead].
+     */
+    fun buildLocalVar(name: Name, returnTypeRef: FirResolvedTypeRef): FirProperty =
+        buildProperty {
+            moduleData = session.moduleData
+            origin = pluginOrigin
+            status = FirResolvedDeclarationStatusImpl(
+                visibility = Visibilities.Local,
+                modality = Modality.FINAL,
+                effectiveVisibility = EffectiveVisibility.Local,
+            )
+            isLocal = true
+            isVar = true
+            this.name = name
+            this.returnTypeRef = returnTypeRef
+            symbol = FirLocalPropertySymbol()
+        }
+
+    /**
+     * An expression reading the local [var]; also its `lValue` in a [buildVariableAssignment].
+     */
+    fun localVarRead(varSymbol: FirPropertySymbol, coneType: ConeKotlinType): FirPropertyAccessExpression =
+        symbolRead(varSymbol, varSymbol.fir.name, coneType)
+
+    /**
+     * The property access that reads a generated declaration by symbol, whatever kind of declaration it is.
+     */
+    private fun symbolRead(
+        symbol: FirCallableSymbol<*>,
+        name: Name,
+        coneType: ConeKotlinType,
+    ): FirPropertyAccessExpression =
         buildPropertyAccessExpression {
             coneTypeOrNull = coneType
             calleeReference = buildResolvedNamedReference {
-                name = paramSymbol.fir.name
-                resolvedSymbol = paramSymbol
+                this.name = name
+                resolvedSymbol = symbol
             }
         }
 
@@ -454,6 +497,116 @@ internal class FirBuilder(
     /** The `kotlin.error(message)` function, used to terminate a `RegisterNatives` step when `findClass` fails. */
     val errorFunction: FirFunctionSymbol<*> by lazy {
         topLevelFunctionSymbol(FqName("kotlin"), "error") { it.valueParameterSymbols.size == 1 }
+    }
+
+    // ------------------------------------------------------------------------------------------------
+    // Critical natives: the `@CriticalNative` fallback facade turns each `jarray` into a `(length, pointer)` pair by
+    // entering a critical region with `modifyCritical`.
+    // ------------------------------------------------------------------------------------------------
+
+    /**
+     * The `JArray.length` extension property: the element count of a `jarray` as the fallback facade receives it,
+     * which is the `length` half of the pair the actual declares.
+     */
+    val jArrayLength: FirPropertySymbol by lazy {
+        provider.getTopLevelPropertySymbols(Symbols.bindingPackage, "length".ident())
+            .firstOrNull { it.resolvedReceiverType?.isJArrayType() == true }
+            ?: error("Missing the JArray.length extension property in the jni-binding library")
+    }
+
+    /**
+     * `memScoped { placement -> body }`: wraps [body] in a `memScoped` call, providing a `MemScope` receiver.
+     */
+    fun memScopedCall(
+        returnType: ConeKotlinType,
+        body: (placementRead: FirExpression, lambdaSymbol: FirAnonymousFunctionSymbol) -> FirExpression,
+    ): FirExpression {
+        val lambdaSymbol = FirAnonymousFunctionSymbol()
+        val memScopeType = Symbols.MemScope.constructClassLikeType()
+        val receiverParameter = buildReceiverParameter(
+            containingSymbol = lambdaSymbol,
+            typeRef = buildResolvedTypeRef { coneType = memScopeType },
+        )
+        val placementRead = thisReceiverRead(receiverParameter.symbol, memScopeType)
+        val bodyResult = body(placementRead, lambdaSymbol)
+        val lambda = buildLambda(
+            lambdaSymbol = lambdaSymbol,
+            functionType = functionTypeCone(
+                receiverType = memScopeType,
+                returnType = returnType,
+            ),
+            returnTypeRef = buildResolvedTypeRef { coneType = returnType },
+            receiverParameter = receiverParameter,
+        ) { returnTarget ->
+            buildBlock {
+                statements += buildReturnExpression { target = returnTarget; result = bodyResult }
+            }
+        }
+        return buildFunctionCall {
+            calleeReference = buildResolvedNamedReference {
+                name = memScopedFunction.name
+                resolvedSymbol = memScopedFunction
+            }
+            coneTypeOrNull = returnType
+            typeArguments += buildTypeProjectionWithVariance {
+                typeRef = buildResolvedTypeRef { coneType = returnType }
+                variance = Variance.INVARIANT
+            }
+            argumentList = buildResolvedArgumentList(
+                original = null,
+                linkedMapOf(lambdaExpression(lambda) to memScopedFunction.valueParameterSymbols[0].fir),
+            )
+        }
+    }
+
+    /**
+     * The `JPrimitiveArray<T>.modifyCritical(onError, block)` extension: entering a critical region over a `jarray`.
+     *
+     * Its value parameters are the `onError` lambda and the `ModifyingArrayScope` block. The block returns `Unit`, so a
+     * value cannot travel out of it as an expression - the facade's only job is to open and close the region.
+     */
+    val modifyCriticalFunction: FirFunctionSymbol<*> by lazy {
+        provider.getTopLevelFunctionSymbols(Symbols.bindingAccessorsPackage, "modifyCritical".ident())
+            .firstOrNull { symbol ->
+                (symbol.fir as? FirFunction)?.receiverParameter != null &&
+                    symbol.typeParameterSymbols.isNotEmpty()
+            }
+            ?: error("Missing the JPrimitiveArray.modifyCritical extension function in the jni-binding library")
+    }
+
+    /**
+     * The `ModifyingArrayScope.finalize()` extension, releasing the critical region a `modifyCritical` block is
+     * holding, with `ApplyChangesMode.FinalCommit`.
+     *
+     * The scope is an ordinary function type rather than a class, so this is an extension on it and not a member.
+     */
+    val finalizeFunction: FirFunctionSymbol<*> by lazy {
+        extensionFunctionOn(Symbols.bindingAccessorsPackage, "finalize")
+    }
+
+    /**
+     * The `ModifyingArrayScope` type, `((ApplyChangesMode) -> Unit)`, the receiver of a `modifyCritical`
+     * block: the first type argument of the block's `Function3`, which is the block's whole
+     * `ModifyingArrayScope.(CArrayPointer<*>, Boolean) -> Unit` type - not that type itself.
+     */
+    val modifyingArrayScopeType: ConeKotlinType by lazy {
+        modifyingArrayScopeBlockType.typeArguments[0] as ConeKotlinType
+    }
+
+    /**
+     * The `CArrayPointer<*>` parameter type of a `modifyCritical` block, its second type argument.
+     *
+     * A block passed to `modifyCritical` must carry exactly this type - the element type is a star
+     * projection, whatever the region's own `CArrayPointer<T>` is - so a generated block conforms to
+     * the parameter without a cast.
+     */
+    val modifyingArrayCarrayType: ConeKotlinType by lazy {
+        modifyingArrayScopeBlockType.typeArguments[1] as ConeKotlinType
+    }
+
+    /** The whole `ModifyingArrayScope.(CArrayPointer<*>, Boolean) -> Unit` type of `modifyCritical`'s block parameter. */
+    private val modifyingArrayScopeBlockType: ConeClassLikeType by lazy {
+        (modifyCriticalFunction.fir as FirFunction).valueParameters[1].returnTypeRef.coneType as ConeClassLikeType
     }
 
     /** The single top-level extension function named [name] in [packageFqName]; fails if absent or ambiguous. */

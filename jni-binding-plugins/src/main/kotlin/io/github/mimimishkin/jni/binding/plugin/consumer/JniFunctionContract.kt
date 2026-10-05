@@ -29,10 +29,9 @@ internal data class JniFunctionContract(
     val parameterTypes: List<String> = emptyList(),
     val returnType: String = "void",
     val targets: List<String> = emptyList(),
-    /** Whether the `@JniActual` takes a `JniEnv` context parameter. Written by the producer only. */
     val needEnv: Boolean? = null,
-    /** Source file declaring the `@JniActual`. Written by the producer only. */
     val source: String? = null,
+    val isCritical: Boolean? = null,
 ) {
     val parameterTypeNames: List<String> get() = parameterTypes.map { it.withoutNullability() }
 

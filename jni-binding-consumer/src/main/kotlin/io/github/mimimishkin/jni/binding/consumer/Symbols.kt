@@ -5,6 +5,8 @@ internal object Symbols {
     val JniExpect = annotationPackage.classId("JniExpect")
     val JniExpects = annotationPackage.classId("JniExpects")
     val LoadMethod = annotationPackage.classId("LoadMethod")
+    val CriticalNative = annotationPackage.classId("CriticalNative")
+    val androidCriticalNative = "dalvik.annotation.optimization".pkg().classId("CriticalNative")
 
     val osParameter = "os".ident()
     val archParameter = "arch".ident()

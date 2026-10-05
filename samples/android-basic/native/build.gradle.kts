@@ -15,12 +15,6 @@ kotlin {
         it.binaries.sharedLib("example")
     }
 
-    sourceSets {
-        commonMain.dependencies {
-            implementation("io.github.mimimishkin:jni-binding:1.0.2")
-        }
-    }
-
     sourceSets.all {
         languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         languageSettings.optIn("kotlin.experimental.ExperimentalNativeApi")

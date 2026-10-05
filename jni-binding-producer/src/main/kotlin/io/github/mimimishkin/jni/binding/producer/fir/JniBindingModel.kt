@@ -43,6 +43,18 @@ internal data class FunLocation(
         val encodedName = fn.callableId.asSingleFqName().asString().replace('.', '_') + "JniBinding"
         return Symbols.generatedPackage.callableId(encodedName + jniSignature)
     }
+
+    /**
+     * The generated name of the `JavaCritical_<class>_<method>` entry point of a `@CriticalNative` actual, next to the
+     * [facadeCallableId] of its fallback facade.
+     *
+     * Only the generated Kotlin name is encoded here: the symbol a JVM resolves is fixed by the `@CName` annotation,
+     * which [FirJniFacades.criticalFacade] derives from the `JavaCritical_` prefix.
+     */
+    fun criticalFacadeCallableId(jniSignature: String = ""): CallableId {
+        val encodedName = fn.callableId.asSingleFqName().asString().replace('.', '_') + "CriticalJniBinding"
+        return Symbols.generatedPackage.callableId(encodedName + jniSignature)
+    }
 }
 
 /**
@@ -96,6 +108,12 @@ internal fun ConeKotlinType.isJavaVmType(): Boolean {
     val pointed = pointer.typeArguments.singleOrNull()?.type ?: return false
     return pointed.classId in setOf(Symbols.JNIInvokeInterface, Symbols.JNIInvokeInterfaceWrapped, Symbols.JNIInvokeInterfaceAndroid)
 }
+
+/**
+ * Whether [this] is a `JArray`, i.e. a pointer to any JNI array.
+ */
+internal fun ConeKotlinType.isJArrayType(): Boolean =
+    classId == Symbols.CPointer && typeArguments.singleOrNull()?.type?.classId == Symbols.JArrayWrapped
 
 /** The JVM class and method a `@JniActual` function binds to. */
 internal data class JniTarget(

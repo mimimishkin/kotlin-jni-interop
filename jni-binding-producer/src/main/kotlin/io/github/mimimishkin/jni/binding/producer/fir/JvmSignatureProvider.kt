@@ -6,6 +6,7 @@ import io.github.mimimishkin.jni.binding.producer.model.ActualParameterType
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.FirSession.Companion.sessionComponentAccessor
 import org.jetbrains.kotlin.fir.declarations.FirFunction
+import org.jetbrains.kotlin.fir.declarations.FirNamedFunction
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirCollectionLiteral
@@ -51,9 +52,115 @@ internal class JvmSignatureProvider(
 ) : FirExtensionSessionComponent(session) {
 
     private val signatures = mutableMapOf<FirFunctionSymbol<*>, JvmSignatureInfo>()
+    private val criticalLayouts = mutableMapOf<FirFunctionSymbol<*>, CriticalLayout>()
 
     fun signatureInfo(declaration: FirFunction): JvmSignatureInfo =
-        signatures.getOrPut(declaration.symbol) { compute(declaration) }
+        signatures.getOrPut(declaration.symbol) {
+            // A critical actual has more native parameters than the JVM method it implements, so its signature is the
+            // collapsed one the layout produces rather than the per-parameter one [compute] derives.
+            val layout = criticalLayout(declaration)
+            if (layout != null) {
+                if (layout.isValid) {
+                    JvmSignatureInfo(
+                        hasSignatureAnnotation = layout.isSignatureAnnotated,
+                        signatureParameterCount = layout.slots.size,
+                        parameterTypes = layout.jvmParameterTypes,
+                        returnType = layout.returnType,
+                        jsonParameterTypes = layout.jsonParameterTypes,
+                        jsonReturnType = layout.jsonReturnType,
+                    )
+                } else {
+                    // An invalid layout has already been reported by the checker; mark it unmappable so the
+                    // generator skips the actual rather than generating a facade from a broken signature.
+                    JvmSignatureInfo(
+                        hasSignatureAnnotation = false,
+                        signatureParameterCount = layout.slots.size,
+                        parameterTypes = List(layout.slots.size) { null },
+                        returnType = null,
+                        jsonParameterTypes = List(layout.slots.size) { null },
+                        jsonReturnType = null,
+                    )
+                }
+            } else {
+                compute(declaration)
+            }
+        }
+
+    /**
+     * The `@CriticalNative` parameter layout of [declaration], or `null` when it is not annotated as a critical
+     * native. Memoized separately from [signatureInfo] because a critical actual resolves its JVM signature from the
+     * collapsed slots rather than from its native parameters one by one.
+     */
+    fun criticalLayout(declaration: FirFunction): CriticalLayout? {
+        val fn = declaration as? FirNamedFunction ?: return null
+        if (!fn.isCriticalNative(session)) return null
+        return criticalLayouts.getOrPut(declaration.symbol) { computeCriticalLayout(fn) }
+    }
+
+    /**
+     * Walks the native parameters of a critical actual left to right, pairing every `CArrayPointer<T>` with the `Int`
+     * length that must precede it. Every structural violation is collected as an issue so the checker can report all of
+     * them at once, while [slots] still ends up holding everything that *is* usable.
+     */
+    private fun computeCriticalLayout(fn: FirNamedFunction): CriticalLayout {
+        val resolvedAnnotation = withJvmSignatureAnnotation(fn)
+        val declaredParameterTypes = resolvedAnnotation?.let { withJvmSignatureArguments(it) }
+            ?.map { (it as? FirLiteralExpression)?.value as? String }.orEmpty()
+        val declaredReturnType = resolvedAnnotation?.let { withJvmSignatureLiteral(it) }
+
+        val issues = mutableListOf<CriticalIssue>()
+        val slots = mutableListOf<CriticalSlot>()
+
+        if (fn.contextParameters.isNotEmpty()) issues += CriticalIssue(CriticalProblem.ContextParameters)
+        if (fn.receiverParameter != null) issues += CriticalIssue(CriticalProblem.Receiver)
+
+        val parameters = fn.valueParameters
+        var index = 0
+        while (index < parameters.size) {
+            val type = parameters[index].returnTypeRef.coneType
+            if (type.isCArrayPointer()) {
+                val element = type.criticalArrayElementOrNull()
+                val lengthIndex = index - 1
+                val hasLength = lengthIndex >= 0 &&
+                        parameters[lengthIndex].returnTypeRef.coneType.classId == StandardClassIds.Int
+                when {
+                    element == null -> issues += CriticalIssue(CriticalProblem.UnsupportedArrayElement, index)
+                    !hasLength -> issues += CriticalIssue(CriticalProblem.ArrayWithoutLength, index)
+                    else -> {
+                        // The length parameter was already recorded as a standalone scalar when it was visited;
+                        // this pair consumes it, so the slot has to go or the collapsed signature would list both.
+                        slots.removeIf { it is CriticalSlot.Scalar && it.parameterIndex == lengthIndex }
+                        slots += CriticalSlot.Array(lengthIndex, index, element)
+                        // The length parameter is consumed by this pair; skip it.
+                        index++
+                    }
+                }
+            } else {
+                val scalar = criticalScalarTypeOrNull(type)
+                if (scalar == null) issues += CriticalIssue(CriticalProblem.UnsupportedParameterType, index)
+                else slots += CriticalSlot.Scalar(index, scalar)
+            }
+            index++
+        }
+
+        if (fn.returnTypeRef.coneType.classId !in CRITICAL_RETURN_CLASS_IDS) {
+            issues += CriticalIssue(CriticalProblem.UnsupportedReturnType)
+        }
+        // An explicit JVM signature has to name exactly one type per collapsed JVM parameter - one per `(length, array)`
+        // pair - so a mismatch is reported rather than silently taking the annotation over the derived layout.
+        if (resolvedAnnotation != null && declaredParameterTypes.size != slots.size) {
+            issues += CriticalIssue(CriticalProblem.UnresolvedType)
+        }
+
+        return CriticalLayout(
+            slots = slots,
+            issues = issues,
+            declaredParameterTypes = declaredParameterTypes,
+            declaredReturnType = declaredReturnType,
+            hasSignatureAnnotation = resolvedAnnotation != null,
+            derivedReturnType = criticalReturnTypeOrNull(fn.returnTypeRef.coneType),
+        )
+    }
 
     private fun compute(fn: FirFunction): JvmSignatureInfo {
         val resolvedAnnotation = withJvmSignatureAnnotation(fn)

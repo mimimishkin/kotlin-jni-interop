@@ -3,6 +3,7 @@ package io.github.mimimishkin.jni.binding.annotation
 /**
  * An alias for android [dalvik.annotation.optimization.CriticalNative].
  *
+ * The Java method must be `static` and may not take or return references, arrays included.
  * Using `RegisterNatives` instead of exposing JNI functions is highly recommended for such functions.
  *
  * Note that using such functions on Android 7- will cause crashes.

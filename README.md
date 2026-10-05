@@ -29,6 +29,7 @@ Use this README as a map and that sample as the full reference.
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Annotations](#annotations)
+- [Critical natives](#critical-natives)
 - [Libraries](#libraries)
 - [Samples](#samples)
 
@@ -187,7 +188,7 @@ How `external` methods find their native implementations:
 
 - **`RegisterNatives`** (recommended) — register on library load; one load serves every class.
 - **`ExposeFunctions`** (default) — export `Java_...` symbols by name; each class that declares natives must load the
-  library. Required for *critical natives* on the JDK (removed in JDK 22; fully supported on Android).
+  library. Required for *critical natives* on the JDK — see [Critical natives](#critical-natives).
 
 ## Annotations
 
@@ -196,7 +197,7 @@ How `external` methods find their native implementations:
 - `@JniExpect` / `@JniExpects` — this `external` member (or whole class) is implemented via JNI.
   Optional target filter: `@JniExpect("mingwX64")`.
 - `@LoadMethod` — function that loads the native library (runs from the object's / companion's initializer).
-- `@CriticalNative` — critical native (for static functions; primitives and primitive arrays only).
+- `@CriticalNative` — critical native (for static non-synchronized functions; primitives and primitive arrays only).
 
 **Native**
 
@@ -206,6 +207,36 @@ How `external` methods find their native implementations:
 - `@CriticalNative` — critical native (no `JniEnv` / `JObject`; primitives and primitive arrays only).
 
 See [`samples/basic`](samples/basic) for every supported shape.
+
+## Critical natives
+
+This is optimization for faster JNI function calls. A `@CriticalNative` is called **without a `JniEnv` and without a 
+class/object reference**. Only primitives / primitive arrays (On JDK only - each array arrives as a `(length, pointer)` 
+pair), `static` and non-`synchronized` on the JVM side. Also, the method must never call back into the JVM.
+
+```kotlin
+// native
+@CriticalNative
+@JniActual
+fun sum(size: Int, values: CArrayPointer<IntVar>): Long   // (length, pointer)
+
+// JVM
+@CriticalNative
+@JniExpect
+external fun sum(values: IntArray): Long    // int[]
+```
+
+**Desktop (HotSpot).** Undocumented and unsupported: deprecated in JDK 16, removed in JDK 22.
+The `JavaCritical_` path needs JDK 21 or older, `-XX:+CriticalJNINatives` option, and a JIT-compiled call site
+(128 calls on my machine); until then — and on newer JDKs — the ordinary `Java_` facade runs.
+Works only with [`ExposeFunctions`](#export-methods) export method. Prefer Project Panama for new code.
+
+**Android (ART).** First-class support — see
+[`CriticalNative`](https://developer.android.com/reference/dalvik/annotation/optimization/CriticalNative) and
+[JNI tips](https://developer.android.com/ndk/guides/jni-tips#faster-native-calls-with-fastnative-and-criticalnative).
+Both `RegisterNatives` and `ExposeFunctions` work (`minSdk` 26+).
+
+See `basic` and `android-basic` samples for reference.
 
 ## Libraries
 

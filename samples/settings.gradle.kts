@@ -26,6 +26,7 @@ rootProject.name = "samples"
 // All parent directories are included as projects when specifying a path to a subproject
 include(":basic:native")
 include(":basic:nativeHello")
+include(":basic:nativeCritical")
 include(":android-basic:native")
 include(":android-basic:app")
 

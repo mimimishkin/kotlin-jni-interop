@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 public data class JniActualInfo(
     val needEnv: Boolean,
     val isStatic: Boolean?,
+    val isCritical: Boolean,
     val className: String,
     val methodName: String,
     val parameterTypes: List<String>,

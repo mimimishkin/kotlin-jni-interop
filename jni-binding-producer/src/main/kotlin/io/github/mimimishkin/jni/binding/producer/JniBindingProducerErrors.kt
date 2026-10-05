@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies.PARAM
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies.PARAMETER_VARARG_MODIFIER
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies.TYPE_PARAMETERS_LIST
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies.VISIBILITY_MODIFIER
+import org.jetbrains.kotlin.diagnostics.KtDiagnosticRenderers
 import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
 import org.jetbrains.kotlin.diagnostics.rendering.CommonRenderers
 import org.jetbrains.kotlin.diagnostics.rendering.Renderer
@@ -52,6 +53,16 @@ internal object JniBindingProducerErrors : KtDiagnosticsContainer() {
             map.put(JNI_ACTUALS_TYPE_PARAMETERS, "@JniActuals cannot have type parameters")
             map.put(JNI_ACTUALS_INNER_CLASS, "@JniActuals cannot be used on inner classes")
             map.put(MULTIPLE_ON_LOAD_HOOKS, "More than one @JniOnLoad and/or constructable @JniActuals detected. Either merge them into one or set 'allowSeveralHooks = true'")
+            map.put(CRITICAL_CONTEXT_PARAMETERS, "@CriticalNative function cannot have context parameters: a critical native is invoked without a JniEnv.")
+            map.put(CRITICAL_RECEIVER, "@CriticalNative function cannot have a receiver: a critical native is invoked without a class/object reference.")
+            map.put(CRITICAL_ARRAY_WITHOUT_LENGTH, "@CriticalNative array parameter ''{0}'' must be preceded by its length: an `Int` parameter right before the CArrayPointer.", CommonRenderers.NAME)
+            map.put(CRITICAL_UNSUPPORTED_PARAMETER_TYPE, "@CriticalNative function can only have primitive parameters or (length: Int, array: CArrayPointer<T>) pairs, but ''{0}'' is {1}.", CommonRenderers.NAME, CommonRenderers.STRING)
+            map.put(CRITICAL_UNSUPPORTED_ARRAY_ELEMENT, "@CriticalNative array parameter ''{0}'' must be a CArrayPointer of a primitive Var (IntVar, LongVar, ...), but {1} was given.", CommonRenderers.NAME, CommonRenderers.STRING)
+            map.put(CRITICAL_UNSUPPORTED_RETURN_TYPE, "@CriticalNative function can only return a primitive or Unit, but was {0}.", CommonRenderers.STRING)
+            map.put(CRITICAL_UNRESOLVED_TYPE, "@CriticalNative function has {0} @WithJvmSignature parameter type(s) but {1} collapsed JVM parameter(s) (a length/array pair counts as one).", KtDiagnosticRenderers.TO_STRING, KtDiagnosticRenderers.TO_STRING)
+            map.put(CRITICAL_UNSUPPORTED_BY_REGISTER_NATIVES, "@CriticalNative is not supported with exportMethod=RegisterNatives. Use the exposed-functions mode on this platform.")
+            map.put(CRITICAL_UNSUPPORTED_BY_JDK_VERSION, "@CriticalNative is not supported for expectedJdkVersion {0}: critical natives were removed from HotSpot in JDK 22.", KtDiagnosticRenderers.TO_STRING)
+            map.put(CRITICAL_REFERENCE_UNSUPPORTED_ON_ANDROID, "@CriticalNative array parameter ''{0}'' is not supported on Android: a critical native there takes no references, an array included. Use primitives only, or declare it as an ordinary native.", CommonRenderers.NAME)
         }
     }
 
@@ -87,4 +98,15 @@ internal object JniBindingProducerErrors : KtDiagnosticsContainer() {
     val JNI_ACTUALS_TYPE_PARAMETERS by error0<KtElement>(TYPE_PARAMETERS_LIST)
     val JNI_ACTUALS_INNER_CLASS by error0<KtElement>(DECLARATION_NAME)
     val MULTIPLE_ON_LOAD_HOOKS by error0<KtElement>()
+    val CRITICAL_CONTEXT_PARAMETERS by error0<KtElement>()
+    val CRITICAL_RECEIVER by error0<KtElement>()
+    val CRITICAL_ARRAY_WITHOUT_LENGTH by error1<KtElement, Name>(DECLARATION_NAME)
+    val CRITICAL_LENGTH_WITHOUT_ARRAY by error1<KtElement, Name>(DECLARATION_NAME)
+    val CRITICAL_UNSUPPORTED_PARAMETER_TYPE by error2<KtElement, Name, String>(DECLARATION_NAME)
+    val CRITICAL_UNSUPPORTED_ARRAY_ELEMENT by error2<KtElement, Name, String>(DECLARATION_NAME)
+    val CRITICAL_UNSUPPORTED_RETURN_TYPE by error1<KtElement, String>(DECLARATION_RETURN_TYPE)
+    val CRITICAL_UNRESOLVED_TYPE by error2<KtElement, Int, Int>(DECLARATION_SIGNATURE)
+    val CRITICAL_UNSUPPORTED_BY_REGISTER_NATIVES by error0<KtElement>()
+    val CRITICAL_UNSUPPORTED_BY_JDK_VERSION by error1<KtElement, Int>(DECLARATION_NAME)
+    val CRITICAL_REFERENCE_UNSUPPORTED_ON_ANDROID by error1<KtElement, Name>(DECLARATION_NAME)
 }

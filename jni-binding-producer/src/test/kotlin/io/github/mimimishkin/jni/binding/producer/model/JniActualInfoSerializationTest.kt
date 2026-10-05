@@ -10,6 +10,7 @@ class JniActualInfoSerializationTest {
         val info = JniActualInfo(
             needEnv = true,
             isStatic = false,
+            isCritical = false,
             className = "com.example.Native",
             methodName = "value",
             parameterTypes = listOf("int", "@Nullable java.lang.String"),

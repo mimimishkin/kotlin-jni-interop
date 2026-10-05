@@ -128,7 +128,52 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
         return lines.joinToString("\n") + "\n"
     }
 
-    private fun render(expect: JniFunctionContract, functionName: String): Stub {
+    private fun render(expect: JniFunctionContract, functionName: String): Stub =
+        if (expect.isCritical == true) renderCritical(expect, functionName) else renderRegular(expect, functionName)
+
+    /**
+     * A `@CriticalNative` stub: a top-level function of primitives and `(length, array)` pairs.
+     */
+    private fun renderCritical(expect: JniFunctionContract, functionName: String): Stub {
+        val parameters = mutableListOf<String>()
+        val imports = linkedSetOf<String>()
+        expect.parameterTypeNames.forEachIndexed { index, jvmType ->
+            val name = "p$index"
+            val varType = criticalVarType(jvmType)
+            if (varType != null) {
+                parameters += "$name" + "Length: Int"
+                parameters += "$name: CArrayPointer<$varType>"
+                imports += "kotlinx.cinterop.CArrayPointer"
+                imports += "kotlinx.cinterop.$varType"
+            } else {
+                parameters += "$name: ${criticalScalarType(jvmType)}"
+            }
+        }
+        val returnType = criticalScalarType(expect.returnTypeName)
+
+        imports += "$ANNOTATIONS_PACKAGE.JniActual"
+        imports += "$ANNOTATIONS_PACKAGE.CriticalNative"
+        imports += "$ANNOTATIONS_PACKAGE.WithJvmSignature"
+
+        val signature = expect.parameterTypeNames.joinToString(", ") { "\"$it\"" }
+
+        val code = buildString {
+            // These two annotations carry the names, and are what makes the stub implement this specific JVM method
+            // rather than just any function that happens to share its shape.
+            appendLine("@JniActual(className = ${expect.className.quoted()}, methodName = ${expect.methodName.quoted()})")
+            appendLine("@CriticalNative")
+            appendLine("@WithJvmSignature(")
+            appendLine("    parameterTypes = [$signature],")
+            appendLine("    returnType = ${expect.returnTypeName.quoted()},")
+            appendLine(")")
+            // The return type is written out because `TODO()` infers `Nothing` without it, which is not one of
+            // the native types the producer accepts as a bound signature.
+            append("fun $functionName(${parameters.joinToString(", ")}): $returnType = TODO()")
+        }
+        return Stub(functionName, code, imports.toList())
+    }
+
+    private fun renderRegular(expect: JniFunctionContract, functionName: String): Stub {
         // A `JClass` receiver is what makes the producer see the actual as static, a `JObject` receiver as an instance
         // method; a top-level function would leave the stasis unstated and only "not contradict" the expect.
         val receiver = if (expect.isStatic == true) "JClass" else "JObject"
@@ -202,6 +247,41 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
             // Any other array, including a multi-dimensional one: an array of arrays is an object rather than a
             // primitive array, so `JObjectArray` is the closest type able to carry it.
             else -> if (jvmType.endsWith("[]")) "JObjectArray" else "JObject"
+        }
+
+        /**
+         * The `kotlinx.cinterop` variable type a critical-native array parameter of JVM type
+         * [jvmType] carries, or `null` when [jvmType] is not a primitive array. `boolean` is
+         * `UByteVar`, matching the `jboolean` binary representation of its elements.
+         */
+        internal fun criticalVarType(jvmType: String): String? = when (jvmType) {
+            "boolean[]" -> "UByteVar"
+            "byte[]" -> "ByteVar"
+            "char[]" -> "UShortVar"
+            "short[]" -> "ShortVar"
+            "int[]" -> "IntVar"
+            "long[]" -> "LongVar"
+            "float[]" -> "FloatVar"
+            "double[]" -> "DoubleVar"
+            else -> null
+        }
+
+        /**
+         * The Kotlin primitive a critical-native parameter or return of JVM type [jvmType] is
+         * declared with. A critical native only ever deals in primitives and primitive arrays, so
+         * anything else is a contract the producer rejects.
+         */
+        internal fun criticalScalarType(jvmType: String): String = when (jvmType) {
+            "void" -> "Unit"
+            "boolean" -> "Boolean"
+            "byte" -> "Byte"
+            "char" -> "Char"
+            "short" -> "Short"
+            "int" -> "Int"
+            "long" -> "Long"
+            "float" -> "Float"
+            "double" -> "Double"
+            else -> throw IllegalArgumentException("A @CriticalNative only binds primitives and primitive arrays, not '$jvmType'")
         }
 
         /**

@@ -17,12 +17,15 @@ import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrVararg
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.org.objectweb.asm.MethodVisitor
+import org.jetbrains.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED
 import org.jetbrains.org.objectweb.asm.Type as AsmType
 
 private val jniExpectAnnotation = Symbols.JniExpect.asSingleFqName()
 private val jniExpectsAnnotation = Symbols.JniExpects.asSingleFqName()
 
 private fun IrAnnotationContainer.hasJniExpect() = hasAnnotation(jniExpectAnnotation)
+
+private fun isAndroidTarget(target: String): Boolean = target.startsWith("android", ignoreCase = true)
 
 /**
  * The single place where `@JniExpect` functions are matched against the JVM names the backend actually produces.
@@ -66,12 +69,18 @@ internal class JniExpectMatcher(
             exceptions: Array<out String>?,
         ): MethodVisitor {
             if (declaration is IrSimpleFunction && currentClassName != null) {
-                checkFunction(declaration, currentClassName!!, name, desc)
+                checkFunction(declaration, currentClassName!!, name, desc, access)
             }
             return delegate.newMethod(declaration, access, name, desc, signature, exceptions)
         }
 
-        private fun checkFunction(function: IrSimpleFunction, className: String, asmMethodName: String, desc: String) {
+        private fun checkFunction(
+            function: IrSimpleFunction,
+            className: String,
+            asmMethodName: String,
+            desc: String,
+            access: Int,
+        ) {
             // The JVM backend emits a synthetic `getX$annotations` method carrying property-level annotations; it is
             // not an accessor and must never be treated as an expect.
             if (function.origin == JvmLoweredDeclarationOrigin.SYNTHETIC_METHOD_FOR_PROPERTY_OR_TYPEALIAS_ANNOTATIONS) return
@@ -91,8 +100,32 @@ internal class JniExpectMatcher(
             if (!expectPresent) return
 
             val expectInfo = function.describeJniExpect(className, asmMethodName, desc)
+            if (expectInfo.source.hasCriticalNative()) {
+                if (access and ACC_SYNCHRONIZED != 0) {
+                    state.reporter.at(expectInfo.source)
+                        .report(JniBindingConsumerErrors.CRITICAL_NATIVE_MUST_NOT_BE_SYNCHRONIZED)
+                }
+                checkNoReferencesOnAndroid(expectInfo, desc)
+            }
             state.recordExpect(expectInfo.toDeclaration())
             actualize(expectInfo, function)
+        }
+
+        /**
+         * Rejects a critical expect that takes or returns a reference when any of its targets is an Android one.
+         */
+        private fun checkNoReferencesOnAndroid(expect: JniExpectInfo, desc: String) {
+            if (state.targetsFor(expect.targets).none(::isAndroidTarget)) return
+            fun AsmType.isReference() = sort == AsmType.ARRAY || sort == AsmType.OBJECT
+            val methodType = AsmType.getMethodType(desc)
+            val references = methodType.argumentTypes.filter { it.isReference() } +
+                    listOfNotNull(methodType.returnType.takeIf { it.isReference() })
+            if (references.isEmpty()) return
+            state.reporter.at(expect.source).report(
+                JniBindingConsumerErrors.CRITICAL_NATIVE_REFERENCE_ON_ANDROID,
+                references.joinToString(", ") { it.className },
+                expect.parametersWithTypes.joinToString(", ") { it.first.name.asString() }.ifEmpty { "no parameters" },
+            )
         }
 
         private fun JniExpectInfo.toDeclaration() = JniExpectDeclaration(
@@ -102,6 +135,7 @@ internal class JniExpectMatcher(
             parameterTypes = parameterTypes,
             returnType = returnType,
             targets = targets,
+            isCritical = source.hasCriticalNative(),
         )
 
         private fun IrSimpleFunction.describeJniExpect(className: String, methodName: String, desc: String): JniExpectInfo {
@@ -256,6 +290,8 @@ internal class JniExpectMatcher(
         if (matched != null) {
             actuals.remove(matched)
 
+            checkCriticalExpect(expect, matched)
+
             // Parameters flow JVM -> native: the expect (the JVM caller's contract) may hand `null` to a native whose
             // declared parameter is non-null, so the mismatch to flag is "expect nullable, actual not".
             matched.parameterTypes.zip(expect.parametersWithTypes) { actualParam, (irParam, expectParam) ->
@@ -337,6 +373,34 @@ internal class JniExpectMatcher(
             }
         }
     }
+
+    /**
+     * Checks that both halves agree a `@JniExpect` is critical, and that it is `static`.
+     *
+     * A critical native is invoked without a class/object reference, so an instance expect would silently never get
+     * one. The annotation is not read by the runtime - it is the marker the two halves agree on - so a mismatch is
+     * reported whichever way it goes.
+     */
+    private fun checkCriticalExpect(expect: JniExpectInfo, actual: JniActualInfo) {
+        val expectIsCritical = expect.source.hasCriticalNative()
+        if (expectIsCritical != actual.isCritical) {
+            if (actual.isCritical) {
+                state.reporter.at(expect.source)
+                    .report(JniBindingConsumerErrors.CRITICAL_NATIVE_ANNOTATION_MISSING)
+            } else {
+                state.reporter.at(expect.source)
+                    .report(JniBindingConsumerErrors.CRITICAL_NATIVE_UNEXPECTED)
+            }
+        }
+        if (actual.isCritical && !expect.isStatic) {
+            state.reporter.at(expect.source)
+                .report(JniBindingConsumerErrors.CRITICAL_NATIVE_MUST_BE_STATIC)
+        }
+    }
+
+    /** Whether this function carries `@CriticalNative`, under either the project's spelling or Android's alias. */
+    private fun IrSimpleFunction.hasCriticalNative(): Boolean =
+        hasAnnotation(Symbols.CriticalNative) || hasAnnotation(Symbols.androidCriticalNative)
 
     /**
      * Compares [expect] against a candidate [actual] that is already known to be the same method by name, and returns

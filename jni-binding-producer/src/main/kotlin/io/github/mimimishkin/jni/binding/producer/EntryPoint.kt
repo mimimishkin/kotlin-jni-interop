@@ -114,10 +114,9 @@ public class JniBindingProducerRegistrar : CompilerPluginRegistrar() {
 
         val actualsFile = configuration[Keys.ACTUALS_FILE]
             ?: error("jni-binding-producer: the 'actualsFile' option is required")
-        val jniVersion = when {
-            configuration.isAndroidTarget() -> JniVersion.V1_6
-            else -> JniVersion.fromMajor(configuration[Keys.EXPECTED_JDK_VERSION, 1])
-        }
+        val expectedJdkVersion = configuration[Keys.EXPECTED_JDK_VERSION, 1]
+        val isAndroid = configuration.isAndroidTarget()
+        val jniVersion = if (isAndroid) JniVersion.V1_6 else JniVersion.fromMajor(expectedJdkVersion)
         val useRegisterNatives = configuration.getBoolean(Keys.USE_REGISTER_NATIVES)
         val allowSeveralHooks = configuration.getBoolean(Keys.ALLOW_SEVERAL_HOOKS)
 
@@ -132,6 +131,8 @@ public class JniBindingProducerRegistrar : CompilerPluginRegistrar() {
                 jniVersion = jniVersion,
                 useRegisterNatives = useRegisterNatives,
                 allowSeveralHooks = allowSeveralHooks,
+                expectedJdkVersion = expectedJdkVersion,
+                isAndroid = isAndroid,
                 actualsFile = actualsFile,
             )
         )
@@ -149,12 +150,18 @@ public class JniBindingProducerRegistrar : CompilerPluginRegistrar() {
         val jniVersion: JniVersion,
         val useRegisterNatives: Boolean,
         val allowSeveralHooks: Boolean,
+        val expectedJdkVersion: Int,
+        val isAndroid: Boolean,
         val actualsFile: File,
     ) : FirExtensionRegistrar() {
         override fun ExtensionRegistrarContext.configurePlugin() {
             +{ session: FirSession -> JvmSignatureProvider(session) }
-            +{ session: FirSession -> FirJniBindingUseChecker(session, allowSeveralHooks) }
-            +{ session: FirSession -> FirJniBindingGenerator(session, jniVersion, useRegisterNatives, actualsFile) }
+            +{ session: FirSession ->
+                FirJniBindingUseChecker(session, allowSeveralHooks, useRegisterNatives, expectedJdkVersion, isAndroid)
+            }
+            +{ session: FirSession ->
+                FirJniBindingGenerator(session, jniVersion, useRegisterNatives, isAndroid, actualsFile)
+            }
         }
     }
 }
