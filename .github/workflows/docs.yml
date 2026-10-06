@@ -29,12 +29,12 @@ jobs:
           cache: gradle
 
       # `jni-binding-annotations` is an Android library in the same build, so the Android Gradle Plugin validates its
-      # compileSdk platform even though the documentation task never compiles a line of Android code. The runner images
-      # do not ship API 37, so install it here instead of leaving it to the plugin's automatic download.
+      # compileSdk platform even though the documentation task never compiles a line of Android code.
       - name: Set up the Android SDK
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platforms;android-37.0"
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platforms;android-37.0'
+          log-accepted-android-sdk-licenses: false
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
