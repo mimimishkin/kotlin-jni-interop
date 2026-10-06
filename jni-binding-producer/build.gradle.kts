@@ -5,6 +5,8 @@ plugins {
     alias(conventions.plugins.publish)
 }
 
+description = "Simplifies writing JNI code"
+
 kotlin {
     explicitApi()
 }

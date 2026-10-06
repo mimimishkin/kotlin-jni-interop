@@ -5,6 +5,8 @@ plugins {
     alias(conventions.plugins.publish)
 }
 
+description = "Simplifies wiring JVM module with JNI library"
+
 kotlin {
     explicitApi()
 }

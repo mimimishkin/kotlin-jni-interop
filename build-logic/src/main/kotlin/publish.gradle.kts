@@ -11,7 +11,7 @@ mavenPublishing {
 
     pom {
         name = project.name
-        description = project.description
+        description = project.provider { project.description }
         inceptionYear = "2025"
         url = "https://github.com/mimimishkin/${rootProject.name}"
         licenses {
