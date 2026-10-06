@@ -2,7 +2,7 @@ import io.github.mimimishkin.jni.binding.plugin.producer.JniExportMethod
 
 plugins {
     kotlin("multiplatform") version "2.4.20"
-    id("io.github.mimimishkin.jni-binding-producer") version "1.0.2"
+    id("io.github.mimimishkin.jni-binding-producer") version "2.0.0"
 }
 
 kotlin {

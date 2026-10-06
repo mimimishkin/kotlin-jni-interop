@@ -1,10 +1,11 @@
 import io.github.mimimishkin.jni.binding.plugin.producer.JniExportMethod
+import io.github.mimimishkin.jni.binding.plugin.producer.downloadCompatibleJdk
 import io.github.mimimishkin.jni.binding.plugin.producer.linkJvm
 import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     kotlin("multiplatform") version "2.4.20"
-    id("io.github.mimimishkin.jni-binding-producer") version "1.0.2"
+    id("io.github.mimimishkin.jni-binding-producer") version "2.0.0"
 }
 
 kotlin {

@@ -44,7 +44,7 @@ Two modules: a native **producer** and a JVM **consumer**.
 
 plugins {
     kotlin("multiplatform")
-    id("io.github.mimimishkin.jni-binding-producer") version "1.0.2"
+    id("io.github.mimimishkin.jni-binding-producer") version "2.0.0"
 }
 
 kotlin {
@@ -77,7 +77,7 @@ body needs them.
 
 plugins {
     kotlin("jvm")
-    id("io.github.mimimishkin.jni-binding-consumer") version "1.0.2"
+    id("io.github.mimimishkin.jni-binding-consumer") version "2.0.0"
 }
 
 kotlin {
@@ -182,10 +182,10 @@ add them by hand:
 
 ```kotlin
 // producer
-implementation("io.github.mimimishkin:jni-binding:1.0.2")
-implementation("io.github.mimimishkin:jni-binding-annotations:1.0.2")
+implementation("io.github.mimimishkin:jni-binding:2.0.0")
+implementation("io.github.mimimishkin:jni-binding-annotations:2.0.0")
 // consumer
-implementation("io.github.mimimishkin:jni-binding-annotations:1.0.2")
+implementation("io.github.mimimishkin:jni-binding-annotations:2.0.0")
 ```
 
 ### Export methods
