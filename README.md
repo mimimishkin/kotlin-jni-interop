@@ -8,30 +8,118 @@
 ![Kotlin linuxX64](https://img.shields.io/badge/Kotlin-linuxX64-f54242)
 ![Kotlin linuxArm64](https://img.shields.io/badge/Kotlin-linuxArm64-f54242)
 
-Write JNI libraries in **Kotlin on both sides** — native code in Kotlin/Native, JVM code in ordinary Kotlin.
-No C, no handwritten JNI signatures, no cinterop setup. The build checks that the two sides match.
-
-Absolutely everything this project supports is shown end to end in [`samples/basic`](samples/basic).
-Use this README as a map and that sample as the full reference.
+**Write JNI libraries in Kotlin on both sides.** The native part is ordinary Kotlin/Native, the JVM and Android part is
+ordinary Kotlin. No C, no handwritten JNI signatures, no `cinterop.def` for the boundary — and the compiler checks
+that the two sides match, on every build, for every platform you ship.
 
 ```
- Native (Kotlin/Native)                         JVM
- @JniActual fun hello(): JString     ←──→       @JniExpect external fun hello(): String
+  Kotlin/Native                               JVM / Android
+  @JniActual fun hello(): JString    ←———→    @JniExpect external fun hello(): String
 ```
 
-- Mark native implementations with `@JniActual`.
-- Mark JVM `external` declarations with `@JniExpect`.
-- Apply the **producer** plugin to the native module and the **consumer** plugin to the JVM (or Android) module.
-  Mismatches are **compile errors**, not runtime `UnsatisfiedLinkError`s.
+- `@JniActual` marks a native implementation, `@JniExpect` the JVM `external` declaration that it implements.
+- The **producer** plugin builds the native library. The **consumer** plugin validates the JVM side against it,
+  packages the binaries per platform, and rebuilds everything when the native code changes.
+- A mismatch between the two sides is a **compile error**, not an `UnsatisfiedLinkError` in production.
+
+Reach for it when part of your app has to be native — an image or audio codec, a crypto or compression library, a
+physics kernel, a port of existing C code, one hot loop — and you would rather not own a C toolchain and a pile of
+unchecked JNI glue to get there.
+
+Everything this project supports is shown end to end in [`samples/basic`](samples/basic). Use this README as a map and
+that sample as the full reference.
 
 ## Contents
 
+- [Why](#why)
+- [What you write instead](#what-you-write-instead)
+- [What you get](#what-you-get)
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Annotations](#annotations)
 - [Critical natives](#critical-natives)
 - [Libraries](#libraries)
 - [Samples](#samples)
+
+## Why
+
+JNI is a low-level interface, and low-level interfaces do not scale to a real codebase. Three things go wrong, every
+time.
+
+**1. The signature is a string that nobody checks.**
+
+```c
+JNIEXPORT jstring JNICALL Java_org_sample_Hello_hello(JNIEnv *env, jobject self) {
+    return (*env)->NewStringUTF(env, "Hello");
+}
+```
+
+The class name, the function name and the descriptor `()Ljava/lang/String;` are three places to keep in sync and
+zero places the compiler looks at. Rename a Kotlin function and the C file still compiles, the jar still builds, and
+the failure arrives as `UnsatisfiedLinkError: No implementation found for ...` on a user's machine — for one OS, or
+one ABI, or one device.
+
+**2. The native side is C, so you write your program twice.**
+
+`JNIEnv*`, `jobject`, `jstring`, UTF-8 versus UTF-16, local reference frames, `ReleaseStringUTFChars`.
+The algorithm is fine; everything around it is bookkeeping in a language your JVM side cannot see.
+
+**3. The artifacts are hand-assembled.**
+
+One binary per OS and per ABI, each copied into the right place inside the jar or the APK, plus the ABI list, plus the
+startup code that works out which binary this machine needs and unpacks it.
+
+This project removes all three.
+
+## What you write instead
+
+The native side, in Kotlin/Native:
+
+```kotlin
+@JniActuals(className = "org.sample.Hello")
+object Hello {
+    context(env: JniEnv)
+    fun hello(): JString? = "Hello from Kotlin/Native".toJString()
+}
+```
+
+The JVM side, in Kotlin:
+
+```kotlin
+@JniExpect
+external fun hello(): String
+```
+
+That is the whole contract. The JNI symbol name and the descriptor are derived from the Kotlin declarations on both
+sides, checked against each other while the consumer compiles, and packaged into the artifact automatically.
+
+|                               | Hand-written JNI                  | Here                                                            |
+|-------------------------------|-----------------------------------|-----------------------------------------------------------------|
+| Native code                   | C / C++                           | Kotlin/Native                                                   |
+| Symbol names, descriptors     | written by hand                   | derived from the Kotlin declarations                            |
+| Contract mismatch             | `UnsatisfiedLinkError` at runtime | compile error                                                   |
+| Per-OS / per-ABI binaries     | copied by hand                    | packaged per target by the plugin                               |
+| Rebuild after a native change | your build script                 | automatic, and the JVM side is revalidated                      |
+| Runtime loading               | `System.load(...)` per module     | your `@LoadMethod`, called from the class initializer by plugin |
+
+## What you get
+
+**The contract is checked, per platform.** Bindings are matched by full JVM class name and function name, and the
+signature is derived from the Kotlin types — overloads, extensions, `infix`, nested classes, nullable parameters,
+`Array<Float>` → `java.lang.Float[]` all work. When platforms differ, say so per target
+(`@JniExpect("linuxX64")`), and every target is validated against its own set of bindings.
+
+**The native side is Kotlin.** Your native code is Kotlin/Native: collections, data classes, exceptions,
+coroutines — and `jni-binding` wraps the JNI API into null-safe Kotlin around it: `String.toJString()`,
+`JString.toKString()`, typed arrays, allocation scopes requested as extra `context` parameters, field and method IDs, 
+DSL. You still use cinterop when you call third-party C APIs — that is ordinary Kotlin/Native work — but the JNI
+boundary itself is two annotations.
+
+**You can start from either side.** Write the JVM API first and run `./gradlew :app:generateJniActuals`: the stubs for
+the missing `@JniActual`s are generated into the producer.
+
+**Performance when you need it.** `@CriticalNative` binds a function to JNI's critical path — the fastest way to call
+native code on Android/ART. See [Critical natives](#critical-natives) for what it costs on desktop JVMs.
 
 ## Quick start
 
@@ -155,11 +243,11 @@ pass a target JDK with `linkJvm(downloadCompatibleJdk())` — see [`samples/basi
 
 ```kotlin
 jniLibraries.create("native") {
-    mingwX64() {
+    mingwX64 {
         fromProducer(project("native"))     // build here
-        copyToResources()       // copy lib into jar resources / Android assets
+        copyToResources("natives/$os-$arch")       // copy lib into jar resources / Android assets
     }
-    androidArm32() {
+    androidArm32 {
         fromPrebuiltBinding(prebuiltDir)     // or take a binary built elsewhere
         copyToJniLibs()      // Android only: copy to jniLibs/<abi>/ for System.loadLibrary
     }
@@ -255,8 +343,10 @@ See `basic` and `android-basic` samples for reference.
 ## Samples
 
 - [`samples/basic`](samples/basic) — full feature tour and multi-platform producer / prebuilt setup.
-- [`samples/android-basic`](samples/android-basic) — Android app across the JNI boundary.
-- [`samples/windows-registry`](samples/windows-registry) — Windows Registry wrapper (`mingwX64` only).
+- [`samples/android-basic`](samples/android-basic) — Android app across the JNI boundary: calling the Java API from
+  native, exceptions, memory and threads, critical natives.
+- [`samples/windows-registry`](samples/windows-registry) — Windows Registry wrapper (`mingwX64` only): a typed
+  `Registry` API over the win32 `Reg*` functions, ~300 lines of Kotlin per side, no C and no JNI signatures anywhere.
 
 ## License
 
