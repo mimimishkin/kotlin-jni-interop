@@ -27,6 +27,7 @@ import org.gradle.kotlin.dsl.register
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.HasProject
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.androidJvm
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.konan.target.KonanTarget.*
 import java.io.File
@@ -90,9 +91,21 @@ public class JniLibraryConfig internal constructor(
     )
 
     /**
-     * The Android extension of this project, or `null` if this is a plain JVM one.
+     * Whether this compilation is an Android one.
      */
-    private val androidExtension: CommonExtension? = project.extensions.findByName("android") as? CommonExtension
+    private val isAndroidCompilation: Boolean = consumerCompilation.platformType == androidJvm
+
+    /**
+     * The Android extension of this project, or `null` if it is not an Android one.
+     *
+     * Two extension types answer to the `android` name, and only one of them offers the `sourceSets`/`assets`/`jniLibs`
+     * API. The application and library plugins register a [CommonExtension]; the Kotlin Multiplatform library plugin,
+     * which is what a KMP project with an `android` target uses, registers a
+     * [KotlinMultiplatformAndroidLibraryExtension] instead - so an Android compilation can have no [CommonExtension]
+     * at all, and [androidCommonExtension] being `null` does not make the project a desktop one.
+     */
+    private val androidCommonExtension: CommonExtension?
+        get() = project.extensions.findByName("android") as? CommonExtension
 
     /**
      * All platform targets of this library. Register new ones with [target] or its shortcuts
@@ -270,7 +283,11 @@ public class JniLibraryConfig internal constructor(
      * targets was packaged has no source either, and this task is skipped.
      */
     public val importLibTaskProvider: TaskProvider<Sync> = project.tasks.register<Sync>(
+        // Disambiguated by the target too, not only by the compilation name: `jvmMain` and `androidMain` are both
+        // `main` compilations, and a library configured for more than one target - as `targets.configureEach` does
+        // in a project with a JVM and an Android target - would register the same name twice and fail.
         camelCase(
+            consumerCompilation.target.disambiguationClassifier,
             "importJniLib",
             libraryName,
             consumerCompilation.compilationName.takeIf { it != KotlinCompilation.MAIN_COMPILATION_NAME },
@@ -387,8 +404,23 @@ public class JniLibraryConfig internal constructor(
      */
     private fun packImportedLibraries() {
         val sourceSetName = consumerCompilation.compilationName
+        val variant = sourceSetName.replaceFirstChar { it.uppercase() }
 
-        if (androidExtension == null) {
+        if (isAndroidCompilation && androidCommonExtension == null) {
+            // Named after the target as well as the variant: `mergeAndroidMainJniLibFolders`, where an application or
+            // library plugin would have `mergeDebugJniLibFolders` - the variant there is a build type, which a KMP
+            // compilation is not.
+            val classifier = consumerCompilation.target.disambiguationClassifier.orEmpty()
+            val target = classifier.replaceFirstChar { it.uppercase() }
+            project.tasks.named { name ->
+                name == "merge${target}${variant}JavaResource" ||
+                        name == "merge${target}${variant}JniLibFolders" ||
+                        name == "${classifier}Jar"
+            }.configureEach { it.dependsOn(importLibTaskProvider) }
+            return
+        }
+
+        if (!isAndroidCompilation) {
             val processResources = if (project.extensions.findByType<KotlinMultiplatformExtension>() != null) {
                 consumerCompilation.disambiguateName("processResources")
             } else {
@@ -401,7 +433,6 @@ public class JniLibraryConfig internal constructor(
             return
         }
 
-        val variant = sourceSetName.replaceFirstChar { it.uppercase() }
         project.tasks.named { name ->
             name in setOf(
                 "merge${variant}Assets",
@@ -471,11 +502,11 @@ public class JniLibraryConfig internal constructor(
     private fun registerStagingDir(layout: BinaryLayout) {
         if (!registeredLayouts.add(layout)) return
 
-        val android = androidExtension
+        val android = androidCommonExtension
         val stagingDir = stagingDirOf(layout)
 
         if (android == null) {
-            if (layout != BinaryLayout.RESOURCES) {
+            if (layout == BinaryLayout.JNI_LIBS && !isAndroidCompilation) {
                 error("copyToJniLibs() requires an Android application or library plugin to be applied")
             }
             val resources = consumerCompilation.defaultSourceSet.resources

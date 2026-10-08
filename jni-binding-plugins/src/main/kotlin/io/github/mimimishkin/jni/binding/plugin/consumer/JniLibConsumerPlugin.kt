@@ -3,8 +3,8 @@ package io.github.mimimishkin.jni.binding.plugin.consumer
 import io.github.mimimishkin.jni.binding.BuildConfig
 import io.github.mimimishkin.jni.binding.BuildConfig.ANNOTATIONS_ID
 import io.github.mimimishkin.jni.binding.plugin.commonSourceSet
+import io.github.mimimishkin.jni.binding.plugin.dependencySourceSets
 import io.github.mimimishkin.jni.binding.plugin.disambiguateName
-import io.github.mimimishkin.jni.binding.plugin.mostCommonSourceSet
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.findByType
@@ -41,7 +41,8 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
     }
 
     /**
-     * Puts `jni-binding-annotations` to the source set all the applicable compilations have in common.
+     * Puts `jni-binding-annotations` to the source set all the applicable compilations have in common, or to each of
+     * their own source sets when they have none in common.
      */
     private fun Project.addAnnotationsAsDependency() {
         val targets = jniLibrariesTargets()
@@ -55,16 +56,18 @@ public class JniLibConsumerPlugin : KotlinCompilerPluginSupportPlugin {
         }
 
         for (compilationName in compilations.map { it.compilationName }.toSet()) {
-            val sourceSet = mostCommonSourceSet(
+            val sourceSets = dependencySourceSets(
                 compilations = compilations.filter { it.compilationName == compilationName },
                 common = if (allTargetsAreConsumable) {
                     extensions.findByType<KotlinMultiplatformExtension>()?.let { commonSourceSet(it, compilationName) }
                 } else {
                     null
                 },
-            ) ?: continue
-            sourceSet.dependencies {
-                compileOnly(ANNOTATIONS_ID)
+            )
+            for (sourceSet in sourceSets) {
+                sourceSet.dependencies {
+                    compileOnly(ANNOTATIONS_ID)
+                }
             }
         }
     }

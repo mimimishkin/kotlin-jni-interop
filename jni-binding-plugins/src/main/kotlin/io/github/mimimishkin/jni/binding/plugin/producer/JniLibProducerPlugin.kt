@@ -5,7 +5,7 @@ import io.github.mimimishkin.jni.binding.plugin.JniBindingAttributes
 import io.github.mimimishkin.jni.binding.plugin.camelCase
 import io.github.mimimishkin.jni.binding.plugin.commonSourceSet
 import io.github.mimimishkin.jni.binding.plugin.finalName
-import io.github.mimimishkin.jni.binding.plugin.mostCommonSourceSet
+import io.github.mimimishkin.jni.binding.plugin.dependencySourceSets
 import io.github.mimimishkin.jni.binding.plugin.producer.JniExportMethod.RegisterNatives
 import org.gradle.api.Project
 import org.gradle.api.attributes.Usage
@@ -170,13 +170,15 @@ public class JniLibProducerPlugin : KotlinCompilerPluginSupportPlugin {
         }
 
         for (compilationName in setOf(KotlinCompilation.MAIN_COMPILATION_NAME, KotlinCompilation.TEST_COMPILATION_NAME)) {
-            val sourceSet = mostCommonSourceSet(
+            val sourceSets = dependencySourceSets(
                 compilations = nativeCompilations.filter { it.compilationName == compilationName },
                 common = if (allTargetsAreNative) commonSourceSet(kotlin, compilationName) else null,
-            ) ?: continue
-            sourceSet.dependencies {
-                implementation(BuildConfig.WRAPPER_ID)
-                implementation(BuildConfig.ANNOTATIONS_ID)
+            )
+            for (sourceSet in sourceSets) {
+                sourceSet.dependencies {
+                    implementation(BuildConfig.WRAPPER_ID)
+                    implementation(BuildConfig.ANNOTATIONS_ID)
+                }
             }
         }
     }
