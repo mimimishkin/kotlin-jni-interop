@@ -1,10 +1,30 @@
 package io.github.mimimishkin.jni.binding.plugin.consumer
 
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.ExperimentalKotlinPoetApi
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.UNIT
 import java.io.File
 
 private const val TYPES_PACKAGE = "io.github.mimimishkin.jni.binding"
 private const val ANNOTATIONS_PACKAGE = "$TYPES_PACKAGE.annotation"
-private const val ENV_TYPE = "JniEnv"
+private const val INTEROP_PACKAGE = "kotlinx.cinterop"
+private const val IMPORT_PREFIX = "import "
+private const val PACKAGE_PREFIX = "package "
+
+private val JNI_ENV = ClassName(TYPES_PACKAGE, "JniEnv")
+private val JNI_OBJECT = ClassName(TYPES_PACKAGE, "JObject")
+private val JNI_CLASS = ClassName(TYPES_PACKAGE, "JClass")
+private val JNI_ACTUAL = ClassName(ANNOTATIONS_PACKAGE, "JniActual")
+private val JNI_CRITICAL_NATIVE = ClassName(ANNOTATIONS_PACKAGE, "CriticalNative")
+private val WITH_JVM_SIGNATURE = ClassName(ANNOTATIONS_PACKAGE, "WithJvmSignature")
+private val ARRAY_POINTER = ClassName(INTEROP_PACKAGE, "CArrayPointer")
 
 /**
  * Writes `@JniActual` stubs for the expects no actual implements yet.
@@ -58,20 +78,21 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
         // already handled above by [alreadyDeclared].
         val usedNames = existingText?.let(::declaredFunctionNames)?.toMutableSet() ?: mutableSetOf()
         val own = expects.filterNot { (className to it.methodName) in alreadyDeclared }
-        val stubs = own
-            .mapNotNull { expect -> uniqueName(kotlinFunctionName(expect.methodName), usedNames)?.let { render(expect, it) } }
+        val stubs = own.mapNotNull { expect ->
+            uniqueName(expect.methodName, usedNames)?.let { render(expect, it) }
+        }
         val alreadyDeclaredCount = expects.size - own.size
 
         if (stubs.isNotEmpty()) {
-            val imports = stubs.flatMapTo(linkedSetOf()) { it.imports }.toList()
-            val body = stubs.joinToString(separator = "\n\n") { it.code }
-
-            if (existingText == null) {
-                file.parentFile?.mkdirs()
-                file.writeText(newFile(packageName, imports, body))
-            } else {
-                file.writeText(appendTo(existingText, imports, body))
-            }
+            val spec = FileSpec.builder(packageName, simpleName)
+                .indent(" ".repeat(4))
+                .apply { stubs.forEach(::addFunction) }
+                // A stub is declared in a Kotlin/Native source set, where `kotlin.Int` and the rest of the language
+                // prelude is in scope without an import - and `java.lang`, which is not, is left out as well.
+                .addKotlinDefaultImports(includeJvm = false, includeJs = false)
+                .build()
+            file.parentFile?.mkdirs()
+            file.writeText(existingText?.let { appendTo(it, spec) } ?: spec.toString())
         }
         return ClassResult(file, stubs.size, alreadyDeclaredCount)
     }
@@ -81,36 +102,41 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
      */
     private class ClassResult(val file: File, val written: Int, val alreadyDeclared: Int)
 
-    private fun newFile(packageName: String, imports: List<String>, body: String): String = buildString {
-        if (packageName.isNotEmpty()) appendLine("package $packageName")
-        appendLine()
-        imports.forEach { appendLine("import $it") }
-        appendLine()
-        appendLine(body)
-    }
-
     /**
-     * Adds [imports] to an existing file's imports and [body] to its end, changing nothing else.
+     * Adds what [spec] declares to [existingText], and changes nothing that is already there.
      *
-     * The missing imports go into the import block where one already exists; a file with no imports at all (its
-     * declarations using qualified names, say) gets them right after the package directive.
+     * A file the generator did not write belongs to the user - their comments, their helpers, their formatting - so it
+     * is not rewritten from a spec: a [FileSpec] covers the stubs alone, and kotlinpoet has no API for emitting a
+     * member on its own. Its own rendering is read instead, which also keeps the two halves of the answer consistent:
+     * the `package` directive and the imports are the header to merge into what the file has, and everything from the
+     * first declaration on is what to append at the end.
      */
-    private fun appendTo(existingText: String, imports: List<String>, body: String): String {
+    private fun appendTo(existingText: String, spec: FileSpec): String {
+        val rendered = spec.toString().lines()
+        val imports = rendered.imports()
+        // kotlinpoet lays a file out as the package directive, a blank line, the imports, another blank line, and then
+        // the declarations - so the header ends at the last import, or, for a spec that needs none, at the package
+        // directive.
+        val lastHeaderLine = when {
+            imports.isNotEmpty() -> rendered.indexOfLast { it.startsWith(IMPORT_PREFIX) }
+            spec.packageName.isEmpty() -> -1
+            else -> rendered.indexOfFirst { it.startsWith(PACKAGE_PREFIX) }
+        }
+        val declarations = rendered.drop(lastHeaderLine + 1).dropWhile(String::isBlank).joinToString("\n")
+        check(declarations.isNotEmpty()) {
+            "kotlinpoet rendered no declaration for ${spec.packageName}.${spec.name}"
+        }
+
         val lines = existingText.lines().toMutableList()
-        val alreadyImported = lines.asSequence()
-            .filter { it.startsWith("import ") }
-            .map { it.removePrefix("import ").trim() }
-            .toSet()
-        val missingImports = imports
-            .filterNot { it in alreadyImported }
-            .map { "import $it" }
+        val alreadyImported = lines.imports().mapTo(HashSet(), String::unescaped)
+        val missingImports = imports.filterNot { it.unescaped() in alreadyImported }.map { "$IMPORT_PREFIX$it" }
 
         if (missingImports.isNotEmpty()) {
-            val lastImport = lines.indexOfLast { it.startsWith("import ") }
+            val lastImport = lines.indexOfLast { it.startsWith(IMPORT_PREFIX) }
             if (lastImport >= 0) {
                 lines.addAll(lastImport + 1, missingImports)
             } else {
-                val packageIndex = lines.indexOfFirst { it.startsWith("package ") }
+                val packageIndex = lines.indexOfFirst { it.startsWith(PACKAGE_PREFIX) }
                 val afterPackage = if (packageIndex >= 0) packageIndex + 1 else 0
                 // Imports go below the blank line the file already separates the package directive with, if it has one,
                 // and are separated from what follows them either way.
@@ -124,94 +150,91 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
 
         while (lines.isNotEmpty() && lines.last().isBlank()) lines.removeAt(lines.size - 1)
         lines.add("")
-        lines.add(body)
+        lines.add(declarations)
         return lines.joinToString("\n") + "\n"
     }
 
-    private fun render(expect: JniFunctionContract, functionName: String): Stub =
-        if (expect.isCritical == true) renderCritical(expect, functionName) else renderRegular(expect, functionName)
+    /**
+     * The stub of [expect], to be declared under [functionName].
+     *
+     * kotlinpoet orders what it emits as the annotations, then the context parameter, then the declaration - which is
+     * the order the stub has to be read in: the two annotations say which JVM method this is, and the `JniEnv` is there
+     * because a binding body cannot reach the JVM without one.
+     */
+    @OptIn(ExperimentalKotlinPoetApi::class)
+    private fun render(expect: JniFunctionContract, functionName: String): FunSpec {
+        val isCritical = expect.isCritical == true
+        // The annotations in the order they are meant to be read: which JVM method this binds, what kind of native it
+        // is, and the signature it is checked against.
+        val annotations = listOfNotNull(
+            binding(expect),
+            AnnotationSpec.builder(JNI_CRITICAL_NATIVE).build().takeIf { isCritical },
+            withJvmSignature(expect),
+        )
+        val builder = FunSpec.builder(functionName)
+        annotations.forEach(builder::addAnnotation)
+
+        if (isCritical) {
+            return builder
+                .addParameters(criticalParameters(expect))
+                .returns(criticalScalarType(expect.returnTypeName))
+                .addStatement("return TODO()")
+                .build()
+        }
+
+        return builder
+            .contextParameter("env", JNI_ENV)
+            // A `JClass` receiver is what makes the producer see the actual as static, a `JObject` receiver as an
+            // instance method; a top-level function would leave the stasis unstated and only "not contradict" the
+            // expect.
+            .receiver(if (expect.isStatic == true) JNI_CLASS else JNI_OBJECT)
+            .addParameters(
+                expect.parameterTypeNames.mapIndexed { index, jvmType ->
+                    ParameterSpec.builder("p$index", kotlinTypeOf(jvmType)).build()
+                }
+            )
+            .returns(kotlinTypeOf(expect.returnTypeName))
+            .addStatement("return TODO()")
+            .build()
+    }
 
     /**
-     * A `@CriticalNative` stub: a top-level function of primitives and `(length, array)` pairs.
+     * The annotation that binds the stub to one specific JVM method rather than to any function of its shape.
      */
-    private fun renderCritical(expect: JniFunctionContract, functionName: String): Stub {
-        val parameters = mutableListOf<String>()
-        val imports = linkedSetOf<String>()
-        expect.parameterTypeNames.forEachIndexed { index, jvmType ->
+    private fun binding(expect: JniFunctionContract): AnnotationSpec =
+        AnnotationSpec.builder(JNI_ACTUAL)
+            .addMember("className = %S", expect.className)
+            .addMember("methodName = %S", expect.methodName)
+            .build()
+
+    /**
+     * The JVM signature of the expect, spelled out rather than derived: it is what the stub is checked against, and a
+     * `@JniActual` deriving it from the Kotlin types would take the `TODO()` body's `Nothing` for the return type,
+     * which is not one of the native types the producer accepts.
+     */
+    private fun withJvmSignature(expect: JniFunctionContract): AnnotationSpec =
+        AnnotationSpec.builder(WITH_JVM_SIGNATURE)
+            .addMember("parameterTypes = %L", codeStringArray(expect.parameterTypeNames))
+            .addMember("returnType = %S", expect.returnTypeName)
+            .build()
+
+    /**
+     * The parameters of a `@CriticalNative` stub: a primitive array arrives as a `(length, pointer)` pair, everything
+     * else as the primitive itself.
+     */
+    private fun criticalParameters(expect: JniFunctionContract): List<ParameterSpec> =
+        expect.parameterTypeNames.flatMapIndexed { index, jvmType ->
             val name = "p$index"
             val varType = criticalVarType(jvmType)
             if (varType != null) {
-                parameters += "$name" + "Length: Int"
-                parameters += "$name: CArrayPointer<$varType>"
-                imports += "kotlinx.cinterop.CArrayPointer"
-                imports += "kotlinx.cinterop.$varType"
+                listOf(
+                    ParameterSpec.builder("${name}Length", INT).build(),
+                    ParameterSpec.builder(name, ARRAY_POINTER.parameterizedBy(varType)).build(),
+                )
             } else {
-                parameters += "$name: ${criticalScalarType(jvmType)}"
+                listOf(ParameterSpec.builder(name, criticalScalarType(jvmType)).build())
             }
         }
-        val returnType = criticalScalarType(expect.returnTypeName)
-
-        imports += "$ANNOTATIONS_PACKAGE.JniActual"
-        imports += "$ANNOTATIONS_PACKAGE.CriticalNative"
-        imports += "$ANNOTATIONS_PACKAGE.WithJvmSignature"
-
-        val signature = expect.parameterTypeNames.joinToString(", ") { "\"$it\"" }
-
-        val code = buildString {
-            // These two annotations carry the names, and are what makes the stub implement this specific JVM method
-            // rather than just any function that happens to share its shape.
-            appendLine("@JniActual(className = ${expect.className.quoted()}, methodName = ${expect.methodName.quoted()})")
-            appendLine("@CriticalNative")
-            appendLine("@WithJvmSignature(")
-            appendLine("    parameterTypes = [$signature],")
-            appendLine("    returnType = ${expect.returnTypeName.quoted()},")
-            appendLine(")")
-            // The return type is written out because `TODO()` infers `Nothing` without it, which is not one of
-            // the native types the producer accepts as a bound signature.
-            append("fun $functionName(${parameters.joinToString(", ")}): $returnType = TODO()")
-        }
-        return Stub(functionName, code, imports.toList())
-    }
-
-    private fun renderRegular(expect: JniFunctionContract, functionName: String): Stub {
-        // A `JClass` receiver is what makes the producer see the actual as static, a `JObject` receiver as an instance
-        // method; a top-level function would leave the stasis unstated and only "not contradict" the expect.
-        val receiver = if (expect.isStatic == true) "JClass" else "JObject"
-        val parameterTypes = expect.parameterTypeNames.map(::kotlinTypeOf)
-        val returnType = kotlinTypeOf(expect.returnTypeName)
-
-        val imports = (parameterTypes + returnType + receiver + ENV_TYPE)
-            .filterNot { it == "Unit" } // kotlin.Unit needs no import
-            .mapTo(linkedSetOf()) { "$TYPES_PACKAGE.$it" }
-            .apply {
-                add("$ANNOTATIONS_PACKAGE.JniActual")
-                add("$ANNOTATIONS_PACKAGE.WithJvmSignature")
-            }
-
-        val signature = expect.parameterTypeNames.joinToString(", ") { "\"$it\"" }
-        val parameters = parameterTypes.mapIndexed { index, type -> "p$index: $type" }.joinToString(", ")
-
-        val code = buildString {
-            // These two annotations carry the names, and are what makes the stub implement this specific JVM method
-            // rather than just any function that happens to share its shape.
-            appendLine("@JniActual(className = ${expect.className.quoted()}, methodName = ${expect.methodName.quoted()})")
-            appendLine("@WithJvmSignature(")
-            appendLine("    parameterTypes = [$signature],")
-            appendLine("    returnType = ${expect.returnTypeName.quoted()},")
-            appendLine(")")
-            // `JniEnv` is what a binding body needs to reach the JVM at all: building the `JString` behind a
-            // `java.lang.String` return value, for one. The producer accepts either no context parameter or a single
-            // one of this type, so the stub asks for it and the user drops the line for a function that turns out not
-            // to need it.
-            appendLine("context(env: $ENV_TYPE)")
-            // The return type is written out because `TODO()` infers `Nothing` without it, which is not one of the
-            // native types the producer accepts as a bound signature.
-            append("fun $receiver.$functionName($parameters): $returnType = TODO()")
-        }
-        return Stub(functionName, code, imports.toList())
-    }
-
-    private class Stub(val functionName: String, val code: String, val imports: List<String>)
 
     companion object {
         /**
@@ -221,32 +244,33 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
          * well-known ones, and everything else - any other reference type, any array of a reference type, any
          * multi-dimensional array - is bound as a plain `JObject`/`JObjectArray`, which is all JNI needs to pass it
          * along. There is deliberately no nullable variant: a `JObject` is already a `CPointer` and therefore already
-         * nullable, and a primitive cannot be null at all.
+         * nullable, and a primitive cannot be null at all. `void` is the one type with no counterpart on the native
+         * side, and a `Unit` return is what it becomes.
          */
-        internal fun kotlinTypeOf(jvmType: String): String = when (jvmType) {
-            "void" -> "Unit"
-            "boolean" -> "JBoolean"
-            "byte" -> "JByte"
-            "char" -> "JChar"
-            "short" -> "JShort"
-            "int" -> "JInt"
-            "long" -> "JLong"
-            "float" -> "JFloat"
-            "double" -> "JDouble"
-            "java.lang.String" -> "JString"
-            "java.lang.Object" -> "JObject"
-            "boolean[]" -> "JBooleanArray"
-            "byte[]" -> "JByteArray"
-            "char[]" -> "JCharArray"
-            "short[]" -> "JShortArray"
-            "int[]" -> "JIntArray"
-            "long[]" -> "JLongArray"
-            "float[]" -> "JFloatArray"
-            "double[]" -> "JDoubleArray"
-            "java.lang.Object[]" -> "JObjectArray"
+        internal fun kotlinTypeOf(jvmType: String): ClassName = when (jvmType) {
+            "void" -> UNIT
+            "boolean" -> ClassName(TYPES_PACKAGE, "JBoolean")
+            "byte" -> ClassName(TYPES_PACKAGE, "JByte")
+            "char" -> ClassName(TYPES_PACKAGE, "JChar")
+            "short" -> ClassName(TYPES_PACKAGE, "JShort")
+            "int" -> ClassName(TYPES_PACKAGE, "JInt")
+            "long" -> ClassName(TYPES_PACKAGE, "JLong")
+            "float" -> ClassName(TYPES_PACKAGE, "JFloat")
+            "double" -> ClassName(TYPES_PACKAGE, "JDouble")
+            "java.lang.String" -> ClassName(TYPES_PACKAGE, "JString")
+            "java.lang.Object" -> JNI_OBJECT
+            "boolean[]" -> ClassName(TYPES_PACKAGE, "JBooleanArray")
+            "byte[]" -> ClassName(TYPES_PACKAGE, "JByteArray")
+            "char[]" -> ClassName(TYPES_PACKAGE, "JCharArray")
+            "short[]" -> ClassName(TYPES_PACKAGE, "JShortArray")
+            "int[]" -> ClassName(TYPES_PACKAGE, "JIntArray")
+            "long[]" -> ClassName(TYPES_PACKAGE, "JLongArray")
+            "float[]" -> ClassName(TYPES_PACKAGE, "JFloatArray")
+            "double[]" -> ClassName(TYPES_PACKAGE, "JDoubleArray")
+            "java.lang.Object[]" -> ClassName(TYPES_PACKAGE, "JObjectArray")
             // Any other array, including a multi-dimensional one: an array of arrays is an object rather than a
             // primitive array, so `JObjectArray` is the closest type able to carry it.
-            else -> if (jvmType.endsWith("[]")) "JObjectArray" else "JObject"
+            else -> if (jvmType.endsWith("[]")) ClassName(TYPES_PACKAGE, "JObjectArray") else JNI_OBJECT
         }
 
         /**
@@ -254,15 +278,15 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
          * [jvmType] carries, or `null` when [jvmType] is not a primitive array. `boolean` is
          * `UByteVar`, matching the `jboolean` binary representation of its elements.
          */
-        internal fun criticalVarType(jvmType: String): String? = when (jvmType) {
-            "boolean[]" -> "UByteVar"
-            "byte[]" -> "ByteVar"
-            "char[]" -> "UShortVar"
-            "short[]" -> "ShortVar"
-            "int[]" -> "IntVar"
-            "long[]" -> "LongVar"
-            "float[]" -> "FloatVar"
-            "double[]" -> "DoubleVar"
+        internal fun criticalVarType(jvmType: String): ClassName? = when (jvmType) {
+            "boolean[]" -> ClassName(INTEROP_PACKAGE, "UByteVar")
+            "byte[]" -> ClassName(INTEROP_PACKAGE, "ByteVar")
+            "char[]" -> ClassName(INTEROP_PACKAGE, "UShortVar")
+            "short[]" -> ClassName(INTEROP_PACKAGE, "ShortVar")
+            "int[]" -> ClassName(INTEROP_PACKAGE, "IntVar")
+            "long[]" -> ClassName(INTEROP_PACKAGE, "LongVar")
+            "float[]" -> ClassName(INTEROP_PACKAGE, "FloatVar")
+            "double[]" -> ClassName(INTEROP_PACKAGE, "DoubleVar")
             else -> null
         }
 
@@ -271,42 +295,51 @@ internal class JniActualsStubWriter(private val sourceRoot: File) {
          * declared with. A critical native only ever deals in primitives and primitive arrays, so
          * anything else is a contract the producer rejects.
          */
-        internal fun criticalScalarType(jvmType: String): String = when (jvmType) {
-            "void" -> "Unit"
-            "boolean" -> "Boolean"
-            "byte" -> "Byte"
-            "char" -> "Char"
-            "short" -> "Short"
-            "int" -> "Int"
-            "long" -> "Long"
-            "float" -> "Float"
-            "double" -> "Double"
-            else -> throw IllegalArgumentException("A @CriticalNative only binds primitives and primitive arrays, not '$jvmType'")
+        internal fun criticalScalarType(jvmType: String): ClassName = when (jvmType) {
+            "void" -> UNIT
+            "boolean" -> ClassName("kotlin", "Boolean")
+            "byte" -> ClassName("kotlin", "Byte")
+            "char" -> ClassName("kotlin", "Char")
+            "short" -> ClassName("kotlin", "Short")
+            "int" -> INT
+            "long" -> ClassName("kotlin", "Long")
+            "float" -> ClassName("kotlin", "Float")
+            "double" -> ClassName("kotlin", "Double")
+            else -> throw IllegalArgumentException(
+                "A @CriticalNative only binds primitives and primitive arrays, not '$jvmType'"
+            )
         }
-
-        /**
-         * The Kotlin function name to declare a stub of [methodName] under.
-         *
-         * A JVM name may contain characters a Kotlin identifier cannot, and may be a hard keyword; since the real name
-         * travels in `@JniActual(methodName = ...)`, the declaration's own name is only ever a label and can be mangled
-         * freely.
-         */
-        internal fun kotlinFunctionName(methodName: String): String {
-            val mangled = methodName.map { if (it.isLetterOrDigit() || it == '_') it else '_' }.joinToString("")
-            val identifier = mangled.ifEmpty { "_" }.let { if (it.first().isDigit()) "_$it" else it }
-            return if (identifier in KOTLIN_HARD_KEYWORDS) "`$identifier`" else identifier
-        }
-
-        private val KOTLIN_HARD_KEYWORDS = setOf(
-            "as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if", "in", "interface", "is",
-            "null", "object", "package", "return", "super", "this", "throw", "true", "try", "typealias", "typeof",
-            "val", "var", "when", "while",
-        )
     }
 }
 
 /**
+ * `["int", "java.lang.String"]`, the way `@WithJvmSignature` takes a JVM signature.
+ */
+private fun codeStringArray(values: List<String>): CodeBlock =
+    CodeBlock.builder().add("[").apply {
+        values.forEachIndexed { index, value ->
+            if (index > 0) add(", ")
+            add("%S", value)
+        }
+    }.add("]").build()
+
+/**
+ * The qualified names the lines of a Kotlin file import.
+ */
+private fun List<String>.imports(): Set<String> =
+    filter { it.startsWith(IMPORT_PREFIX) }
+        .mapTo(linkedSetOf()) { it.removePrefix(IMPORT_PREFIX).trim() }
+
+/**
+ * The name with the backticks a keyword is written with taken off, so that two spellings of one name compare equal.
+ */
+private fun String.unescaped(): String = replace("`", "")
+
+/**
  * A variant of [base] that is not in [used] and is marked as used, or `null` when every variant is taken.
+ *
+ * What is compared is the JVM name, because kotlinpoet escapes a name that is not an identifier rather than changing
+ * it: a method called `get-value` is declared as `` `get-value` ``, which no other name can collide with.
  */
 private fun uniqueName(base: String, used: MutableSet<String>): String? {
     if (used.add(base)) return base
@@ -318,10 +351,10 @@ private fun uniqueName(base: String, used: MutableSet<String>): String? {
 
 private const val MAX_NAME_VARIANTS = 100
 
-private val actualAnnotation = Regex("""@JniActuals?\s*(\((?:[^()])*\))?""")
+private val actualAnnotation = Regex("""@JniActuals?\s*(\([^()]*\))?""")
 private val classNameArgument = Regex("""\bclassName\s*=\s*"([^"]*)"""")
 private val methodNameArgument = Regex("""\bmethodName\s*=\s*"([^"]*)"""")
-private val functionDeclaration = Regex("""\bfun\s+(?:<[^>]*>\s*)?(?:[\w?.]+\.)?(\w+)\s*\(""")
+private val functionDeclaration = Regex("""\bfun\s+(?:<[^>]*>\s*)?(?:[\w?.]+\.)?(`?[\w-]+`?)\s*\(""")
 
 /**
  * The `(className, methodName)` pairs of the actuals already declared in [text].
@@ -342,6 +375,5 @@ private fun declaredActuals(text: String): Set<Pair<String, String>> = buildSet 
  * The names of every function declared in [text], whatever it is an actual of.
  */
 private fun declaredFunctionNames(text: String): Set<String> =
-    functionDeclaration.findAll(text).mapTo(linkedSetOf()) { it.groupValues[1] }
-
-private fun String.quoted(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+    functionDeclaration.findAll(text)
+        .mapTo(linkedSetOf()) { it.groupValues[1].removeSurrounding("`") }

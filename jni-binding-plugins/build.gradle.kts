@@ -40,6 +40,7 @@ dependencies {
     implementation(libs.serialization.json)
     implementation(libs.foojay.discoclient)
     implementation(libs.commons.compress)
+    implementation(libs.kotlinpoet)
     compileOnly(gradleKotlinDsl())
     compileOnly(kotlin("gradle-plugin"))
     compileOnly(libs.androidTools.build.gradle)

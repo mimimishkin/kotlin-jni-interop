@@ -53,14 +53,17 @@ class JniActualsStubWriterTest {
         )
 
         val text = generated("com.example.Native")
-        assertTrue("fun JClass.of(): JObject = TODO()" in text, text)
-        assertTrue("fun JObject.value(): JBoolean = TODO()" in text, text)
+        assertTrue("public fun JClass.of(): JObject = TODO()" in text, text)
+        assertTrue("public fun JObject.`value`(): JBoolean = TODO()" in text, text)
     }
 
     @Test
     fun `writes the names, the signature and a TODO body`() {
         writer.write(listOf(expect("com.example.Native", "value", isStatic = false, returnType = "boolean")))
 
+        // Everything here is kotlinpoet's rendering: the imports it collects and sorts, the escaping of a name that is
+        // a keyword (`value`), the layout of an annotation's arguments, the explicit `public` of a top-level
+        // declaration, and the expression body a `return` is folded into.
         assertEquals(
             """
             package com.example
@@ -68,16 +71,19 @@ class JniActualsStubWriterTest {
             import io.github.mimimishkin.jni.binding.JBoolean
             import io.github.mimimishkin.jni.binding.JObject
             import io.github.mimimishkin.jni.binding.JniEnv
-            import io.github.mimimishkin.jni.binding.annotation.JniActual
-            import io.github.mimimishkin.jni.binding.annotation.WithJvmSignature
+            import io.github.mimimishkin.jni.binding.`annotation`.JniActual
+            import io.github.mimimishkin.jni.binding.`annotation`.WithJvmSignature
 
-            @JniActual(className = "com.example.Native", methodName = "value")
+            @JniActual(
+                className = "com.example.Native",
+                methodName = "value",
+            )
             @WithJvmSignature(
                 parameterTypes = [],
                 returnType = "boolean",
             )
             context(env: JniEnv)
-            fun JObject.value(): JBoolean = TODO()
+            public fun JObject.`value`(): JBoolean = TODO()
 
             """.trimIndent(),
             generated("com.example.Native"),
@@ -123,7 +129,7 @@ class JniActualsStubWriterTest {
         )
 
         for ((jvmType, nativeType) in types) {
-            assertEquals(nativeType, JniActualsStubWriter.kotlinTypeOf(jvmType), jvmType)
+            assertEquals(nativeType, JniActualsStubWriter.kotlinTypeOf(jvmType).simpleName, jvmType)
         }
     }
 
@@ -132,7 +138,7 @@ class JniActualsStubWriterTest {
         writer.write(listOf(expect("com.example.Native", "close", isStatic = false, returnType = "void")))
 
         val text = generated("com.example.Native")
-        assertTrue("fun JObject.close(): Unit = TODO()" in text, text)
+        assertTrue("public fun JObject.close(): Unit = TODO()" in text, text)
         assertTrue("binding.Unit" !in text, text)
     }
 
@@ -144,7 +150,7 @@ class JniActualsStubWriterTest {
 
         val text = generated("java.lang.Math")
         assertTrue("package java.lang" in text, text)
-        assertTrue("fun JClass.max(p0: JInt, p1: JInt): JInt = TODO()" in text, text)
+        assertTrue("public fun JClass.max(p0: JInt, p1: JInt): JInt = TODO()" in text, text)
     }
 
     @Test
@@ -155,21 +161,23 @@ class JniActualsStubWriterTest {
     }
 
     @Test
-    fun `a method name that is not a Kotlin identifier is declared under a mangled one`() {
+    fun `a method name that is not a Kotlin identifier is declared escaped`() {
         writer.write(listOf(expect("com.example.Native", "get-value", isStatic = false, returnType = "int")))
 
+        // kotlinpoet escapes rather than mangles, so the declaration keeps the JVM name the user will recognize - and
+        // stays a name no other JVM method can collide with.
         val text = generated("com.example.Native")
-        assertTrue("fun JObject.`get-value`()..." !in text, text)
-        assertTrue("fun JObject.get_value(): JInt = TODO()" in text, text)
-        // The JVM name is the one the producer binds, and it travels in the annotation, not in the declaration's name.
-        assertTrue("""methodName = "get-value")""" in text, text)
+        assertTrue("public fun JObject.`get-value`(): JInt = TODO()" in text, text)
+        assertTrue("get_value" !in text, text)
+        // The JVM name is what the producer binds, and it travels in the annotation as well.
+        assertTrue("""methodName = "get-value",""" in text, text)
     }
 
     @Test
-    fun `a method name that is a hard keyword is escaped rather than mangled`() {
+    fun `a method name that is a keyword is escaped`() {
         writer.write(listOf(expect("com.example.Native", "object", isStatic = false, returnType = "int")))
 
-        assertTrue("fun JObject.`object`(): JInt = TODO()" in generated("com.example.Native"))
+        assertTrue("public fun JObject.`object`(): JInt = TODO()" in generated("com.example.Native"))
     }
 
     @Test
@@ -246,10 +254,10 @@ class JniActualsStubWriterTest {
         // `JObject` was imported already; `JBoolean` and the annotations are new.
         assertTrue("import io.github.mimimishkin.jni.binding.JBoolean" in imports, file.readText())
         assertTrue("import io.github.mimimishkin.jni.binding.JObject" in imports, file.readText())
-        assertTrue("import io.github.mimimishkin.jni.binding.annotation.JniActual" in imports, file.readText())
+        assertTrue("import io.github.mimimishkin.jni.binding.`annotation`.JniActual" in imports, file.readText())
         // The user's own declaration is still there, above the appended ones.
         assertTrue("fun helper(): JInt = 42" in file.readText())
-        assertTrue("fun JObject.value(): JBoolean = TODO()" in file.readText())
+        assertTrue("public fun JObject.`value`(): JBoolean = TODO()" in file.readText())
     }
 
     @Test
@@ -291,7 +299,7 @@ class JniActualsStubWriterTest {
 
         val text = file.readText()
         assertEquals(2, Regex("fun JObject").findAll(text).count(), text)
-        assertTrue("fun JObject.value2(): JBoolean = TODO()" in text, text)
+        assertTrue("public fun JObject.value2(): JBoolean = TODO()" in text, text)
     }
 
     @Test
@@ -300,7 +308,65 @@ class JniActualsStubWriterTest {
 
         val text = sourceRoot.resolve("Native.kt").readText()
         assertTrue("package " !in text, text)
-        assertTrue("fun JObject.value(): JBoolean = TODO()" in text, text)
+        assertTrue("public fun JObject.`value`(): JBoolean = TODO()" in text, text)
+    }
+
+    @Test
+    fun `a critical expect declares a length and a pointer per array, and nothing else`() {
+        // A critical native only ever gets primitives, and an array arrives as a `(length, pointer)` pair - so this
+        // stub is the one shape that brings `kotlinx.cinterop` into a generated file.
+        writer.write(
+            listOf(
+                expect("com.example.Native", "sum", isStatic = true, parameters = listOf("int[]", "long"), returnType = "long", isCritical = true),
+                expect("com.example.Native", "isAllPositive", isStatic = true, parameters = listOf("boolean[]"), returnType = "boolean", isCritical = true),
+            )
+        )
+
+        val text = generated("com.example.Native")
+        // A signature past kotlinpoet's column limit is wrapped onto one parameter per line, the way any other
+        // kotlinpoet-generated code is.
+        assertTrue(
+            """
+            @JniActual(
+                className = "com.example.Native",
+                methodName = "sum",
+            )
+            @CriticalNative
+            @WithJvmSignature(
+                parameterTypes = ["int[]", "long"],
+                returnType = "long",
+            )
+            public fun sum(
+                p0Length: Int,
+                p0: CArrayPointer<IntVar>,
+                p1: Long,
+            ): Long = TODO()
+            """.trimIndent() in text,
+            text,
+        )
+        // A `jboolean` is an unsigned byte, which is what `UByteVar` says.
+        assertTrue("public fun isAllPositive(p0Length: Int, p0: CArrayPointer<UByteVar>): Boolean = TODO()" in text, text)
+        // The language prelude needs no import of its own.
+        assertTrue("import kotlin." !in text, text)
+    }
+
+    @Test
+    fun `maps a critical array to the cinterop variable type that carries it`() {
+        val types = mapOf(
+            "boolean[]" to "UByteVar",
+            "byte[]" to "ByteVar",
+            "char[]" to "UShortVar",
+            "short[]" to "ShortVar",
+            "int[]" to "IntVar",
+            "long[]" to "LongVar",
+            "float[]" to "FloatVar",
+            "double[]" to "DoubleVar",
+        )
+
+        for ((jvmType, varType) in types) {
+            assertEquals(varType, JniActualsStubWriter.criticalVarType(jvmType)?.simpleName, jvmType)
+        }
+        assertEquals(null, JniActualsStubWriter.criticalVarType("java.lang.Object[]"), "not a primitive array")
     }
 
     private fun expect(
@@ -309,7 +375,8 @@ class JniActualsStubWriterTest {
         isStatic: Boolean? = null,
         parameters: List<String> = emptyList(),
         returnType: String = "void",
-    ) = JniFunctionContract(className, methodName, isStatic, parameters, returnType)
+        isCritical: Boolean? = null,
+    ) = JniFunctionContract(className, methodName, isStatic, parameters, returnType, isCritical = isCritical)
 
     private fun generated(className: String): String {
         val simpleName = className.substringAfterLast('.').replace('$', '_')
