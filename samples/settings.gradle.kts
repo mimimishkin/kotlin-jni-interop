@@ -2,9 +2,9 @@ import org.gradle.internal.os.OperatingSystem
 
 pluginManagement {
     repositories {
+        mavenLocal()
         gradlePluginPortal()
         google()
-        mavenLocal()
     }
 }
 
