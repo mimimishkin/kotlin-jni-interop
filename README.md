@@ -37,7 +37,7 @@ that sample as the full reference.
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
 - [Annotations](#annotations)
-- [Critical natives](#critical-natives)
+- [Fast and Critical natives](#fast-and-critical-natives)
 - [Libraries](#libraries)
 - [Samples](#samples)
 
@@ -302,11 +302,15 @@ How `external` methods find their native implementations:
 
 See [`samples/basic`](samples/basic) for every supported shape.
 
-## Critical natives
+## Fast and Critical natives
 
-This is optimization for faster JNI function calls. A `@CriticalNative` is called **without a `JniEnv` and without a
-class/object reference**. Only primitives / primitive arrays (On JDK only - each array arrives as a `(length, pointer)`
-pair), `static` and non-`synchronized` on the JVM side. Also, the method must never call back into the JVM.
+They are optimizations for faster JNI function calls.
+
+- A `@FastNative` is android only runtime built-in optimization for native methods to speed up JNI transitions. Ignored 
+  on desktop.
+- A `@CriticalNative` is called **without a `JniEnv` and without a class/object reference**. Only primitives / primitive
+  arrays (On JDK only - each array arrives as a `(length, pointer)` pair), `static` and non-`synchronized` on the JVM 
+  side. Also, the method must never call back into the JVM.
 
 ```kotlin
 // native
