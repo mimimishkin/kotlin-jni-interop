@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.konan.target.HostManager
 plugins {
     kotlin("jvm") version "2.4.20"
     kotlin("plugin.power-assert") version "2.4.20"
-    id("io.github.mimimishkin.jni-binding-consumer") version "2.0.0"
+    id("io.github.mimimishkin.jni-binding-consumer") version "2.1.0"
 }
 
 val isCI = isCiBuild()

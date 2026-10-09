@@ -6,7 +6,7 @@ import io.github.mimimishkin.jni.binding.plugin.consumer.jniLibraries
 
 plugins {
     id("com.android.application")
-    id("io.github.mimimishkin.jni-binding-consumer") version "2.0.0"
+    id("io.github.mimimishkin.jni-binding-consumer") version "2.1.0"
 }
 
 android {
