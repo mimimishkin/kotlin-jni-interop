@@ -242,8 +242,13 @@ public class JniLibraryConfig internal constructor(
         override fun binaries(): FileCollection =
             selfProduced("binaries", targetName)
 
-        override fun actuals(): FileCollection =
-            selfProduced("actualsInfo", targetName)
+        override fun actuals(): FileCollection {
+            val file = project.layout.buildDirectory.file("$PRODUCER_OUTPUT_DIR/actualsInfo/$targetName/actuals.json")
+            val files = project.objects.fileCollection().from(file)
+            project.extensions.findByType<JniLibProducerExtension>()
+                ?.let { files.builtBy(it.exportJniBindingTaskProvider) }
+            return files
+        }
     }
 
     private fun selfProduced(directory: String, targetName: String): FileCollection {
