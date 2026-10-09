@@ -35,9 +35,6 @@ serialization = "1.11.0"
 # https://github.com/foojayio/discoclient
 discoclient = "2.0.39"
 
-# https://commons.apache.org/proper/commons-compress/
-commonsCompress = "1.28.0"
-
 # https://github.com/square/kotlinpoet
 kotlinpoet = "2.4.0"
 
@@ -51,7 +48,6 @@ zacsweers-autoServiceKsp = { group = "dev.zacsweers.autoservice", name = "auto-s
 zacsweers-kctFork = { group = "dev.zacsweers.kctfork", name = "core", version.ref = "kct" }
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 foojay-discoclient = { group = "io.foojay.api", name = "discoclient", version.ref = "discoclient" }
-commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commonsCompress" }
 kotlinpoet = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
 
 [plugins]

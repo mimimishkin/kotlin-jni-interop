@@ -12,36 +12,36 @@ import eu.hansolo.jdktools.ReleaseStatus
 import eu.hansolo.jdktools.TermOfSupport
 import eu.hansolo.jdktools.versioning.VersionNumber
 import io.foojay.api.discoclient.DiscoClient
-import io.foojay.api.discoclient.pkg.Pkg
 import io.foojay.api.discoclient.pkg.Scope
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-import org.apache.commons.compress.archivers.zip.ZipFile
+import io.github.mimimishkin.jni.binding.plugin.camelCase
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.logging.Logging
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.provider.ValueSource
-import org.gradle.api.provider.ValueSourceParameters
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.the
+import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBinary
 import org.jetbrains.kotlin.konan.target.Architecture
 import org.jetbrains.kotlin.konan.target.Family
 import java.io.File
-import java.io.InputStream
 import java.net.URI
 import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.FileAlreadyExistsException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.attribute.PosixFilePermission
-import java.util.zip.GZIPInputStream
+import javax.inject.Inject
 
 /**
  * Distribution [downloadCompatibleJdk] uses when it is not told otherwise.
@@ -79,10 +79,10 @@ private const val JDK_STORAGE_LOCATION_PROPERTY: String = "jni.jdkStorageLocatio
  * }
  * ```
  *
- * The JDK is looked up through the foojay Disco API, which means a build that downloads one needs
- * network access. A major version resolves to whichever build the distribution published last at the
- * time of the first download, and to that same one afterwards, since the JDK is then reused from
- * disk. Pass a version as a [String] to pin it.
+ * The JDK is looked up through the foojay Disco API, so a build that needs one needs network access. A
+ * major version resolves to whichever build the distribution published last at the time of the first
+ * download, and to that same one afterwards, since the JDK is then reused from disk. Pass a version as a
+ * [String] to pin it.
  *
  * @param os operating system to build the JDK for, which is this target's one by default.
  * @param arch architecture to build the JDK for, which is this target's one by default.
@@ -94,7 +94,7 @@ public fun NativeBinary.downloadCompatibleJdk(
     distribution: String = DEFAULT_JDK_DISTRIBUTION,
 ): Provider<Directory> {
     val expectedJdkVersion = project.the<JniLibProducerExtension>().expectedJdkVersion
-    return jdkProvider(distribution, expectedJdkVersion, project.provider { "" }, os, arch)
+    return jdkProvider(distribution, "", expectedJdkVersion, project.provider { "" }, os, arch)
 }
 
 /**
@@ -109,7 +109,7 @@ public fun NativeBinary.downloadCompatibleJdk(
     os: JdkOperatingSystem = jdkOperatingSystem,
     arch: JdkArchitecture = target.konanTarget.architecture.jdkArchitecture,
 ): Provider<Directory> =
-    jdkProvider(distribution, project.provider { version }, project.provider { "" }, os, arch)
+    jdkProvider(distribution, version.toString(), project.provider { version }, project.provider { "" }, os, arch)
 
 /**
  * Provides the JDK of exactly [version] built for the platform of this binary's target, to link
@@ -125,35 +125,56 @@ public fun NativeBinary.downloadCompatibleJdk(
     os: JdkOperatingSystem = jdkOperatingSystem,
     arch: JdkArchitecture = target.konanTarget.architecture.jdkArchitecture,
 ): Provider<Directory> =
-    jdkProvider(distribution, project.provider { 0 }, project.provider { version }, os, arch)
+    jdkProvider(distribution, version, project.provider { 0 }, project.provider { version }, os, arch)
 
 /**
- * Provider of the home directory of a JDK, which downloads and unpacks it when first read.
+ * Provider of the home directory of a JDK, which an [UnpackJdkTask] downloads when the linker needs it.
  *
  * @param majorVersion the major version to ask for when [exactVersion] is empty.
  * @param exactVersion the exact version to ask for, or empty to ask for the latest build of a major
  * version instead.
+ * @param namedVersion the version as this call names it, empty when it is
+ * [JniLibProducerExtension.expectedJdkVersion] and so not known while configuring. It is what tells two
+ * requests for the same platform apart.
  */
 private fun NativeBinary.jdkProvider(
-    distributionName: String,
+    distribution: String,
+    namedVersion: String,
     majorVersion: Provider<Int>,
     exactVersion: Provider<String>,
     os: JdkOperatingSystem,
     arch: JdkArchitecture,
 ): Provider<Directory> {
     val konanTarget = target.konanTarget
-    val home = project.providers.of(JdkValueSource::class.java) { spec ->
-        val parameters = spec.parameters
-        parameters.distribution.set(distributionName)
-        parameters.majorVersion.set(majorVersion)
-        parameters.exactVersion.set(exactVersion)
-        parameters.operatingSystem.set(os.name)
-        parameters.architecture.set(arch.name)
-        parameters.storageLocation.fileValue(project.jdkStorageLocation())
-        parameters.targetName.set(konanTarget.name)
-        parameters.targetArchitecture.set(konanTarget.architecture.name)
+    val name = camelCase("unpackJdk", distribution, os.apiString, arch.apiString, namedVersion)
+
+    // Every binary asking for the same JDK gets the same task, so that it is downloaded once.
+    val unpack = project.tasks.let { tasks ->
+        if (name in tasks.names) {
+            tasks.named(name, UnpackJdkTask::class)
+        } else {
+            tasks.register(name, UnpackJdkTask::class) { task ->
+                task.description = "Downloads and unpacks the JDK $konanTarget is linked against"
+
+                task.distribution.set(distribution)
+                task.majorVersion.set(majorVersion)
+                task.exactVersion.set(exactVersion)
+                task.operatingSystem.set(os.name)
+                task.architecture.set(arch.name)
+                task.home.fileValue(
+                    project.jdkStorageLocation().resolve(
+                        camelCase("jdk", distribution, os.apiString, arch.apiString, namedVersion)
+                    )
+                )
+            }
+        }
     }
-    return project.layout.dir(project.provider { home.get() })
+
+    // Named rather than inferred: the linker reads the JDK's home as a string path, which carries no
+    // dependency of its own.
+    linkTaskProvider.configure { it.dependsOn(unpack) }
+
+    return project.layout.dir(unpack.map { it.home.get().asFile })
 }
 
 /**
@@ -180,8 +201,8 @@ public val NativeBinary.jdkOperatingSystem: JdkOperatingSystem
             Family.OSX -> JdkOperatingSystem.MACOS
             else -> error(
                 "Cannot link a JDK into the ${konanTarget.name} target: JDKs are published for linux, " +
-                    "macos and windows only, while ${konanTarget.name} is a ${konanTarget.family} target. " +
-                    "Do not call linkJvm() for it."
+                        "macos and windows only, while ${konanTarget.name} is a ${konanTarget.family} target. " +
+                        "Do not call linkJvm() for it."
             )
         }
     }
@@ -196,73 +217,110 @@ public val Architecture.jdkArchitecture: JdkArchitecture
         Architecture.ARM64 -> JdkArchitecture.AARCH64
         else -> error(
             "Cannot link a JDK into a $this target: no JDK distribution publishes a 32-bit ARM build, " +
-                "so there is nothing to download. Do not call linkJvm() for it."
+                    "so there is nothing to download. Do not call linkJvm() for it."
         )
     }
 
 /**
- * Provides the home directory of a JDK, downloading and unpacking it if it is not unpacked yet.
+ * Downloads the JDK a binary is linked against and unpacks it, as [downloadCompatibleJdk] arranges.
  *
- * Its parameters are all read when it is evaluated rather than while configuring, which is what lets
- * `jniLibraries { }` sit anywhere in a build script.
+ * The request is the task's input and the unpacked JDK its output, so what an earlier run of this task
+ * put in that directory is reused as it is.
  */
-internal abstract class JdkValueSource : ValueSource<File, JdkValueSource.Parameters> {
+@DisableCachingByDefault(because = "the archive is downloaded by the task, so its contents are not a cache key")
+internal abstract class UnpackJdkTask : DefaultTask() {
 
     /**
-     * Which JDK to provide.
-     *
-     * @property exactVersion the exact version to ask for, or empty to ask for the latest build of a
-     * major [majorVersion] instead.
+     * Distribution to download from, for example `"corretto"`.
      */
-    internal interface Parameters : ValueSourceParameters {
-        val distribution: Property<String>
-        val majorVersion: Property<Int>
-        val exactVersion: Property<String>
-        val operatingSystem: Property<String>
-        val architecture: Property<String>
-        val storageLocation: DirectoryProperty
-        val targetName: Property<String>
-        val targetArchitecture: Property<String>
-    }
+    @get:Input
+    abstract val distribution: Property<String>
 
-    override fun obtain(): File {
-        val distribution = parameters.distribution.get()
-        val os = JdkOperatingSystem.valueOf(parameters.operatingSystem.get())
-        val arch = JdkArchitecture.valueOf(parameters.architecture.get())
-        val exact = parameters.exactVersion.orNull?.ifEmpty { null }
-        val major = parameters.majorVersion.get()
+    /**
+     * Major Java version to ask for, unless [exactVersion] names one.
+     */
+    @get:Input
+    abstract val majorVersion: Property<Int>
 
-        val jdk = resolve(distribution, exact, major, os, arch)
-        val home = File(parameters.storageLocation.get().asFile, jdk.directoryName)
-        if (!File(home, RELEASE_FILE).isFile) {
-            unpack(Archive(jdk.url, jdk.format), home)
+    /**
+     * Exact version to ask for, as the distribution publishes it, or empty to ask for the latest build
+     * of [majorVersion].
+     */
+    @get:Input
+    abstract val exactVersion: Property<String>
+
+    /**
+     * Operating system to build the JDK for.
+     */
+    @get:Input
+    abstract val operatingSystem: Property<String>
+
+    /**
+     * Architecture to build the JDK for.
+     */
+    @get:Input
+    abstract val architecture: Property<String>
+
+    /**
+     * Directory the JDK is unpacked into, and the task's output.
+     */
+    @get:OutputDirectory
+    abstract val home: DirectoryProperty
+
+    @get:Inject
+    abstract val archives: ArchiveOperations
+
+    @get:Inject
+    abstract val fileSystems: FileSystemOperations
+
+    @TaskAction
+    fun unpack() {
+        val archive = resolve()
+        val home = home.get().asFile
+        val file = Files.createTempFile("jni-jdk-", archive.format.fileEndings.first())
+        // Staged next to where the JDK goes, so that moving it into place stays on one file system.
+        val staging = Files.createTempDirectory(home.toPath().parent, "${home.name}-staging-")
+        try {
+            logger.lifecycle("Downloading JDK from {}", archive.url)
+            URI(archive.url).toURL().openStream().use { input ->
+                Files.copy(input, file)
+            }
+            val tree = when (archive.format) {
+                ArchiveType.ZIP -> archives.zipTree(file)
+                ArchiveType.TAR_GZ, ArchiveType.TGZ -> archives.tarTree(file)
+                else -> error("Unsupported archive format: ${archive.format}")
+            }
+            fileSystems.copy { spec ->
+                spec.from(tree)
+                spec.into(staging.toFile())
+            }
+            val unpackedHome = findJdkHome(staging.toFile(), archive.url)
+            logger.lifecycle("Unpacking JDK into {}", home)
+            home.deleteRecursively()
+            moveInto(unpackedHome.toPath(), home.toPath())
+        } finally {
+            staging.toFile().deleteRecursively()
+            Files.deleteIfExists(file)
         }
-        checkJdk(
-            home,
-            parameters.targetName.get(),
-            Architecture.valueOf(parameters.targetArchitecture.get()),
-            major,
-        )
-        return home
     }
 
     /**
-     * Asks the foojay Disco API for the JDK matching [exact], or the latest build of [major] when
-     * [exact] is null, and for the URL to download it from.
+     * Asks the foojay Disco API for the JDK this task was asked for, and where to download it from.
      */
-    private fun resolve(
-        distributionName: String,
-        exact: String?,
-        major: Int,
-        os: JdkOperatingSystem,
-        arch: JdkArchitecture,
-    ): ResolvedJdk {
-        val disco = DiscoClient()
+    private fun resolve(): Archive {
+        val distributionName = distribution.get()
         val distribution = DiscoClient.getDistributionFromText(distributionName)
             ?: error(
                 "Unknown JDK distribution '$distributionName': the foojay Disco API does not know a " +
-                    "distribution by that name"
+                        "distribution by that name"
             )
+        val os = JdkOperatingSystem.valueOf(operatingSystem.get())
+        val arch = JdkArchitecture.valueOf(architecture.get())
+        val exact = exactVersion.get().ifEmpty { null }
+        val major = majorVersion.get()
+        val version = exact ?: major
+
+        val disco = DiscoClient()
         val pkgs = disco.getPkgs(
             listOf(distribution),
             requestedVersion(exact, major),
@@ -280,24 +338,23 @@ internal abstract class JdkValueSource : ValueSource<File, JdkValueSource.Parame
             listOf(Scope.PUBLIC),
             Match.ANY,
         )
-        // The API also offers `.deb`, `.rpm` and other installers, which are not what this source
-        // downloads, and it matches an exact version only down to the release line of the build.
-        val matching = pkgs
-            .filter { it.isPackableArchive() }
-            .filter { exact == null || it.fileName.contains(exact) }
-        val wanted = if (exact == null) "a JDK $major" else "the JDK $exact"
-        val pkg = matching.maxByOrNull { it.javaVersion }
-            ?: error("The foojay Disco API has no $wanted for $distributionName on $os $arch")
-        val url = disco.getPkgDirectDownloadUri(pkg.id)
-        check(url.isNotEmpty()) { "The foojay Disco API returned no download URL for ${pkg.fileName}" }
-        return ResolvedJdk(pkg.homeDirectoryName(), url, formatOf(pkg))
+
+        val archive = pkgs.asSequence()
+            .filter { pkg -> pkg.archiveType in listOf(ArchiveType.ZIP, ArchiveType.TAR_GZ, ArchiveType.TGZ) }
+            .filter { pkg -> exact == null || pkg.fileName.contains(exact) }
+            .maxByOrNull { pkg -> pkg.javaVersion }
+            ?.let { pkg -> Archive(disco.getPkgDirectDownloadUri(pkg.id), pkg.archiveType) }
+            ?: error(
+                "The foojay Disco API has no JDK ${exact ?: major} for $distributionName " +
+                        "on ${os.apiString} ${arch.apiString}"
+            )
+
+        check(archive.url.isNotEmpty()) { "The foojay Disco API returned no download URL for JDK $version" }
+        return archive
     }
 
     /**
-     * Version to ask the Disco API for, which for [exact] is only its feature version.
-     *
-     * The API matches a version down to its release line, never down to a build, so an exact build is
-     * asked for as the line it belongs to and picked out of the builds of that line afterwards.
+     * Version to ask the Disco API for, which for an exact one is only its feature version.
      */
     private fun requestedVersion(exact: String?, major: Int): VersionNumber =
         if (exact == null) {
@@ -307,164 +364,13 @@ internal abstract class JdkValueSource : ValueSource<File, JdkValueSource.Parame
         }
 
     /**
-     * Whether this package is a `.zip` or tar archive of the kind this source can unpack, rather than
-     * an installer such as a `.deb` or `.rpm`.
+     * The libc the Disco API should filter an operating system by, which only matters where several are
+     * published.
      */
-    private fun Pkg.isPackableArchive(): Boolean =
-        archiveType == ArchiveType.ZIP || archiveType == ArchiveType.TAR_GZ || archiveType == ArchiveType.TGZ
-
-    /**
-     * How to unpack the archive of [pkg], which is the one the Disco API offers it as.
-     */
-    private fun formatOf(pkg: Pkg): String = when (pkg.archiveType) {
-        ArchiveType.ZIP -> "zip"
-        ArchiveType.TAR_GZ, ArchiveType.TGZ -> "tar.gz"
-        else -> error(
-            "Cannot unpack ${pkg.fileName}: only `.zip` and `.tar.gz` JDK archives are supported, " +
-                "while this one is a ${pkg.archiveType}"
-        )
-    }
-
-    /**
-     * Downloads the archive and unpacks the JDK in it into [home].
-     */
-    private fun unpack(archive: Archive, home: File) {
-        val logger = Logging.getLogger(JdkValueSource::class.java)
-        val file = Files.createTempFile("jni-jdk-", ".${archive.format}")
-        // Created only now, so that a build that needs no JDK leaves no directory behind either.
-        Files.createDirectories(home.toPath().parent)
-        // Staged next to where the JDK goes, so that moving it into place stays on one file system.
-        val staging = Files.createTempDirectory(home.parentFile.toPath(), "${home.name}-staging-")
-        try {
-            logger.lifecycle("Downloading JDK from {}", archive.url)
-            URI(archive.url).toURL().openStream().use { input ->
-                Files.newOutputStream(file).use { output -> input.copyTo(output) }
-            }
-            if (archive.format == "zip") {
-                unzip(file, staging)
-            } else {
-                untar(file, staging)
-            }
-            val unpackedHome = findJdkHome(staging.toFile(), archive.url)
-            logger.lifecycle("Unpacking JDK into {}", home)
-            moveInto(unpackedHome.toPath(), home.toPath())
-        } finally {
-            staging.toFile().deleteRecursively()
-            Files.deleteIfExists(file)
-        }
-    }
-
-    /**
-     * Writes every entry of a `.zip` archive under [into].
-     */
-    private fun unzip(archive: Path, into: Path) {
-        ZipFile.builder().setPath(archive).get().use { zip ->
-            val entries = zip.entries
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement()
-                val target = into.resolve(entry.name)
-                when {
-                    entry.isDirectory -> Files.createDirectories(target)
-                    entry.isUnixSymlink -> link(target, zip.getInputStream(entry).readBytes().decodeToString())
-                    else -> write(target, zip.getInputStream(entry), executable = entry.unixMode.isExecutable())
-                }
-            }
-        }
-    }
-
-    /**
-     * Writes every entry of a tar archive under [into].
-     */
-    private fun untar(archive: Path, into: Path) {
-        Files.newInputStream(archive).use { input ->
-            TarArchiveInputStream(GZIPInputStream(input).buffered()).use { tar ->
-                var entry: TarArchiveEntry? = tar.nextEntry
-                while (entry != null) {
-                    val target = into.resolve(entry.name)
-                    when {
-                        entry.isDirectory -> Files.createDirectories(target)
-                        entry.isSymbolicLink -> link(target, tar.readBytes().decodeToString().trim())
-                        else -> write(target, tar, executable = entry.mode.isExecutable())
-                    }
-                    entry = tar.nextEntry
-                }
-            }
-        }
-    }
-
-    /**
-     * Writes one entry of an archive, marking it executable when the archive says it is.
-     */
-    private fun write(target: Path, archive: InputStream, executable: Boolean = false) {
-        Files.createDirectories(target.parent)
-        Files.newOutputStream(target).use { output -> archive.copyTo(output) }
-        if (executable) makeExecutable(target)
-    }
-
-    /**
-     * Whether a file mode read from an archive marks its file executable.
-     */
-    private fun Int.isExecutable(): Boolean = this and 0b111 != 0
-
-    /**
-     * Marks [target] executable, where the file system can.
-     */
-    private fun makeExecutable(target: Path) {
-        try {
-            Files.setPosixFilePermissions(
-                target,
-                Files.getPosixFilePermissions(target) + PosixFilePermission.OWNER_EXECUTE,
-            )
-        } catch (e: UnsupportedOperationException) {
-            // A file system without POSIX permissions, such as one on Windows.
-        }
-    }
-
-    /**
-     * A symlink to [linkTo], or a plain file naming it where the file system has no symlinks.
-     */
-    private fun link(target: Path, linkTo: String) {
-        try {
-            Files.createSymbolicLink(target, Path.of(linkTo))
-        } catch (e: UnsupportedOperationException) {
-            Files.writeString(target, linkTo)
-        } catch (e: FileAlreadyExistsException) {
-            // A second entry for a link already made.
-        }
-    }
-
-    /**
-     * Moves an unpacked directory into place, a file at a time where a move is not possible.
-     */
-    private fun moveInto(from: Path, to: Path) {
-        try {
-            Files.move(from, to, StandardCopyOption.ATOMIC_MOVE)
-            return
-        } catch (e: AtomicMoveNotSupportedException) {
-            // A file system without atomic moves, which also means a plain one is the best it offers.
-        }
-        copyInto(from, to)
-        from.toFile().deleteRecursively()
-    }
-
-    /**
-     * Copies a directory, as are the symlinks in it.
-     */
-    private fun copyInto(from: Path, into: Path) {
-        Files.walkFileTree(from, object : SimpleFileVisitor<Path>() {
-            override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-                Files.createDirectories(into.resolve(from.relativize(dir).toString()))
-                return FileVisitResult.CONTINUE
-            }
-
-            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                val target = into.resolve(from.relativize(file).toString())
-                // A symlink is copied as what it points at: the JDK is only linked against, so having
-                // the file rather than the link is all that is needed of it.
-                Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING)
-                return FileVisitResult.CONTINUE
-            }
-        })
+    private fun libcTypeOf(os: JdkOperatingSystem): LibCType = when (os) {
+        JdkOperatingSystem.LINUX -> LibCType.GLIBC
+        JdkOperatingSystem.LINUX_MUSL, JdkOperatingSystem.ALPINE_LINUX -> LibCType.MUSL
+        else -> LibCType.NONE
     }
 
     /**
@@ -477,39 +383,35 @@ internal abstract class JdkValueSource : ValueSource<File, JdkValueSource.Parame
             .minByOrNull { it.toPath().nameCount }
             ?: error(
                 "The archive downloaded from $url does not contain a JDK: there is no $RELEASE_FILE " +
-                    "file anywhere under $unpacked"
+                        "file anywhere under $unpacked"
             )
 
     /**
-     * An archive to download, and how to unpack it.
+     * Moves an unpacked directory into place, a file at a time where a move is not possible.
      */
-    private class Archive(val url: String, val format: String)
+    private fun moveInto(from: Path, to: Path) {
+        try {
+            Files.move(from, to, StandardCopyOption.ATOMIC_MOVE)
+            return
+        } catch (e: AtomicMoveNotSupportedException) {
+            // A file system without atomic moves, which also means a plain one is the best it offers.
+        }
+        Files.walkFileTree(from, object : SimpleFileVisitor<Path>() {
+            override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+                Files.createDirectories(to.resolve(from.relativize(dir).toString()))
+                return FileVisitResult.CONTINUE
+            }
+
+            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                Files.copy(file, to.resolve(from.relativize(file).toString()), StandardCopyOption.REPLACE_EXISTING)
+                return FileVisitResult.CONTINUE
+            }
+        })
+        from.toFile().deleteRecursively()
+    }
+
+    /**
+     * A JDK archive to download, and the form it comes in.
+     */
+    private class Archive(val url: String, val format: ArchiveType)
 }
-
-/**
- * The libc the Disco API should filter [os] by, which only matters where several are published.
- */
-private fun libcTypeOf(os: JdkOperatingSystem): LibCType = when (os) {
-    JdkOperatingSystem.LINUX -> LibCType.GLIBC
-    JdkOperatingSystem.LINUX_MUSL, JdkOperatingSystem.ALPINE_LINUX -> LibCType.MUSL
-    else -> LibCType.NONE
-}
-
-/**
- * A JDK the Disco API matched, and where to download it from.
- *
- * @property directoryName directory to unpack this JDK into, named after its archive.
- */
-private class ResolvedJdk(val directoryName: String, val url: String, val format: String)
-
-/**
- * Name of the directory this package's JDK is unpacked into, which is its archive name without the
- * extension, so that a JDK is only ever downloaded once.
- */
-private fun Pkg.homeDirectoryName(): String =
-    fileName
-        .removeSuffix(".tar.gz")
-        .removeSuffix(".tar.xz")
-        .removeSuffix(".tgz")
-        .removeSuffix(".zip")
-        .ifEmpty { id }
