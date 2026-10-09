@@ -12,9 +12,12 @@ import io.github.mimimishkin.jni.binding.consumer.model.JniExpectInfo
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.backend.jvm.extensions.ClassGenerator
 import org.jetbrains.kotlin.backend.jvm.extensions.ClassGeneratorExtension
+import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrVararg
+import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED
@@ -26,6 +29,12 @@ private val jniExpectsAnnotation = Symbols.JniExpects.asSingleFqName()
 private fun IrAnnotationContainer.hasJniExpect() = hasAnnotation(jniExpectAnnotation)
 
 private fun isAndroidTarget(target: String): Boolean = target.startsWith("android", ignoreCase = true)
+
+private val primitiveJvmTypeNames =
+    setOf("void", "boolean", "byte", "char", "short", "int", "long", "float", "double")
+
+private fun isClassType(jvmName: String): Boolean =
+    jvmName !in primitiveJvmTypeNames && !jvmName.endsWith("[]")
 
 /**
  * The single place where `@JniExpect` functions are matched against the JVM names the backend actually produces.
@@ -133,9 +142,11 @@ internal class JniExpectMatcher(
             methodName = methodName,
             isStatic = isStatic,
             parameterTypes = parameterTypes,
+            parameterNames = parameterNames,
             returnType = returnType,
             targets = targets,
             isCritical = source.hasCriticalNative(),
+            superClasses = superClasses,
         )
 
         private fun IrSimpleFunction.describeJniExpect(className: String, methodName: String, desc: String): JniExpectInfo {
@@ -157,7 +168,76 @@ internal class JniExpectMatcher(
                 },
                 JavaType(methodType.returnType.className, returnType.isNullable()),
                 this,
+                superClasses = buildSuperClasses(
+                    declaringClass = parentClass,
+                    className = className,
+                    parameters = irParameters,
+                    parameterNames = argTypes.map { it.className },
+                    returnType = returnType,
+                    returnTypeName = methodType.returnType.className,
+                ),
             )
+        }
+
+        /**
+         * The class hierarchy the generated native stubs can mirror for smart-casting: for every reference class that
+         * takes part in the binding (the declaring class, each reference parameter and the return type) it records the
+         * class it directly extends, if any.
+         */
+        private fun buildSuperClasses(
+            declaringClass: IrClass?,
+            className: String,
+            parameters: List<IrValueParameter>,
+            parameterNames: List<String>,
+            returnType: IrType,
+            returnTypeName: String,
+        ): Map<String, String?> {
+            val result = linkedMapOf<String, String?>()
+            declaringClass?.let { collectSuperClasses(it, className, result) }
+            parameters.forEachIndexed { index, parameter ->
+                val name = parameterNames[index]
+                if (isClassType(name)) {
+                    parameter.type.classOrNull?.owner?.let { collectSuperClasses(it, name, result) }
+                }
+            }
+            if (isClassType(returnTypeName)) {
+                returnType.classOrNull?.owner?.let { collectSuperClasses(it, returnTypeName, result) }
+            }
+            return result
+        }
+
+        /**
+         * Walks the single superclass chain of [irClass] and records it in [result] under the JVM names the stubs use.
+         * Stops at a class it cannot name (a Kotlin built-in other than `Any`, see [jvmClassName]) or at a class it has
+         * already recorded.
+         */
+        private fun collectSuperClasses(irClass: IrClass, jvmName: String, result: MutableMap<String, String?>) {
+            var current: IrClass? = irClass
+            var name = jvmName
+            while (current != null && !result.containsKey(name)) {
+                val superClass = current.superTypes
+                    .firstOrNull { it.classOrNull?.owner?.kind == ClassKind.CLASS }
+                    ?.classOrNull?.owner
+                val superName = superClass?.let(::jvmClassName)
+                result[name] = superName
+                if (superName == null) break
+                current = superClass
+                name = superName
+            }
+        }
+
+        /**
+         * The JVM name the stubs know [irClass] by, or `null` when the chain must stop there: `java.lang.Object` (the
+         * root every opaque type already descends from) and any other Kotlin built-in, which is not a JVM class the
+         * stubs can name.
+         */
+        private fun jvmClassName(irClass: IrClass): String? {
+            val fqName = irClass.fqNameWhenAvailable?.asString() ?: return null
+            return when {
+                fqName == "kotlin.Any" -> null
+                fqName.startsWith("kotlin.") -> null
+                else -> fqName
+            }
         }
 
         /**

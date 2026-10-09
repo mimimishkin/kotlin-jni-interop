@@ -88,7 +88,7 @@ internal class FirJniFacades(
             actualFn = actualFn,
             actualSymbol = actualLocation.fn,
             container = actualLocation.container,
-            receiverName = when (facadeReceiverStasis(receiverTypeRef)) {
+            receiverName = when (facadeReceiverStasis(receiverTypeRef, session)) {
                 true -> "class"
                 false -> "object"
                 null -> "classOrObject"

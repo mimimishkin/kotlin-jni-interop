@@ -5,6 +5,7 @@ package io.github.mimimishkin.jni.binding.producer.fir
 import io.github.mimimishkin.jni.binding.producer.Symbols
 import io.github.mimimishkin.jni.binding.producer.callableId
 import io.github.mimimishkin.jni.binding.producer.ident
+import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirNamedFunction
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.expressions.FirExpression
@@ -13,6 +14,7 @@ import org.jetbrains.kotlin.fir.expressions.FirNamedArgumentExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.expressions.FirStringConcatenationCall
 import org.jetbrains.kotlin.fir.resolve.getContainingClass
+import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
@@ -24,6 +26,7 @@ import org.jetbrains.kotlin.fir.types.classId
 import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.fir.types.type
 import org.jetbrains.kotlin.name.CallableId
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 
 /**
@@ -68,18 +71,55 @@ internal data class HookStep(
     val buildBody: (vmParameterSymbol: FirValueParameterSymbol, vmType: ConeKotlinType) -> FirStatement,
 )
 
-/** The JNI receiver status of a facade: `true` for a static (`jclass`) receiver, `false` for an instance (`jobject`) one, `null` otherwise. */
-internal fun facadeReceiverStasis(receiverTypeRef: FirResolvedTypeRef?): Boolean? {
-    var type = receiverTypeRef?.coneType ?: return null
+/**
+ * The JNI receiver status of a facade: `true` for a static (`jclass`) receiver, `false` for an instance (`jobject`)
+ * one, `null` otherwise.
+ */
+internal fun facadeReceiverStasis(receiverTypeRef: FirResolvedTypeRef?, session: FirSession): Boolean? {
+    val type = receiverTypeRef?.coneType ?: return null
     if (type.classId != Symbols.CPointer) return null
-    type = type.typeArguments.singleOrNull()?.type ?: return null
+    val pointed = type.typeArguments.singleOrNull()?.type?.classId ?: return null
 
-    return when (type.classId) {
-        Symbols.JClassRaw, Symbols.JClassWrapped -> true
-        Symbols.JObjectRaw, Symbols.JObjectWrapped -> false
+    return when (session.receiverStasis(pointed)) {
+        ReceiverStasis.Static -> true
+        ReceiverStasis.Instance -> false
+        null -> null
+    }
+}
+
+/**
+ * Which JNI receiver a native method is invoked with: a `jclass` or a `jobject`.
+ */
+internal enum class ReceiverStasis { Static, Instance }
+
+/**
+ * The JNI receiver kind of the type [pointedClassId], resolved through its superclass chain.
+ *
+ * A generated stub types its instance receiver with a dedicated opaque type (e.g. `_j_com_example_native`)
+ * rather than `_jobject`, so recognizing it means asking what it descends from instead of comparing it to the
+ * well-known opaques directly. `_jclass` wins over `_jobject` because it is itself a `_jobject`. `null` means
+ * neither - the receiver is not a JNI reference at all.
+ */
+internal fun FirSession.receiverStasis(pointedClassId: ClassId?): ReceiverStasis? {
+    if (pointedClassId == null) return null
+    val reachable = mutableSetOf<ClassId>()
+    val queue = ArrayDeque<ClassId>()
+    queue += pointedClassId
+    while (queue.isNotEmpty()) {
+        val classId = queue.removeFirst()
+        if (!reachable.add(classId)) continue
+        val symbol = symbolProvider.getClassLikeSymbolByClassId(classId) as? FirClassSymbol<*> ?: continue
+        symbol.resolvedSuperTypes.forEach { superType -> superType.classId?.let(queue::add) }
+    }
+    return when {
+        reachable.any { it in jclassClassIds } -> ReceiverStasis.Static
+        reachable.any { it in jobjectClassIds } -> ReceiverStasis.Instance
         else -> null
     }
 }
+
+private val jclassClassIds = setOf(Symbols.JClassRaw, Symbols.JClassWrapped)
+private val jobjectClassIds = setOf(Symbols.JObjectRaw, Symbols.JObjectWrapped)
 
 /**
  * Whether [this] is a `JniEnv`.

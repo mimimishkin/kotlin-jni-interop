@@ -529,8 +529,60 @@ class JniBindingConsumerCompilationTest {
         assertEquals("foo", expect.methodName)
         assertEquals(false, expect.isStatic)
         assertEquals(listOf(JavaType("java.lang.String", nullable = false)), expect.parameterTypes)
+        assertEquals(listOf("s"), expect.parameterNames)
         assertEquals(JavaType("int", nullable = false), expect.returnType)
         assertEquals(listOf("test"), expect.targets)
+    }
+
+    @Test
+    fun `an extension receiver is recorded as a parameter named receiver`() {
+        // A receiver is one of the JVM method's arguments but has no name of its own, so the stub generator is told to
+        // call it `receiver` rather than being handed a name that is not a Kotlin identifier.
+        val expectsFile = File.createTempFile("jni-binding-expects", ".json")
+        val source = SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            @file:JniExpects
+
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.JniExpects
+
+            external fun Int.times(times: Float): Int
+            """.trimIndent(),
+        )
+        compile(source, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+
+        val expect = readExpects(expectsFile).single()
+        assertEquals(listOf("int", "float"), expect.parameterTypes.map { it.type })
+        assertEquals(listOf("receiver", "times"), expect.parameterNames)
+    }
+
+    @Test
+    fun `the superclass chain of the owning class is recorded for the stub generator`() {
+        // The stub generator mirrors this chain with opaque types, so a generated receiver can be smart-cast to a base
+        // the caller wrote by hand - which is why the consumer has to record it, all the way to a root.
+        val expectsFile = File.createTempFile("jni-binding-expects", ".json")
+        val source = SourceFile.kotlin(
+            "Wrap.kt",
+            """
+            package test
+
+            import io.github.mimimishkin.jni.binding.annotation.JniExpect
+
+            open class Base
+
+            class Wrap : Base() {
+                @JniExpect(targets = ["test"])
+                external fun foo(): Int
+            }
+            """.trimIndent(),
+        )
+        compile(source, actualsJson = EMPTY_ACTUALS, expectsFile = expectsFile).compile()
+
+        val expect = readExpects(expectsFile).single()
+        assertEquals("test.Wrap", expect.className)
+        assertEquals(mapOf("test.Wrap" to "test.Base", "test.Base" to null), expect.superClasses)
     }
 
     @Test

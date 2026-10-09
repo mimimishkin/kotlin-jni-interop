@@ -23,6 +23,7 @@ class JniFunctionContractTest {
             "methodName": "max",
             "isStatic": true,
             "parameterTypes": ["int", "int"],
+            "parameterNames": ["a", "b"],
             "returnType": "int",
             "targets": ["mingwX64"],
             "signatureKey": "java.lang.Math#max(II)I"
@@ -48,6 +49,15 @@ class JniFunctionContractTest {
         assertEquals(listOf("int", "int"), max.parameterTypes)
         assertEquals("int", max.returnType)
         assertEquals(listOf("mingwX64"), max.targets)
+        assertEquals(listOf("a", "b"), max.parameterNames)
+    }
+
+    @Test
+    fun `a parameter without a recorded name falls back to its position`() {
+        val value = decode(expectsJson)[1]
+
+        assertEquals("p0", value.parameterName(0))
+        assertEquals("p1", value.parameterName(1))
     }
 
     @Test

@@ -500,7 +500,7 @@ internal class FirJniBindingGenerator(
 
             val needEnv = fn.contextParameters.any { it.returnTypeRef.coneType.isJniEnvType() }
 
-            val isStatic = facadeReceiverStasis(location.fn.resolvedReceiverTypeRef)
+            val isStatic = facadeReceiverStasis(location.fn.resolvedReceiverTypeRef, session)
 
             val signatureInfo = session.jvmSignatureProvider.signatureInfo(fn)
             val jvmParameterTypes = signatureInfo.jsonParameterTypes

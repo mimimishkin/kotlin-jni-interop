@@ -44,7 +44,7 @@ class JniBindingProducerCompilationTest {
             import kotlinx.cinterop.LongVar
             import kotlinx.cinterop.MemScope
 
-            class _jobject
+            open class _jobject
             class _jclass
             class _jstring
             open class _jarray
@@ -395,6 +395,56 @@ class JniBindingProducerCompilationTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         val method = result.getFacadeMethod("test_valueJniBinding")
         assertEquals("Java_com_example_Native_value", cNameValue(method))
+    }
+
+    @Test
+    fun `receiver typed as a generated WithJvmType typealias is treated as an instance method`() {
+        // The stub generator types a stub's receiver with a typealias that aliases a `JRef` to a generated opaque
+        // type, and the opaque type extends `_jobject`. The producer has to follow that chain to see an instance
+        // method, and read the JVM name of a parameter back from the typealias' `@WithJvmType` - not from
+        // `@WithJvmSignature`, which the generated stubs no longer carry.
+        val actualsFile = File.createTempFile("actuals", ".json")
+        val result = compileWithActualsFile(
+            actualsFile,
+            SourceFile.kotlin(
+                "GeneratedTypes.kt",
+                """
+                package test.generated
+
+                import io.github.mimimishkin.jni.binding.JRef
+                import io.github.mimimishkin.jni.binding._jobject
+                import io.github.mimimishkin.jni.binding.annotation.WithJvmType
+
+                typealias JComExampleNative = @WithJvmType("com.example.Native") JRef<_j_com_example_native>
+
+                open class _j_com_example_native : _jobject()
+
+                typealias JComExampleItem = @WithJvmType("com.example.Item") JRef<_j_com_example_item>
+
+                open class _j_com_example_item : _jobject()
+                """.trimIndent(),
+            ),
+            SourceFile.kotlin(
+                "Main.kt",
+                """
+                package test
+
+                import io.github.mimimishkin.jni.binding.annotation.JniActual
+                import test.generated.JComExampleItem
+                import test.generated.JComExampleNative
+
+                @JniActual(className = "com.example.Native")
+                fun JComExampleNative.accept(item: JComExampleItem): Int = 42
+                """.trimIndent(),
+            ),
+        ).compile()
+
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { "KCT_MESSAGES_START\n" + result.messages + "\nKCT_MESSAGES_END" }
+        val method = result.getFacadeMethod("test_acceptJniBinding")
+        assertEquals("Java_com_example_Native_accept", cNameValue(method))
+        val info = Json.decodeFromString<List<JniActualInfo>>(actualsFile.readText()).single()
+        assertEquals(false, info.isStatic)
+        assertEquals(listOf("@NonNull com.example.Item"), info.parameterTypes)
     }
 
     @Test

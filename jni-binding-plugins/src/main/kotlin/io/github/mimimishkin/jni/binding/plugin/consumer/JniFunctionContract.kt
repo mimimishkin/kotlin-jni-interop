@@ -32,10 +32,20 @@ internal data class JniFunctionContract(
     val needEnv: Boolean? = null,
     val source: String? = null,
     val isCritical: Boolean? = null,
+    val superClasses: Map<String, String?> = emptyMap(),
+    val parameterNames: List<String> = emptyList(),
 ) {
     val parameterTypeNames: List<String> get() = parameterTypes.map { it.withoutNullability() }
 
     val returnTypeName: String get() = returnType.withoutNullability()
+
+    /**
+     * The Kotlin name to declare the parameter at [index] with. The consumer records the original parameter names
+     * (and `receiver` for an extension receiver, which has none of its own), so a generated stub reads like the
+     * declaration it implements rather than as `p0`, `p1`, ...; the positional fallback covers a contract written
+     * before the names were recorded and an actual, which never carries them.
+     */
+    fun parameterName(index: Int): String = parameterNames.getOrElse(index) { "p$index" }
 
     /**
      * Whether [actual] is this declaration's counterpart, i.e. whether the expect is already implemented and no stub

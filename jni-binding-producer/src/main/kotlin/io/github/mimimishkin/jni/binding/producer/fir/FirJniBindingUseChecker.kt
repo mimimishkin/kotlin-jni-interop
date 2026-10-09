@@ -168,12 +168,7 @@ public class FirJniBindingUseChecker(
                         val receiverType = receiver.typeRef.coneType
                         val pointed = receiverType.typeArguments.singleOrNull()?.type?.classId
                             .takeIf { receiverType.classId == Symbols.CPointer }
-                        if (
-                            pointed != Symbols.JObjectRaw &&
-                            pointed != Symbols.JClassRaw &&
-                            pointed != Symbols.JObjectWrapped &&
-                            pointed != Symbols.JClassWrapped
-                        ) {
+                        if (context.session.receiverStasis(pointed) == null) {
                             reporter.reportOn(declaration.receiverParameter?.source ?: declaration.source, NOT_STATIC_OR_INSTANCE, receiverType.toString(), context)
                         }
                     }
