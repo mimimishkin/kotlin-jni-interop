@@ -1,0 +1,147 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>CriticalNative</title>
+<link href="../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../index.html" tabindex="1">
+                    kotlin-jni-interop
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;io.github.mimimishkin.jni.binding.annotation/-critical-native/index.html&quot;}">dev</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":jni-binding-annotations/androidMain">android</button>
+                <button class="platform-tag platform-selector common-like" data-active="" aria-pressed="true" data-filter=":jni-binding-annotations/commonMain">common</button>
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":jni-binding-annotations/jvmMain">jvm</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jni-binding-annotations/nativeMain">native</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding-annotations/androidMain" data-filter=":jni-binding-annotations/androidMain">
+                                <span class="checkbox--icon"></span>
+                                android
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option common-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding-annotations/commonMain" data-filter=":jni-binding-annotations/commonMain">
+                                <span class="checkbox--icon"></span>
+                                common
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding-annotations/jvmMain" data-filter=":jni-binding-annotations/jvmMain">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding-annotations/nativeMain" data-filter=":jni-binding-annotations/nativeMain">
+                                <span class="checkbox--icon"></span>
+                                native
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    kotlin-jni-interop
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="jni-binding-annotations::io.github.mimimishkin.jni.binding.annotation/CriticalNative///PointingToDeclaration//719262660">
+  <div class="breadcrumbs"><a href="../../index.html">jni-binding-annotations</a><span class="delimiter">/</span><a href="../index.html">io.github.mimimishkin.jni.binding.annotation</a><span class="delimiter">/</span><span class="current">CriticalNative</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Critical</span><wbr><span><span>Native</span></span></h1>
+    <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+      <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding-annotations/androidMain" data-filterable-set=":jni-binding-annotations/androidMain" data-active="" data-toggle=":jni-binding-annotations/androidMain">android</button><button class="platform-bookmark" data-filterable-current=":jni-binding-annotations/commonMain" data-filterable-set=":jni-binding-annotations/commonMain" data-toggle=":jni-binding-annotations/commonMain">common</button><button class="platform-bookmark" data-filterable-current=":jni-binding-annotations/jvmMain" data-filterable-set=":jni-binding-annotations/jvmMain" data-toggle=":jni-binding-annotations/jvmMain">jvm</button><button class="platform-bookmark" data-filterable-current=":jni-binding-annotations/nativeMain" data-filterable-set=":jni-binding-annotations/nativeMain" data-toggle=":jni-binding-annotations/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-togglable=":jni-binding-annotations/androidMain"><div class="symbol monospace"><span class="token keyword">actual </span><span class="token keyword">typealias </span><a href="index.html">CriticalNative</a><span class="token operator"> = </span><a href="https://developer.android.com/reference/kotlin/dalvik/annotation/optimization/CriticalNative.html">dalvik.annotation.optimization.CriticalNative</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/mimimishkin/kotlin-jni-interop/tree/master/jni-binding-annotations/src/androidMain/kotlin/io/github/mimimishkin/jni/binding/annotation/CriticalNative.android.kt#L11">source</a>)</span></span></div><p class="paragraph">An alias for android <a href="https://developer.android.com/reference/kotlin/dalvik/annotation/optimization/CriticalNative.html">dalvik.annotation.optimization.CriticalNative</a>.</p><p class="paragraph">The Java method must be <code class="lang-kotlin">static</code> and may not take or return references, arrays included. Using <code class="lang-kotlin">RegisterNatives</code> instead of exposing JNI functions is highly recommended for such functions.</p><p class="paragraph">Note that using such functions on Android 7- will cause crashes.</p></div><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-annotations/commonMain"><div class="symbol monospace"><span class="token keyword">expect </span><span class="token keyword">annotation class </span><a href="index.html">CriticalNative</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/mimimishkin/kotlin-jni-interop/tree/master/jni-binding-annotations/src/commonMain/kotlin/io/github/mimimishkin/jni/binding/annotation/CriticalNative.kt#L6">source</a>)</span></span></div><p class="paragraph">Marks a function as not requiring JNI environment and a class/object reference.</p></div><div class="content sourceset-dependent-content" data-togglable=":jni-binding-annotations/jvmMain"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.annotation/-target/index.html"><span class="token annotation builtin">Target</span></a><span class="token punctuation">(</span><span>allowedTargets<span class="token operator"> = </span><span class="token punctuation">[</span><span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.annotation/-annotation-target/-f-u-n-c-t-i-o-n/index.html">AnnotationTarget.FUNCTION</a><span class="token punctuation">, </span></span><wbr><span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.annotation/-annotation-target/-p-r-o-p-e-r-t-y_-g-e-t-t-e-r/index.html">AnnotationTarget.PROPERTY_GETTER</a><span class="token punctuation">, </span></span><wbr><span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.annotation/-annotation-target/-p-r-o-p-e-r-t-y_-s-e-t-t-e-r/index.html">AnnotationTarget.PROPERTY_SETTER</a></span><wbr><span class="token punctuation">]</span></span><wbr><span class="token punctuation">)</span></div></div><span class="token keyword">actual </span><span class="token keyword">annotation class </span><a href="index.html">CriticalNative</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/mimimishkin/kotlin-jni-interop/tree/master/jni-binding-annotations/src/jvmMain/kotlin/io/github/mimimishkin/jni/binding/annotation/CriticalNative.jvm.kt#L18">source</a>)</span></span></div><p class="paragraph">Marks a function as not requiring JNI environment and a class/object reference. A function will be exposed to JVM like a regular JNI function AND almost the same one with <code class="lang-kotlin">JavaCritical_</code> prefix (instead of standard <code class="lang-kotlin">Java_</code>) will be exposed.</p><p class="paragraph">Restrictions HotSpot puts on the method (see the JDK-7013347 RFE that introduced them): it must be <code class="lang-kotlin">static</code>, <code class="lang-kotlin">synchronized</code> and throwing are not allowed, and the parameters must be primitives or primitive arrays.</p><p class="paragraph">Two JNI functions will be generated: ordinal and critical one. Which of the two symbols a given call goes through is up to the JVM: critical is only taken once the call site has been compiled and inlined, and only on a JVM that supports it. The mechanism is undocumented and unsupported, and Project Panama's FFM API is the intended replacement.</p></div><div class="content sourceset-dependent-content" data-togglable=":jni-binding-annotations/nativeMain"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.annotation/-target/index.html"><span class="token annotation builtin">Target</span></a><span class="token punctuation">(</span><span>allowedTargets<span class="token operator"> = </span><span class="token punctuation">[</span><span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.annotation/-annotation-target/-f-u-n-c-t-i-o-n/index.html">AnnotationTarget.FUNCTION</a></span><wbr><span class="token punctuation">]</span></span><wbr><span class="token punctuation">)</span></div></div><span class="token keyword">actual </span><span class="token keyword">annotation class </span><a href="index.html">CriticalNative</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/mimimishkin/kotlin-jni-interop/tree/master/jni-binding-annotations/src/nativeMain/kotlin/io/github/mimimishkin/jni/binding/annotation/CriticalNative.native.kt#L13">source</a>)</span></span></div><p class="paragraph">Marks a <a href="../-jni-actual/index.html">JniActual</a> function as a JNI critical native function. Such a function does not receive a <code class="lang-kotlin">JniEnv</code> or a <code class="lang-kotlin">JClass</code>/<code class="lang-kotlin">JObject</code> reference. Its parameters and return value must be primitives or primitive arrays only.</p><p class="paragraph">On Android this works as expected, thanks to the platform's built-in critical native support. On the JVM it may only work up to JDK 22, is undocumented, and requires the legacy <code class="lang-kotlin">ExposeFunctions</code> binding mode. Prefer ProjectPanama instead.</p></div>    </div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"></div>
+    <div class="tabs-section-body"></div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

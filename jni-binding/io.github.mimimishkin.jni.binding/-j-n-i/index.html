@@ -1,0 +1,353 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>JNI</title>
+<link href="../../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../../index.html" tabindex="1">
+                    kotlin-jni-interop
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;io.github.mimimishkin.jni.binding/-j-n-i/index.html&quot;}">dev</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jni-binding/nativeMain">native</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding/nativeMain" data-filter=":jni-binding/nativeMain">
+                                <span class="checkbox--icon"></span>
+                                native
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    kotlin-jni-interop
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="classlike" id="content" pageids="jni-binding::io.github.mimimishkin.jni.binding/JNI///PointingToDeclaration//-2108830934">
+  <div class="breadcrumbs"><a href="../../index.html">jni-binding</a><span class="delimiter">/</span><a href="../index.html">io.github.mimimishkin.jni.binding</a><span class="delimiter">/</span><span class="current">JNI</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>JNI</span></span></h1>
+    <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+      <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="index.html">JNI</a><span class="source-link-wrapper"><span class="source-link" data-element-type="source-link">(<a href="https://github.com/mimimishkin/kotlin-jni-interop/tree/master/jni-binding/src/nativeMain/kotlin/io/github/mimimishkin/jni/binding/JNI.kt#L35">source</a>)</span></span></div><p class="paragraph">Functions and utilities to work with JNI (Java Native Interface).</p><p class="paragraph">Note: every <code class="lang-kotlin">throws</code> in documentation is about java side.</p></div>    </div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION,EXTENSION_PROPERTY,EXTENSION_FUNCTION">Members &amp; Extensions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="631690124%2FProperties%2F-2108830934" anchor-label="javaVMs" id="631690124%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_PROPERTY" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../java-v-ms.html"><span>java</span><wbr><span><span>VMs</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="631690124%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">placement<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-native-placement/index.html">NativePlacement</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">val </span><a href="index.html">JNI</a><span class="token punctuation">.</span><a href="../java-v-ms.html">javaVMs</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="../-java-v-m/index.html">JavaVM</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">All Java VMs that have been created in the order they are created.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1014775909%2FProperties%2F-2108830934" anchor-label="v1" id="-1014775909%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v1.html"><span><span>v1</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1014775909%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v1.html">v1</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE version <i>1.1</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1905354385%2FProperties%2F-2108830934" anchor-label="v10" id="-1905354385%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v10.html"><span><span>v10</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1905354385%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v10.html">v10</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE versions <i>10</i>, <i>11</i>, <i>12</i>, <i>13</i>, <i>14</i>, <i>15</i>, <i>16</i>, <i>17</i>, <i>18</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1626176122%2FProperties%2F-2108830934" anchor-label="v19" id="-1626176122%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v19.html"><span><span>v19</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1626176122%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v19.html">v19</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE version <i>19</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-983756102%2FProperties%2F-2108830934" anchor-label="v2" id="-983756102%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v2.html"><span><span>v2</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-983756102%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v2.html">v2</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE versions <i>1.2</i>, <i>1.3</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-943740368%2FProperties%2F-2108830934" anchor-label="v20" id="-943740368%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v20.html"><span><span>v20</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-943740368%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v20.html">v20</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE version <i>20</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-912720561%2FProperties%2F-2108830934" anchor-label="v21" id="-912720561%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v21.html"><span><span>v21</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-912720561%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v21.html">v21</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE versions <i>21</i>, <i>22</i>, <i>23</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-819661140%2FProperties%2F-2108830934" anchor-label="v24" id="-819661140%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v24.html"><span><span>v24</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-819661140%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v24.html">v24</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE version <i>24</i> and later.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-952736295%2FProperties%2F-2108830934" anchor-label="v3" id="-952736295%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v3.html"><span><span>v3</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-952736295%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v3.html">v3</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE version <i>1.4</i>, <i>1.5</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-859676874%2FProperties%2F-2108830934" anchor-label="v6" id="-859676874%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v6.html"><span><span>v6</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-859676874%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v6.html">v6</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE versions <i>1.6</i>, <i>1.7</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-797637260%2FProperties%2F-2108830934" anchor-label="v8" id="-797637260%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v8.html"><span><span>v8</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-797637260%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v8.html">v8</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE version <i>1.8</i></p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-766617453%2FProperties%2F-2108830934" anchor-label="v9" id="-766617453%2FProperties%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="v9.html"><span><span>v9</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-766617453%2FProperties%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="v9.html">v9</a><span class="token operator">: </span><a href="../-jni-version/index.html">JniVersion</a></div><div class="brief "><p class="paragraph">JDK/JRE version <i>9</i>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="EXTENSION_FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="-681458293%2FFunctions%2F-2108830934" anchor-label="createJavaVM" id="-681458293%2FFunctions%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../create-java-v-m.html"><span>create</span><wbr><span>Java</span><wbr><span><span>VM</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-681458293%2FFunctions%2F-2108830934"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-active="" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">placement<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-native-placement/index.html">NativePlacement</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="index.html">JNI</a><span class="token punctuation">.</span><a href="../create-java-v-m.html"><span class="token function">createJavaVM</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">args<span class="token operator">: </span><a href="../-java-v-m-init-args/index.html">JavaVMInitArgs</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-pair/index.html">Pair</a><span class="token operator">&lt;</span><a href="../-java-v-m/index.html">JavaVM</a><span class="token punctuation">, </span><a href="../-jni-env/index.html">JniEnv</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Loads and initializes a Java VM. The current thread becomes the main thread.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+
+module:jawt-binding
+io.github.mimimishkin.jni.binding.awt
+module:jni-binding
+io.github.mimimishkin.jni.binding
+io.github.mimimishkin.jni.binding.accessors
+module:jni-binding-annotations
+io.github.mimimishkin.jni.binding.annotation
+module:jni-binding-plugins
+io.github.mimimishkin.jni.binding.plugin
+io.github.mimimishkin.jni.binding.plugin.consumer
+io.github.mimimishkin.jni.binding.plugin.producer

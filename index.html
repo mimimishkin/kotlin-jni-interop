@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>All modules</title>
+    <link href="images/logo-icon.svg" rel="icon" type="image/svg">
+        <script>var pathToRoot = "";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="scripts/sourceset_dependencies.js" async="async"></script>
+<link href="styles/style.css" rel="Stylesheet">
+<link href="styles/main.css" rel="Stylesheet">
+<link href="styles/prism.css" rel="Stylesheet">
+<link href="styles/logo-styles.css" rel="Stylesheet">
+<link href="ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="ui-kit/ui-kit.min.js" defer="defer"></script>
+<link href="styles/multimodule.css" rel="Stylesheet">
+</head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+            <a class="library-name--link" href="index.html" tabindex="1">
+                    kotlin-jni-interop
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;index.html&quot;}">dev</dokka-template-command>        </div>
+        <div class="navigation-controls">
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config='{"defaultSize": 280, "minSize": 200, "maxSize": 400}'>
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                    data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    kotlin-jni-interop
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" id="content" pageIds="kotlin-jni-interop::.ext/allModules///PointingToDeclaration//0">
+  <div class="breadcrumbs"></div>
+  <div class="cover ">
+    <div class="cover ">
+      <h1 class="">Kotlin/Native JNI interop</h1>
+      <p class="paragraph"><a href="https://central.sonatype.org/artifact/io.github.mimimishkin/jni-binding"><img alt="Maven Central" src="https://img.shields.io/maven-central/v/io.github.mimimishkin/jni-binding.svg"></a> </p>
+      <p class="paragraph">   </p>
+      <p class="paragraph"><strong>Write JNI libraries in Kotlin on both sides.</strong> The native part is ordinary Kotlin/Native, the JVM and Android part is ordinary Kotlin. No C, no handwritten JNI signatures, no <code class="lang-kotlin">cinterop.def</code> for the boundary — and the compiler checks that the two sides match, on every build, for every platform you ship.</p>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">  Kotlin/Native                               JVM / Android<br>  @JniActual fun hello(): JString    ←———→    @JniExpect external fun hello(): String</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <ul>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@JniActual</code> marks a native implementation, <code class="lang-kotlin">@JniExpect</code> the JVM <code class="lang-kotlin">external</code> declaration that it implements.</p>
+        </li>
+        <li>
+          <p class="paragraph">The <strong>producer</strong> plugin builds the native library. The <strong>consumer</strong> plugin validates the JVM side against it,   packages the binaries per platform, and rebuilds everything when the native code changes.</p>
+        </li>
+        <li>
+          <p class="paragraph">A mismatch between the two sides is a <strong>compile error</strong>, not an <code class="lang-kotlin">UnsatisfiedLinkError</code> in production.</p>
+        </li>
+      </ul>
+      <p class="paragraph">Reach for it when part of your app has to be native — an image or audio codec, a crypto or compression library, a physics kernel, a port of existing C code, one hot loop — and you would rather not own a C toolchain and a pile of unchecked JNI glue to get there.</p>
+      <p class="paragraph">Everything this project supports is shown end to end in samples/basic. Use this README as a map and that sample as the full reference.</p>
+      <h2 class="">Contents</h2>
+      <ul>
+        <li>
+          <p class="paragraph">#why</p>
+        </li>
+        <li>
+          <p class="paragraph">#what-you-write-instead</p>
+        </li>
+        <li>
+          <p class="paragraph">#what-you-get</p>
+        </li>
+        <li>
+          <p class="paragraph">#quick-start</p>
+        </li>
+        <li>
+          <p class="paragraph">#single-module-projects</p>
+        </li>
+        <li>
+          <p class="paragraph">#configuration</p>
+        </li>
+        <li>
+          <p class="paragraph">#annotations</p>
+        </li>
+        <li>
+          <p class="paragraph">#fast-and-critical-natives</p>
+        </li>
+        <li>
+          <p class="paragraph">#libraries</p>
+        </li>
+        <li>
+          <p class="paragraph">#samples</p>
+        </li>
+      </ul>
+      <h2 class="">Why</h2>
+      <p class="paragraph">JNI is a low-level interface, and low-level interfaces do not scale to a real codebase. Three things go wrong, every time.</p>
+      <p class="paragraph"><strong>1. The signature is a string that nobody checks.</strong></p>
+      <div class="sample-container">
+        <pre><code class="block lang-c" theme="idea">JNIEXPORT jstring JNICALL Java_org_sample_Hello_hello(JNIEnv *env, jobject self) {<br>    return (*env)-&gt;NewStringUTF(env, &quot;Hello&quot;);<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">The class name, the function name and the descriptor <code class="lang-kotlin">()Ljava/lang/String;</code> are three places to keep in sync and zero places the compiler looks at. Rename a Kotlin function and the C file still compiles, the jar still builds, and the failure arrives as <code class="lang-kotlin">UnsatisfiedLinkError: No implementation found for ...</code> on a user's machine — for one OS, or one ABI, or one device.</p>
+      <p class="paragraph"><strong>2. The native side is C, so you write your program twice.</strong></p>
+      <p class="paragraph"><code class="lang-kotlin">JNIEnv*</code>, <code class="lang-kotlin">jobject</code>, <code class="lang-kotlin">jstring</code>, UTF-8 versus UTF-16, local reference frames, <code class="lang-kotlin">ReleaseStringUTFChars</code>. The algorithm is fine; everything around it is bookkeeping in a language your JVM side cannot see.</p>
+      <p class="paragraph"><strong>3. The artifacts are hand-assembled.</strong></p>
+      <p class="paragraph">One binary per OS and per ABI, each copied into the right place inside the jar or the APK, plus the ABI list, plus the startup code that works out which binary this machine needs and unpacks it.</p>
+      <p class="paragraph">This project removes all three.</p>
+      <h2 class="">What you write instead</h2>
+      <p class="paragraph">The native side, in Kotlin/Native:</p>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">@JniActuals(className = &quot;org.sample.Hello&quot;)<br>object Hello {<br>    context(env: JniEnv)<br>    fun hello(): JString? = &quot;Hello from Kotlin/Native&quot;.toJString()<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">The JVM side, in Kotlin:</p>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">@JniExpect<br>external fun hello(): String</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">That is the whole contract. The JNI symbol name and the descriptor are derived from the Kotlin declarations on both sides, checked against each other while the consumer compiles, and packaged into the artifact automatically.</p>
+      <div class="table--container">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Hand-written JNI</th>
+              <th>Here</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Native code</td>
+              <td>C / C++</td>
+              <td>Kotlin/Native</td>
+            </tr>
+            <tr>
+              <td>Symbol names, descriptors</td>
+              <td>written by hand</td>
+              <td>derived from the Kotlin declarations</td>
+            </tr>
+            <tr>
+              <td>Contract mismatch</td>
+              <td><code class="org.jetbrains.dokka.pages.commenttable@41798447 lang-kotlin">UnsatisfiedLinkError</code> at runtime</td>
+              <td>compile error</td>
+            </tr>
+            <tr>
+              <td>Per-OS / per-ABI binaries</td>
+              <td>copied by hand</td>
+              <td>packaged per target by the plugin</td>
+            </tr>
+            <tr>
+              <td>Rebuild after a native change</td>
+              <td>your build script</td>
+              <td>automatic, and the JVM side is revalidated</td>
+            </tr>
+            <tr>
+              <td>Runtime loading</td>
+              <td><code class="org.jetbrains.dokka.pages.commenttable@41798447 lang-kotlin">System.load(...)</code> per module</td>
+              <td>your <code class="org.jetbrains.dokka.pages.commenttable@41798447 lang-kotlin">@LoadMethod</code>, called from the class initializer by plugin</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h2 class="">What you get</h2>
+      <p class="paragraph"><strong>The contract is checked, per platform.</strong> Bindings are matched by full JVM class name and function name, and the signature is derived from the Kotlin types — overloads, extensions, <code class="lang-kotlin">infix</code>, nested classes, nullable parameters, <code class="lang-kotlin">Array&lt;Float&gt;</code> → <code class="lang-kotlin">java.lang.Float[]</code> all work. When platforms differ, say so per target (<code class="lang-kotlin">@JniExpect(&quot;linuxX64&quot;)</code>), and every target is validated against its own set of bindings.</p>
+      <p class="paragraph"><strong>The native side is Kotlin.</strong> Your native code is Kotlin/Native: collections, data classes, exceptions, coroutines — and <code class="lang-kotlin">jni-binding</code> wraps the JNI API into null-safe Kotlin around it: <code class="lang-kotlin">String.toJString()</code>, <code class="lang-kotlin">JString.toKString()</code>, typed arrays, allocation scopes requested as extra <code class="lang-kotlin">context</code> parameters, field and method IDs,  DSL. You still use cinterop when you call third-party C APIs — that is ordinary Kotlin/Native work — but the JNI boundary itself is two annotations.</p>
+      <p class="paragraph"><strong>You can start from either side.</strong> Write the JVM API first and run <code class="lang-kotlin">./gradlew :app:generateJniActuals</code>: the stubs for the missing <code class="lang-kotlin">@JniActual</code>s are generated into the producer.</p>
+      <p class="paragraph"><strong>Performance when you need it.</strong> <code class="lang-kotlin">@CriticalNative</code> binds a function to JNI's critical path — the fastest way to call native code on Android/ART. See #critical-natives for what it costs on desktop JVMs.</p>
+      <h2 class="">Quick start</h2>
+      <p class="paragraph">Two modules: a native <strong>producer</strong> and a JVM <strong>consumer</strong>.</p>
+      <h3 class="">Native module</h3>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">// native/build.gradle.kts<br><br>plugins {<br>    kotlin(&quot;multiplatform&quot;)<br>    id(&quot;io.github.mimimishkin.jni-binding-producer&quot;) version &quot;2.0.0&quot;<br>}<br><br>kotlin {<br>    jvmToolchain(17)<br>    mingwX64().binaries.sharedLib(&quot;native&quot;) {   // or linuxX64() / macosArm64() / ...<br>        linkJvm()                               // desktop only; Android needs no linkJvm()<br>    }<br>}<br><br>jniLibraries {<br>    expectedJdkVersion = 17<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">// native/src/nativeMain/kotlin/Hello.kt<br><br>@JniActual(className = &quot;org.sample.HelloKt&quot;)<br>context(env: JniEnv, autofreeScope: AutofreeScope)<br>fun hello(): JString? = &quot;Hello from Kotlin/Native&quot;.toJString()</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph"><code class="lang-kotlin">context(env: JniEnv)</code> (and an allocation scope such as <code class="lang-kotlin">AutofreeScope</code>) are optional — add them only when the body needs them.</p>
+      <h3 class="">JVM module</h3>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">// app/build.gradle.kts<br><br>plugins {<br>    kotlin(&quot;jvm&quot;)<br>    id(&quot;io.github.mimimishkin.jni-binding-consumer&quot;) version &quot;2.0.0&quot;<br>}<br><br>kotlin {<br>    jvmToolchain(17)<br><br>    target { // or jvm { ... } in a multiplatform project<br>        compilations.named(&quot;main&quot;) {<br>            jniLibraries.create(&quot;native&quot;) {     // same name as sharedLib(&quot;native&quot;)<br>                mingwX64 {<br>                    fromProducer(project(&quot;:native&quot;)) // sync natives<br>                    copyToResources()                // puts the binary into jar resources<br>                }<br>            }<br>        }<br>    }<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">// app/src/main/kotlin/org/sample/Hello.kt<br><br>@JniExpect<br>external fun hello(): String<br><br>@LoadMethod<br>private fun load(os: String, arch: String) {<br>    // `os` receives the OS family (&quot;windows&quot;, &quot;linux&quot;, &quot;macos&quot;, &quot;android&quot;),<br>    // `arch` the normalized architecture (&quot;x86_64&quot;, &quot;aarch64&quot;, ...).<br><br>    // After copyToResources() the binary is at /natives/$os-$arch/...<br>    // Copy it out of the jar and System.load(...). Full example: samples/basic.<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">That is the whole contract: <code class="lang-kotlin">@JniExpect</code> on the JVM side is implemented by <code class="lang-kotlin">@JniActual</code> on the native side.</p>
+      <p class="paragraph">Tip: declare <code class="lang-kotlin">@JniExpect</code> first, then run <code class="lang-kotlin">./gradlew :app:generateJniActuals</code> to stub the missing <code class="lang-kotlin">@JniActual</code>s into the producer.</p>
+      <h3 class="">Single-module projects</h3>
+      <p class="paragraph">Most projects keep the producer and the consumer apart, because they are separate artifacts with separate lifecycles. A small project — a library, a sample, a prototype — has one module with a native target and a JVM target instead. <code class="lang-kotlin">io.github.mimimishkin.jni-binding</code> applies both parts in one go:</p>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">// build.gradle.kts<br><br>plugins {<br>    kotlin(&quot;multiplatform&quot;)<br>    id(&quot;io.github.mimimishkin.jni-binding&quot;) version &quot;2.0.0&quot;   // producer + consumer<br>}<br><br>kotlin {<br>    jvmToolchain(17)<br><br>    jvm {<br>        compilations.named(&quot;main&quot;) {<br>            jniLibraries.create(&quot;native&quot;) {<br>                mingwX64 {<br>                    fromProducer(project)   // this very module is the producer<br>                    copyToResources()<br>                }<br>            }<br>        }<br>    }<br><br>    mingwX64().binaries.sharedLib(&quot;native&quot;) {<br>        linkJvm()<br>    }<br>}<br><br>jniLibraries {<br>    expectedJdkVersion = 17<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">The Kotlin code is unchanged. The only difference to watch for is the source sets: everything goes into <code class="lang-kotlin">nativeMain</code> / <code class="lang-kotlin">jvmMain</code> of one module rather than into two modules.</p>
+      <h3 class="">Naming</h3>
+      <p class="paragraph">A top-level function in <code class="lang-kotlin">Hello.kt</code>, package <code class="lang-kotlin">org.sample</code>, binds to the JVM file facade <code class="lang-kotlin">org.sample.HelloKt</code>. Group several functions with <code class="lang-kotlin">@JniActuals</code> so you write the class name once:</p>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">@JniActuals(className = &quot;org.sample.HelloKt&quot;)<br>object Hello {<br>    context(env: JniEnv, autofreeScope: AutofreeScope)<br>    fun hello(): JString? = &quot;Hello&quot;.toJString()<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <h2 class="">Configuration</h2>
+      <h3 class="">Producer (<code class="lang-kotlin">jniLibraries</code> on the native project)</h3>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">jniLibraries {<br>    expectedJdkVersion = 17                     // JDK this library is built for (ignored on Android)<br>    exportMethod = JniExportMethod.RegisterNatives  // preferred; default is ExposeFunctions<br>    allowSeveralHooks = false                   // several @JniOnLoad / @JniOnUnload?<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">On <strong>desktop</strong>, call <code class="lang-kotlin">linkJvm()</code> inside <code class="lang-kotlin">sharedLib { ... }</code>. On <strong>Android</strong>, do not — linking is automatic:</p>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">androidNativeArm64().binaries.sharedLib(&quot;native&quot;)</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">Need AWT? Call <code class="lang-kotlin">linkJAwt()</code> after <code class="lang-kotlin">linkJvm()</code> (and <code class="lang-kotlin">linkX11IfLinux()</code> on Linux). For a non-host desktop target, pass a target JDK with <code class="lang-kotlin">linkJvm(downloadCompatibleJdk())</code> — see samples/basic.</p>
+      <h3 class="">Consumer (<code class="lang-kotlin">jniLibraries.create</code> on the JVM / Android compilation)</h3>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">jniLibraries.create(&quot;native&quot;) {<br>    mingwX64 {<br>        fromProducer(project(&quot;native&quot;))     // build here<br>        copyToResources(&quot;natives/$os-$arch&quot;)       // copy lib into jar resources / Android assets<br>    }<br>    androidArm32 {<br>        fromPrebuiltBinding(prebuiltDir)     // or take a binary built elsewhere<br>        copyToJniLibs()      // Android only: copy to jniLibs/&lt;abi&gt;/ for System.loadLibrary<br>    }<br><br>    allowExtraActuals = false<br>    allowAbsentBindings = false<br>}</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph">Targets: <code class="lang-kotlin">mingwX64()</code>, <code class="lang-kotlin">linuxX64()</code>, <code class="lang-kotlin">linuxArm64()</code>, <code class="lang-kotlin">macosArm64()</code>, <code class="lang-kotlin">androidX86()</code>, <code class="lang-kotlin">androidX64()</code>, <code class="lang-kotlin">androidArm32()</code>, <code class="lang-kotlin">androidArm64()</code>.</p>
+      <p class="paragraph">A build can only <strong>link</strong> the host OS, so the usual pattern is: build the host from the producer, take other platforms from a prebuilt folder (as in samples/basic).</p>
+      <h3 class="">Dependencies</h3>
+      <p class="paragraph">Both plugins add their artifacts to the default source sets. With a custom source set hierarchy you may need to add them by hand:</p>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">// producer<br>implementation(&quot;io.github.mimimishkin:jni-binding:2.0.0&quot;)<br>implementation(&quot;io.github.mimimishkin:jni-binding-annotations:2.0.0&quot;)<br>// consumer<br>implementation(&quot;io.github.mimimishkin:jni-binding-annotations:2.0.0&quot;)</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <h3 class="">Export methods</h3>
+      <p class="paragraph">How <code class="lang-kotlin">external</code> methods find their native implementations:</p>
+      <ul>
+        <li>
+          <p class="paragraph"><code class="strong lang-kotlin"><strong>RegisterNatives</strong></code> (recommended) — register on library load; one load serves every class.</p>
+        </li>
+        <li>
+          <p class="paragraph"><code class="strong lang-kotlin"><strong>ExposeFunctions</strong></code> (default) — export <code class="lang-kotlin">Java_...</code> symbols by name; each class that declares natives must load the   library. Required for <i>critical natives</i> on the JDK — see #critical-natives.</p>
+        </li>
+      </ul>
+      <h2 class="">Annotations</h2>
+      <p class="paragraph"><strong>JVM</strong></p>
+      <ul>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@JniExpect</code> / <code class="lang-kotlin">@JniExpects</code> — this <code class="lang-kotlin">external</code> member (or whole class) is implemented via JNI.   Optional target filter: <code class="lang-kotlin">@JniExpect(&quot;mingwX64&quot;)</code>.</p>
+        </li>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@LoadMethod</code> — function that loads the native library (runs from the object's / companion's initializer).</p>
+        </li>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@CriticalNative</code> — critical native (for static non-synchronized functions; primitives and primitive arrays only).</p>
+        </li>
+      </ul>
+      <p class="paragraph"><strong>Native</strong></p>
+      <ul>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@JniActual</code> / <code class="lang-kotlin">@JniActuals</code> — native implementation of an <code class="lang-kotlin">@JniExpect</code>.</p>
+        </li>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@JniOnLoad</code> / <code class="lang-kotlin">@JniOnUnload</code> — library load / unload hooks.</p>
+        </li>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@WithJvmType</code> / <code class="lang-kotlin">@WithJvmSignature</code> — override the derived JVM type or full signature when needed.</p>
+        </li>
+        <li>
+          <p class="paragraph"><code class="lang-kotlin">@CriticalNative</code> — critical native (no <code class="lang-kotlin">JniEnv</code> / <code class="lang-kotlin">JObject</code>; primitives and primitive arrays only).</p>
+        </li>
+      </ul>
+      <p class="paragraph">See samples/basic for every supported shape.</p>
+      <h2 class="">Fast and Critical natives</h2>
+      <p class="paragraph">They are optimizations for faster JNI function calls.</p>
+      <ul>
+        <li>
+          <p class="paragraph">A <code class="lang-kotlin">@FastNative</code> is android only runtime built-in optimization for native methods to speed up JNI transitions. Ignored    on desktop.</p>
+        </li>
+        <li>
+          <p class="paragraph">A <code class="lang-kotlin">@CriticalNative</code> is called <strong>without a </strong><code class="strong lang-kotlin"><strong>JniEnv</strong></code><strong> and without a class/object reference</strong>. Only primitives / primitive   arrays (On JDK only - each array arrives as a <code class="lang-kotlin">(length, pointer)</code> pair), <code class="lang-kotlin">static</code> and non-<code class="lang-kotlin">synchronized</code> on the JVM    side. Also, the method must never call back into the JVM.</p>
+        </li>
+      </ul>
+      <div class="sample-container">
+        <pre><code class="block lang-kotlin" theme="idea">// native<br>@CriticalNative<br>@JniActual<br>fun sum(size: Int, values: CArrayPointer&lt;IntVar&gt;): Long   // (length, pointer)<br><br>// JVM<br>@CriticalNative<br>@JniExpect<br>external fun sum(values: IntArray): Long    // int[]</code></pre>
+<span class="copy-tooltip">
+          <div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div>
+<span class="copy-icon"></span></span></div>
+      <p class="paragraph"><strong>Desktop (HotSpot).</strong> Undocumented and unsupported: deprecated in JDK 16, removed in JDK 22. The <code class="lang-kotlin">JavaCritical_</code> path needs JDK 21 or older, <code class="lang-kotlin">-XX:+CriticalJNINatives</code> option, and a JIT-compiled call site (128 calls on my machine); until then — and on newer JDKs — the ordinary <code class="lang-kotlin">Java_</code> facade runs. Works only with #export-methods export method. Prefer Project Panama for new code.</p>
+      <p class="paragraph"><strong>Android (ART).</strong> First-class support — see <a href="https://developer.android.com/reference/dalvik/annotation/optimization/CriticalNative"><code class="lang-kotlin">CriticalNative</code></a> and <a href="https://developer.android.com/ndk/guides/jni-tips#faster-native-calls-with-fastnative-and-criticalnative">JNI tips</a>. Both <code class="lang-kotlin">RegisterNatives</code> and <code class="lang-kotlin">ExposeFunctions</code> work (<code class="lang-kotlin">minSdk</code> 26+).</p>
+      <p class="paragraph">See <code class="lang-kotlin">basic</code> and <code class="lang-kotlin">android-basic</code> samples for reference.</p>
+      <h2 class="">Libraries</h2>
+      <div class="table--container">
+        <table>
+          <thead>
+            <tr>
+              <th>Artifact</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>jni-binding/Module.md</td>
+              <td>Idiomatic JNI API for Kotlin/Native .</td>
+            </tr>
+            <tr>
+              <td>jawt-binding/Module.md</td>
+              <td>JAWT / AWT native interface; link with <code class="org.jetbrains.dokka.pages.commenttable@41798447 lang-kotlin">linkJAwt()</code>.</td>
+            </tr>
+            <tr>
+              <td>jni-binding-raw/Module.md</td>
+              <td>Raw cinterop of the JDK headers (<code class="org.jetbrains.dokka.pages.commenttable@41798447 lang-kotlin">jni</code> package), if you need it.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h2 class="">Samples</h2>
+      <ul>
+        <li>
+          <p class="paragraph">samples/basic — full feature tour and multi-platform producer / prebuilt setup.</p>
+        </li>
+        <li>
+          <p class="paragraph">samples/android-basic — Android app across the JNI boundary: calling the Java API from   native, exceptions, memory and threads, critical natives.</p>
+        </li>
+        <li>
+          <p class="paragraph">samples/windows-registry — Windows Registry wrapper (<code class="lang-kotlin">mingwX64</code> only): a typed   <code class="lang-kotlin">Registry</code> API over the win32 <code class="lang-kotlin">Reg*</code> functions, ~300 lines of Kotlin per side, no C and no JNI signatures anywhere.</p>
+        </li>
+      </ul>
+      <h2 class="">License</h2>
+      <p class="paragraph">LICENSE.txt</p>
+    </div>
+    <h2 class="">All modules:</h2>
+    <div class="table"><a data-name="-506607159%2FMain%2F0" anchor-label="jawt-binding" id="-506607159%2FMain%2F0" data-filterable-set=""></a>
+      <div class="table-row table-row_multimodule">
+        <div class="main-subrow ">
+          <div class="w-100"><span class="inline-flex">
+              <div><a href="jawt-binding/index.html">jawt-binding</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-506607159%2FMain%2F0"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div><span class="brief-comment">
+              <p class="paragraph">Kotlin/Native bindings for JAWT - the Java Abstract Window Toolkit native interface (<code class="lang-kotlin">jawt.h</code>). The module wraps the C API into idiomatic Kotlin on top of <code class="lang-kotlin">jni-binding</code>, so a native application can render into a <code class="lang-kotlin">java.awt.Component</code> or hand a native window over to AWT without any manual cinterop configuration.</p>
+            </span></div>
+        </div>
+      </div>
+<a data-name="-1881979440%2FMain%2F0" anchor-label="jni-binding" id="-1881979440%2FMain%2F0" data-filterable-set=""></a>
+      <div class="table-row table-row_multimodule">
+        <div class="main-subrow ">
+          <div class="w-100"><span class="inline-flex">
+              <div><a href="jni-binding/index.html">jni-binding</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1881979440%2FMain%2F0"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div><span class="brief-comment">
+              <p class="paragraph">Kotlin/Native bindings for the Java Native Interface (JNI). The module wraps the C JNI API into idiomatic Kotlin - null-safe reference types, <code class="lang-kotlin">context(JniEnv)</code> parameters, DSLs and small helpers - so the native side of a JNI library can be written without C and without any manual cinterop setup.</p>
+            </span></div>
+        </div>
+      </div>
+<a data-name="-1304915367%2FMain%2F0" anchor-label="jni-binding-annotations" id="-1304915367%2FMain%2F0" data-filterable-set=""></a>
+      <div class="table-row table-row_multimodule">
+        <div class="main-subrow ">
+          <div class="w-100"><span class="inline-flex">
+              <div><a href="jni-binding-annotations/index.html">jni-binding-annotations</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1304915367%2FMain%2F0"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div><span class="brief-comment">
+              <p class="paragraph">Annotations for the <code class="lang-kotlin">jni-binding-consumer</code> and <code class="lang-kotlin">jni-binding-producer</code> plugins.</p>
+            </span></div>
+        </div>
+      </div>
+<a data-name="-781017251%2FMain%2F0" anchor-label="jni-binding-plugins" id="-781017251%2FMain%2F0" data-filterable-set=""></a>
+      <div class="table-row table-row_multimodule">
+        <div class="main-subrow ">
+          <div class="w-100"><span class="inline-flex">
+              <div><a href="jni-binding-plugins/index.html">jni-binding-plugins</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-781017251%2FMain%2F0"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div><span class="brief-comment"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

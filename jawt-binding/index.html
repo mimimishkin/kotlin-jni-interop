@@ -1,0 +1,175 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>jawt-binding</title>
+<link href="../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../scripts/sourceset_dependencies.js" async></script>
+<link href="../styles/style.css" rel="Stylesheet">
+<link href="../styles/main.css" rel="Stylesheet">
+<link href="../styles/prism.css" rel="Stylesheet">
+<link href="../styles/logo-styles.css" rel="Stylesheet">
+<link href="../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../scripts/main.js" defer></script>
+<script type="text/javascript" src="../scripts/prism.js" async></script>
+<script type="text/javascript" src="../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../index.html" tabindex="1">
+                    kotlin-jni-interop
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;index.html&quot;}">dev</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/intermideateMain">intermideate</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/linuxMain">linux</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/macosMain">macos</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/mingwMain">mingw</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/nativeMain">native</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/intermideateMain" data-filter=":jawt-binding/intermideateMain">
+                                <span class="checkbox--icon"></span>
+                                intermideate
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/linuxMain" data-filter=":jawt-binding/linuxMain">
+                                <span class="checkbox--icon"></span>
+                                linux
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/macosMain" data-filter=":jawt-binding/macosMain">
+                                <span class="checkbox--icon"></span>
+                                macos
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/mingwMain" data-filter=":jawt-binding/mingwMain">
+                                <span class="checkbox--icon"></span>
+                                mingw
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/nativeMain" data-filter=":jawt-binding/nativeMain">
+                                <span class="checkbox--icon"></span>
+                                native
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    kotlin-jni-interop
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" id="content" pageids="jawt-binding::////PointingToDeclaration//-929661853">
+  <div class="breadcrumbs"></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>jawt-binding</span></span></h1>
+    <div class="platform-hinted UnderCoverText with-platform-tabs" data-platform-hinted="data-platform-hinted">
+      <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/intermideateMain" data-active="" data-toggle=":jawt-binding/intermideateMain">intermideate</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-toggle=":jawt-binding/linuxMain">linux</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/macosMain" data-filterable-set=":jawt-binding/macosMain" data-toggle=":jawt-binding/macosMain">macos</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain" data-toggle=":jawt-binding/mingwMain">mingw</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/intermideateMain"><p class="paragraph">Kotlin/Native bindings for JAWT - the Java Abstract Window Toolkit native interface (<code class="lang-kotlin">jawt.h</code>). The module wraps the C API into idiomatic Kotlin on top of <code class="lang-kotlin">jni-binding</code>, so a native application can render into a <code class="lang-kotlin">java.awt.Component</code> or hand a native window over to AWT without any manual cinterop configuration.</p><p class="paragraph"><strong>Desktop only</strong> (mingwX64, linuxX64, linuxArm64, macosArm64). Android has no AWT and is not a target of this module.</p><p class="paragraph">The module depends on <code class="lang-kotlin">jni-binding</code> (and transitively on <code class="lang-kotlin">jni-binding-raw</code> for the raw JDK headers), so everything from the JNI core - JniEnv, JNI, the null-safe reference types - is available as usual. Link <code class="lang-kotlin">libjawt</code> with <code class="lang-kotlin">linkJAwt()</code> of the producer plugin (call it after <code class="lang-kotlin">linkJvm()</code>, which it reuses). On Linux also call <code class="lang-kotlin">linkX11IfLinux()</code> when the AWT runtime needs X11.</p><p class="paragraph">These interfaces are <strong>not</strong> part of the Java SE specification; a VM is not required to implement them. See the <a href="https://docs.oracle.com/en/java/javase/22/docs/technotes/guides/awt/AWT_Native_Interface.html">JAWT documentation</a>.</p></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/linuxMain"><p class="paragraph">Kotlin/Native bindings for JAWT - the Java Abstract Window Toolkit native interface (<code class="lang-kotlin">jawt.h</code>). The module wraps the C API into idiomatic Kotlin on top of <code class="lang-kotlin">jni-binding</code>, so a native application can render into a <code class="lang-kotlin">java.awt.Component</code> or hand a native window over to AWT without any manual cinterop configuration.</p><p class="paragraph"><strong>Desktop only</strong> (mingwX64, linuxX64, linuxArm64, macosArm64). Android has no AWT and is not a target of this module.</p><p class="paragraph">The module depends on <code class="lang-kotlin">jni-binding</code> (and transitively on <code class="lang-kotlin">jni-binding-raw</code> for the raw JDK headers), so everything from the JNI core - JniEnv, JNI, the null-safe reference types - is available as usual. Link <code class="lang-kotlin">libjawt</code> with <code class="lang-kotlin">linkJAwt()</code> of the producer plugin (call it after <code class="lang-kotlin">linkJvm()</code>, which it reuses). On Linux also call <code class="lang-kotlin">linkX11IfLinux()</code> when the AWT runtime needs X11.</p><p class="paragraph">These interfaces are <strong>not</strong> part of the Java SE specification; a VM is not required to implement them. See the <a href="https://docs.oracle.com/en/java/javase/22/docs/technotes/guides/awt/AWT_Native_Interface.html">JAWT documentation</a>.</p></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/macosMain"><p class="paragraph">Kotlin/Native bindings for JAWT - the Java Abstract Window Toolkit native interface (<code class="lang-kotlin">jawt.h</code>). The module wraps the C API into idiomatic Kotlin on top of <code class="lang-kotlin">jni-binding</code>, so a native application can render into a <code class="lang-kotlin">java.awt.Component</code> or hand a native window over to AWT without any manual cinterop configuration.</p><p class="paragraph"><strong>Desktop only</strong> (mingwX64, linuxX64, linuxArm64, macosArm64). Android has no AWT and is not a target of this module.</p><p class="paragraph">The module depends on <code class="lang-kotlin">jni-binding</code> (and transitively on <code class="lang-kotlin">jni-binding-raw</code> for the raw JDK headers), so everything from the JNI core - JniEnv, JNI, the null-safe reference types - is available as usual. Link <code class="lang-kotlin">libjawt</code> with <code class="lang-kotlin">linkJAwt()</code> of the producer plugin (call it after <code class="lang-kotlin">linkJvm()</code>, which it reuses). On Linux also call <code class="lang-kotlin">linkX11IfLinux()</code> when the AWT runtime needs X11.</p><p class="paragraph">These interfaces are <strong>not</strong> part of the Java SE specification; a VM is not required to implement them. See the <a href="https://docs.oracle.com/en/java/javase/22/docs/technotes/guides/awt/AWT_Native_Interface.html">JAWT documentation</a>.</p></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/mingwMain"><p class="paragraph">Kotlin/Native bindings for JAWT - the Java Abstract Window Toolkit native interface (<code class="lang-kotlin">jawt.h</code>). The module wraps the C API into idiomatic Kotlin on top of <code class="lang-kotlin">jni-binding</code>, so a native application can render into a <code class="lang-kotlin">java.awt.Component</code> or hand a native window over to AWT without any manual cinterop configuration.</p><p class="paragraph"><strong>Desktop only</strong> (mingwX64, linuxX64, linuxArm64, macosArm64). Android has no AWT and is not a target of this module.</p><p class="paragraph">The module depends on <code class="lang-kotlin">jni-binding</code> (and transitively on <code class="lang-kotlin">jni-binding-raw</code> for the raw JDK headers), so everything from the JNI core - JniEnv, JNI, the null-safe reference types - is available as usual. Link <code class="lang-kotlin">libjawt</code> with <code class="lang-kotlin">linkJAwt()</code> of the producer plugin (call it after <code class="lang-kotlin">linkJvm()</code>, which it reuses). On Linux also call <code class="lang-kotlin">linkX11IfLinux()</code> when the AWT runtime needs X11.</p><p class="paragraph">These interfaces are <strong>not</strong> part of the Java SE specification; a VM is not required to implement them. See the <a href="https://docs.oracle.com/en/java/javase/22/docs/technotes/guides/awt/AWT_Native_Interface.html">JAWT documentation</a>.</p></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/nativeMain"><p class="paragraph">Kotlin/Native bindings for JAWT - the Java Abstract Window Toolkit native interface (<code class="lang-kotlin">jawt.h</code>). The module wraps the C API into idiomatic Kotlin on top of <code class="lang-kotlin">jni-binding</code>, so a native application can render into a <code class="lang-kotlin">java.awt.Component</code> or hand a native window over to AWT without any manual cinterop configuration.</p><p class="paragraph"><strong>Desktop only</strong> (mingwX64, linuxX64, linuxArm64, macosArm64). Android has no AWT and is not a target of this module.</p><p class="paragraph">The module depends on <code class="lang-kotlin">jni-binding</code> (and transitively on <code class="lang-kotlin">jni-binding-raw</code> for the raw JDK headers), so everything from the JNI core - JniEnv, JNI, the null-safe reference types - is available as usual. Link <code class="lang-kotlin">libjawt</code> with <code class="lang-kotlin">linkJAwt()</code> of the producer plugin (call it after <code class="lang-kotlin">linkJvm()</code>, which it reuses). On Linux also call <code class="lang-kotlin">linkX11IfLinux()</code> when the AWT runtime needs X11.</p><p class="paragraph">These interfaces are <strong>not</strong> part of the Java SE specification; a VM is not required to implement them. See the <a href="https://docs.oracle.com/en/java/javase/22/docs/technotes/guides/awt/AWT_Native_Interface.html">JAWT documentation</a>.</p></div>    </div>
+  </div>
+  <h2 class="">Packages</h2>
+  <div class="table"><a data-name="-1575955196%2FPackages%2F-929661853" anchor-label="io.github.mimimishkin.jni.binding.awt" id="-1575955196%2FPackages%2F-929661853" data-filterable-set=":jawt-binding/intermideateMain,:jawt-binding/linuxMain,:jawt-binding/macosMain,:jawt-binding/mingwMain,:jawt-binding/nativeMain"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":jawt-binding/intermideateMain,:jawt-binding/linuxMain,:jawt-binding/macosMain,:jawt-binding/mingwMain,:jawt-binding/nativeMain" data-filterable-set=":jawt-binding/intermideateMain,:jawt-binding/linuxMain,:jawt-binding/macosMain,:jawt-binding/mingwMain,:jawt-binding/nativeMain">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="io.github.mimimishkin.jni.binding.awt/index.html">io.github.mimimishkin.jni.binding.awt</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1575955196%2FPackages%2F-929661853"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag native-like">intermideate</div>
+              <div class="platform-tag native-like">linux</div>
+              <div class="platform-tag native-like">macos</div>
+              <div class="platform-tag native-like">mingw</div>
+              <div class="platform-tag native-like">native</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

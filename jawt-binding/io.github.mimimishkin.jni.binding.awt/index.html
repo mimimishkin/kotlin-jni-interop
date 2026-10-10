@@ -1,0 +1,1018 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>io.github.mimimishkin.jni.binding.awt</title>
+<link href="../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../index.html" tabindex="1">
+                    kotlin-jni-interop
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;io.github.mimimishkin.jni.binding.awt/index.html&quot;}">dev</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/intermideateMain">intermideate</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/linuxMain">linux</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/macosMain">macos</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/mingwMain">mingw</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jawt-binding/nativeMain">native</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/intermideateMain" data-filter=":jawt-binding/intermideateMain">
+                                <span class="checkbox--icon"></span>
+                                intermideate
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/linuxMain" data-filter=":jawt-binding/linuxMain">
+                                <span class="checkbox--icon"></span>
+                                linux
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/macosMain" data-filter=":jawt-binding/macosMain">
+                                <span class="checkbox--icon"></span>
+                                macos
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/mingwMain" data-filter=":jawt-binding/mingwMain">
+                                <span class="checkbox--icon"></span>
+                                mingw
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jawt-binding/nativeMain" data-filter=":jawt-binding/nativeMain">
+                                <span class="checkbox--icon"></span>
+                                native
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    kotlin-jni-interop
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="package" id="content" pageids="jawt-binding::io.github.mimimishkin.jni.binding.awt////PointingToDeclaration//-929661853">
+  <div class="breadcrumbs"><a href="../index.html">jawt-binding</a><span class="delimiter">/</span><span class="current">io.github.mimimishkin.jni.binding.awt</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+    <div class="platform-hinted UnderCoverText with-platform-tabs" data-platform-hinted="data-platform-hinted">
+      <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/intermideateMain" data-active="" data-toggle=":jawt-binding/intermideateMain">intermideate</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-toggle=":jawt-binding/linuxMain">linux</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/macosMain" data-filterable-set=":jawt-binding/macosMain" data-toggle=":jawt-binding/macosMain">macos</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain" data-toggle=":jawt-binding/mingwMain">mingw</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/intermideateMain"><p class="paragraph">Bindings for JAWT - access to the native structures behind AWT (<code class="lang-kotlin">java.awt</code>), used for native rendering onto a component or for hand-off of a native window to AWT.</p><h2 class="">Constants and versions</h2><p class="paragraph">All constants live on the <a href="-j-a-w-t/index.html">JAWT</a> object:</p><ul><li><p class="paragraph">Versions: <a href="-j-a-w-t/v3.html">JAWT.v3</a> (1.3), <a href="-j-a-w-t/v4.html">JAWT.v4</a> (1.4), <a href="-j-a-w-t/v7.html">JAWT.v7</a> (1.7), <a href="-j-a-w-t/v9.html">JAWT.v9</a> (9). Pass one to <a href="get-awt.html">getAwt</a> /   <a href="with-awt.html">withAwt</a>; newer versions unlock extra entry points (<code class="lang-kotlin">Lock</code>/<code class="lang-kotlin">Unlock</code>/<code class="lang-kotlin">GetComponent</code> from 1.4,   embedding from 9).</p></li><li><p class="paragraph">Lock result flags returned by <a href="lock.html">DrawingSurface.lock</a>: <a href="-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a>, <a href="-j-a-w-t/-l-o-c-k_-c-l-i-p_-c-h-a-n-g-e-d.html">JAWT.LOCK_CLIP_CHANGED</a>,   <a href="-j-a-w-t/-l-o-c-k_-b-o-u-n-d-s_-c-h-a-n-g-e-d.html">JAWT.LOCK_BOUNDS_CHANGED</a>, <a href="-j-a-w-t/-l-o-c-k_-s-u-r-f-a-c-e_-c-h-a-n-g-e-d.html">JAWT.LOCK_SURFACE_CHANGED</a>.</p></li></ul><h2 class="">Typical rendering loop</h2><p class="paragraph">Obtain the <a href="-awt/index.html">Awt</a> interface, take a <a href="-drawing-surface/index.html">DrawingSurface</a> for a <code class="lang-kotlin">java.awt.Component</code> (usually a <code class="lang-kotlin">Canvas</code> or <code class="lang-kotlin">Window</code>), lock it, and read the platform-specific <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a>. Session helpers acquire and release everything for you:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">// context(env: JniEnv, memScope: MemScope)<br>withAwt(JAWT.v9) { awt -&gt;<br>    awt.useDrawingSurface(component) { surface -&gt;<br>        surface.locking {<br>            surface.useInfo { info -&gt;<br>                // info.bounds, info.clipRects, ...<br>                // platform members: hwnd/hdc on Windows, display/drawable on Linux, layer on macOS<br>                // draw...<br>            }<br>        }<br>    }<br>}</code></pre><span class="copy-tooltip"><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div><span class="copy-icon"></span></span></div><p class="paragraph">Or in one call: <a href="use-drawing-surface-info.html">Awt.useDrawingSurfaceInfo</a>.</p><p class="paragraph">All operations on a <a href="-drawing-surface/index.html">DrawingSurface</a> <strong>must</strong> run on the same thread that obtained it via <a href="get-drawing-surface.html">getDrawingSurface</a>. When calling <code class="lang-kotlin">lock</code> / <code class="lang-kotlin">unlock</code> / <code class="lang-kotlin">getInfo</code> / <code class="lang-kotlin">freeInfo</code> from another thread, set <a href="env.html">DrawingSurface.env</a> to that thread's <code class="lang-kotlin">JniEnv</code> first.</p><h2 class="">Session helpers</h2><div class="table--container"><table><thead><tr><th>Helper</th><th>Role</th></tr></thead><tbody><tr><td><a href="with-awt.html">withAwt</a></td><td><a href="get-awt.html">getAwt</a> + throw if the VM does not expose JAWT</td></tr><tr><td><a href="locking.html">Awt.locking</a></td><td>lock / unlock the entire AWT (since 1.4)</td></tr><tr><td><a href="use-drawing-surface.html">Awt.useDrawingSurface</a></td><td><a href="get-drawing-surface.html">getDrawingSurface</a> + <a href="free-drawing-surface.html">freeDrawingSurface</a></td></tr><tr><td><a href="locking.html">DrawingSurface.locking</a></td><td><a href="lock.html">lock</a> + <a href="unlock.html">unlock</a>; throws on <a href="-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a></td></tr><tr><td><a href="use-info.html">DrawingSurface.useInfo</a></td><td><a href="get-info.html">getInfo</a> + <a href="free-info.html">freeInfo</a></td></tr><tr><td><a href="use-drawing-surface-info.html">Awt.useDrawingSurfaceInfo</a></td><td>surface + lock + info stacked together</td></tr></tbody></table></div><p class="paragraph">Low-level entry points (<code class="lang-kotlin">getAwt</code>, <code class="lang-kotlin">getDrawingSurface</code>, <code class="lang-kotlin">lock</code>, <code class="lang-kotlin">getInfo</code>, …) remain available when you need finer control or want to cache the surface across frames.</p><h2 class="">Embedding a native window into AWT</h2><p class="paragraph">Since JAWT 9, a native container can host an AWT <code class="lang-kotlin">Frame</code>:</p><ul><li><p class="paragraph"><a href="create-embedded-frame.html">Awt.createEmbeddedFrame</a> - create a <code class="lang-kotlin">java.awt.Frame</code> inside a native parent (HWND / Drawable / NSWindow).</p></li><li><p class="paragraph"><a href="set-bounds.html">Awt.setBounds</a> - move/resize that embedded frame relative to the native parent (<code class="lang-kotlin">Component.setBounds</code> alone   keeps embedded frames at <code class="lang-kotlin">(0, 0)</code> for compatibility).</p></li><li><p class="paragraph"><a href="synthesize-window-activation.html">Awt.synthesizeWindowActivation</a> - synthesize activate / deactivate for the embedded frame.</p></li></ul><p class="paragraph">The reverse direction - resolve a <code class="lang-kotlin">java.awt.Component</code> from a native handle - is <a href="get-component.html">Awt.getComponent</a> (since 1.4).</p><p class="paragraph">Platform handles passed to embedding / <code class="lang-kotlin">getComponent</code>:</p><div class="table--container"><table><thead><tr><th>Platform</th><th>Handle</th></tr></thead><tbody><tr><td>Windows</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">HWND</code></td></tr><tr><td>Linux</td><td>X11 <code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">Drawable</code></td></tr><tr><td>macOS</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">NSWindow</code></td></tr></tbody></table></div><h2 class="">Platform-specific <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a> members</h2><p class="paragraph">Each desktop source set exposes the native structure members directly on <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - no <code class="lang-kotlin">platformInfo</code> cast:</p><p class="paragraph"><strong>Windows</strong> (<code class="lang-kotlin">mingwMain</code>):</p><ul><li><p class="paragraph">hwnd - window handle (mutually exclusive with hbitmap / pbits)</p></li><li><p class="paragraph">hbitmap - DDB handle</p></li><li><p class="paragraph">pbits - DIB bits pointer</p></li><li><p class="paragraph">hdc - preferred device context (use instead of <code class="lang-kotlin">BeginPaint</code> / <code class="lang-kotlin">GetDC</code>)</p></li><li><p class="paragraph">hpalette</p></li></ul><p class="paragraph"><strong>Linux</strong> (<code class="lang-kotlin">linuxMain</code>):</p><ul><li><p class="paragraph">drawable, display, visualID, colormapID, depth</p></li><li><p class="paragraph">GetAWTColor - RGB → pixel for paletted modes (since 1.4)</p></li></ul><p class="paragraph"><strong>macOS</strong> (<code class="lang-kotlin">macosMain</code>):</p><ul><li><p class="paragraph">layer / windowLayer - <code class="lang-kotlin">CALayer</code> of the surface / window</p></li></ul><h2 class="">Types</h2><ul><li><p class="paragraph"><a href="-awt/index.html">Awt</a> - the JAWT interface pointer returned by <a href="get-awt.html">getAwt</a>.</p></li><li><p class="paragraph"><a href="-drawing-surface/index.html">DrawingSurface</a> - drawing surface of a <a href="-j-awt-component/index.html">JAwtComponent</a>; must be freed with <a href="free-drawing-surface.html">freeDrawingSurface</a>.</p></li><li><p class="paragraph"><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - bounds, clip rectangles (<a href="clip-rects.html">clipRects</a> / <a href="clip-size.html">clipSize</a>) and platform info; must be freed with   <a href="free-info.html">freeInfo</a>.</p></li><li><p class="paragraph"><a href="-awt-rectangle/index.html">AwtRectangle</a> - <code class="lang-kotlin">{ x, y, width, height }</code> used by bounds and clip.</p></li><li><p class="paragraph"><a href="-j-awt-component/index.html">JAwtComponent</a> / <a href="-j-awt-frame/index.html">JAwtFrame</a> - typed JObject aliases for <code class="lang-kotlin">java.awt.Component</code> / <code class="lang-kotlin">java.awt.Frame</code>.</p></li></ul></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/linuxMain"><p class="paragraph">Bindings for JAWT - access to the native structures behind AWT (<code class="lang-kotlin">java.awt</code>), used for native rendering onto a component or for hand-off of a native window to AWT.</p><h2 class="">Constants and versions</h2><p class="paragraph">All constants live on the <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/index.html">JAWT</a> object:</p><ul><li><p class="paragraph">Versions: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v3.html">JAWT.v3</a> (1.3), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v4.html">JAWT.v4</a> (1.4), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v7.html">JAWT.v7</a> (1.7), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v9.html">JAWT.v9</a> (9). Pass one to <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a> /   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">withAwt</a>; newer versions unlock extra entry points (<code class="lang-kotlin">Lock</code>/<code class="lang-kotlin">Unlock</code>/<code class="lang-kotlin">GetComponent</code> from 1.4,   embedding from 9).</p></li><li><p class="paragraph">Lock result flags returned by <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.lock</a>: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a>, <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-c-l-i-p_-c-h-a-n-g-e-d.html">JAWT.LOCK_CLIP_CHANGED</a>,   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-b-o-u-n-d-s_-c-h-a-n-g-e-d.html">JAWT.LOCK_BOUNDS_CHANGED</a>, <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-s-u-r-f-a-c-e_-c-h-a-n-g-e-d.html">JAWT.LOCK_SURFACE_CHANGED</a>.</p></li></ul><h2 class="">Typical rendering loop</h2><p class="paragraph">Obtain the <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-awt/index.html">Awt</a> interface, take a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> for a <code class="lang-kotlin">java.awt.Component</code> (usually a <code class="lang-kotlin">Canvas</code> or <code class="lang-kotlin">Window</code>), lock it, and read the platform-specific <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a>. Session helpers acquire and release everything for you:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">// context(env: JniEnv, memScope: MemScope)<br>withAwt(JAWT.v9) { awt -&gt;<br>    awt.useDrawingSurface(component) { surface -&gt;<br>        surface.locking {<br>            surface.useInfo { info -&gt;<br>                // info.bounds, info.clipRects, ...<br>                // platform members: hwnd/hdc on Windows, display/drawable on Linux, layer on macOS<br>                // draw...<br>            }<br>        }<br>    }<br>}</code></pre><span class="copy-tooltip"><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div><span class="copy-icon"></span></span></div><p class="paragraph">Or in one call: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurfaceInfo</a>.</p><p class="paragraph">All operations on a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> <strong>must</strong> run on the same thread that obtained it via <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getDrawingSurface</a>. When calling <code class="lang-kotlin">lock</code> / <code class="lang-kotlin">unlock</code> / <code class="lang-kotlin">getInfo</code> / <code class="lang-kotlin">freeInfo</code> from another thread, set <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.env</a> to that thread's <code class="lang-kotlin">JniEnv</code> first.</p><h2 class="">Session helpers</h2><div class="table--container"><table><thead><tr><th>Helper</th><th>Role</th></tr></thead><tbody><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">withAwt</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a> + throw if the VM does not expose JAWT</td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.locking</a></td><td>lock / unlock the entire AWT (since 1.4)</td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurface</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getDrawingSurface</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeDrawingSurface</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.locking</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">lock</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">unlock</a>; throws on <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.useInfo</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getInfo</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeInfo</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurfaceInfo</a></td><td>surface + lock + info stacked together</td></tr></tbody></table></div><p class="paragraph">Low-level entry points (<code class="lang-kotlin">getAwt</code>, <code class="lang-kotlin">getDrawingSurface</code>, <code class="lang-kotlin">lock</code>, <code class="lang-kotlin">getInfo</code>, …) remain available when you need finer control or want to cache the surface across frames.</p><h2 class="">Embedding a native window into AWT</h2><p class="paragraph">Since JAWT 9, a native container can host an AWT <code class="lang-kotlin">Frame</code>:</p><ul><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.createEmbeddedFrame</a> - create a <code class="lang-kotlin">java.awt.Frame</code> inside a native parent (HWND / Drawable / NSWindow).</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.setBounds</a> - move/resize that embedded frame relative to the native parent (<code class="lang-kotlin">Component.setBounds</code> alone   keeps embedded frames at <code class="lang-kotlin">(0, 0)</code> for compatibility).</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.synthesizeWindowActivation</a> - synthesize activate / deactivate for the embedded frame.</p></li></ul><p class="paragraph">The reverse direction - resolve a <code class="lang-kotlin">java.awt.Component</code> from a native handle - is <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.getComponent</a> (since 1.4).</p><p class="paragraph">Platform handles passed to embedding / <code class="lang-kotlin">getComponent</code>:</p><div class="table--container"><table><thead><tr><th>Platform</th><th>Handle</th></tr></thead><tbody><tr><td>Windows</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">HWND</code></td></tr><tr><td>Linux</td><td>X11 <code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">Drawable</code></td></tr><tr><td>macOS</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">NSWindow</code></td></tr></tbody></table></div><h2 class="">Platform-specific <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> members</h2><p class="paragraph">Each desktop source set exposes the native structure members directly on <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - no <code class="lang-kotlin">platformInfo</code> cast:</p><p class="paragraph"><strong>Windows</strong> (<code class="lang-kotlin">mingwMain</code>):</p><ul><li><p class="paragraph">hwnd - window handle (mutually exclusive with hbitmap / pbits)</p></li><li><p class="paragraph">hbitmap - DDB handle</p></li><li><p class="paragraph">pbits - DIB bits pointer</p></li><li><p class="paragraph">hdc - preferred device context (use instead of <code class="lang-kotlin">BeginPaint</code> / <code class="lang-kotlin">GetDC</code>)</p></li><li><p class="paragraph">hpalette</p></li></ul><p class="paragraph"><strong>Linux</strong> (<code class="lang-kotlin">linuxMain</code>):</p><ul><li><p class="paragraph"><a href="drawable.html">drawable</a>, <a href="display.html">display</a>, <a href="visual-i-d.html">visualID</a>, <a href="colormap-i-d.html">colormapID</a>, <a href="depth.html">depth</a></p></li><li><p class="paragraph"><a href="-get-a-w-t-color.html">GetAWTColor</a> - RGB → pixel for paletted modes (since 1.4)</p></li></ul><p class="paragraph"><strong>macOS</strong> (<code class="lang-kotlin">macosMain</code>):</p><ul><li><p class="paragraph">layer / windowLayer - <code class="lang-kotlin">CALayer</code> of the surface / window</p></li></ul><h2 class="">Types</h2><ul><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-awt/index.html">Awt</a> - the JAWT interface pointer returned by <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a>.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> - drawing surface of a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-component/index.html">JAwtComponent</a>; must be freed with <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeDrawingSurface</a>.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - bounds, clip rectangles (<a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">clipRects</a> / <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">clipSize</a>) and platform info; must be freed with   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeInfo</a>.</p></li><li><p class="paragraph"><a href="-awt-rectangle/index.html">AwtRectangle</a> - <code class="lang-kotlin">{ x, y, width, height }</code> used by bounds and clip.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-component/index.html">JAwtComponent</a> / <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-frame/index.html">JAwtFrame</a> - typed JObject aliases for <code class="lang-kotlin">java.awt.Component</code> / <code class="lang-kotlin">java.awt.Frame</code>.</p></li></ul></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/macosMain"><p class="paragraph">Bindings for JAWT - access to the native structures behind AWT (<code class="lang-kotlin">java.awt</code>), used for native rendering onto a component or for hand-off of a native window to AWT.</p><h2 class="">Constants and versions</h2><p class="paragraph">All constants live on the <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/index.html">JAWT</a> object:</p><ul><li><p class="paragraph">Versions: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v3.html">JAWT.v3</a> (1.3), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v4.html">JAWT.v4</a> (1.4), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v7.html">JAWT.v7</a> (1.7), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v9.html">JAWT.v9</a> (9). Pass one to <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a> /   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">withAwt</a>; newer versions unlock extra entry points (<code class="lang-kotlin">Lock</code>/<code class="lang-kotlin">Unlock</code>/<code class="lang-kotlin">GetComponent</code> from 1.4,   embedding from 9).</p></li><li><p class="paragraph">Lock result flags returned by <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.lock</a>: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a>, <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-c-l-i-p_-c-h-a-n-g-e-d.html">JAWT.LOCK_CLIP_CHANGED</a>,   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-b-o-u-n-d-s_-c-h-a-n-g-e-d.html">JAWT.LOCK_BOUNDS_CHANGED</a>, <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-s-u-r-f-a-c-e_-c-h-a-n-g-e-d.html">JAWT.LOCK_SURFACE_CHANGED</a>.</p></li></ul><h2 class="">Typical rendering loop</h2><p class="paragraph">Obtain the <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-awt/index.html">Awt</a> interface, take a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> for a <code class="lang-kotlin">java.awt.Component</code> (usually a <code class="lang-kotlin">Canvas</code> or <code class="lang-kotlin">Window</code>), lock it, and read the platform-specific <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a>. Session helpers acquire and release everything for you:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">// context(env: JniEnv, memScope: MemScope)<br>withAwt(JAWT.v9) { awt -&gt;<br>    awt.useDrawingSurface(component) { surface -&gt;<br>        surface.locking {<br>            surface.useInfo { info -&gt;<br>                // info.bounds, info.clipRects, ...<br>                // platform members: hwnd/hdc on Windows, display/drawable on Linux, layer on macOS<br>                // draw...<br>            }<br>        }<br>    }<br>}</code></pre><span class="copy-tooltip"><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div><span class="copy-icon"></span></span></div><p class="paragraph">Or in one call: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurfaceInfo</a>.</p><p class="paragraph">All operations on a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> <strong>must</strong> run on the same thread that obtained it via <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getDrawingSurface</a>. When calling <code class="lang-kotlin">lock</code> / <code class="lang-kotlin">unlock</code> / <code class="lang-kotlin">getInfo</code> / <code class="lang-kotlin">freeInfo</code> from another thread, set <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.env</a> to that thread's <code class="lang-kotlin">JniEnv</code> first.</p><h2 class="">Session helpers</h2><div class="table--container"><table><thead><tr><th>Helper</th><th>Role</th></tr></thead><tbody><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">withAwt</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a> + throw if the VM does not expose JAWT</td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.locking</a></td><td>lock / unlock the entire AWT (since 1.4)</td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurface</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getDrawingSurface</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeDrawingSurface</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.locking</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">lock</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">unlock</a>; throws on <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.useInfo</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getInfo</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeInfo</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurfaceInfo</a></td><td>surface + lock + info stacked together</td></tr></tbody></table></div><p class="paragraph">Low-level entry points (<code class="lang-kotlin">getAwt</code>, <code class="lang-kotlin">getDrawingSurface</code>, <code class="lang-kotlin">lock</code>, <code class="lang-kotlin">getInfo</code>, …) remain available when you need finer control or want to cache the surface across frames.</p><h2 class="">Embedding a native window into AWT</h2><p class="paragraph">Since JAWT 9, a native container can host an AWT <code class="lang-kotlin">Frame</code>:</p><ul><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.createEmbeddedFrame</a> - create a <code class="lang-kotlin">java.awt.Frame</code> inside a native parent (HWND / Drawable / NSWindow).</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.setBounds</a> - move/resize that embedded frame relative to the native parent (<code class="lang-kotlin">Component.setBounds</code> alone   keeps embedded frames at <code class="lang-kotlin">(0, 0)</code> for compatibility).</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.synthesizeWindowActivation</a> - synthesize activate / deactivate for the embedded frame.</p></li></ul><p class="paragraph">The reverse direction - resolve a <code class="lang-kotlin">java.awt.Component</code> from a native handle - is <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.getComponent</a> (since 1.4).</p><p class="paragraph">Platform handles passed to embedding / <code class="lang-kotlin">getComponent</code>:</p><div class="table--container"><table><thead><tr><th>Platform</th><th>Handle</th></tr></thead><tbody><tr><td>Windows</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">HWND</code></td></tr><tr><td>Linux</td><td>X11 <code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">Drawable</code></td></tr><tr><td>macOS</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">NSWindow</code></td></tr></tbody></table></div><h2 class="">Platform-specific <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> members</h2><p class="paragraph">Each desktop source set exposes the native structure members directly on <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - no <code class="lang-kotlin">platformInfo</code> cast:</p><p class="paragraph"><strong>Windows</strong> (<code class="lang-kotlin">mingwMain</code>):</p><ul><li><p class="paragraph">hwnd - window handle (mutually exclusive with hbitmap / pbits)</p></li><li><p class="paragraph">hbitmap - DDB handle</p></li><li><p class="paragraph">pbits - DIB bits pointer</p></li><li><p class="paragraph">hdc - preferred device context (use instead of <code class="lang-kotlin">BeginPaint</code> / <code class="lang-kotlin">GetDC</code>)</p></li><li><p class="paragraph">hpalette</p></li></ul><p class="paragraph"><strong>Linux</strong> (<code class="lang-kotlin">linuxMain</code>):</p><ul><li><p class="paragraph">drawable, display, visualID, colormapID, depth</p></li><li><p class="paragraph">GetAWTColor - RGB → pixel for paletted modes (since 1.4)</p></li></ul><p class="paragraph"><strong>macOS</strong> (<code class="lang-kotlin">macosMain</code>):</p><ul><li><p class="paragraph"><a href="layer.html">layer</a> / <a href="window-layer.html">windowLayer</a> - <code class="lang-kotlin">CALayer</code> of the surface / window</p></li></ul><h2 class="">Types</h2><ul><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-awt/index.html">Awt</a> - the JAWT interface pointer returned by <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a>.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> - drawing surface of a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-component/index.html">JAwtComponent</a>; must be freed with <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeDrawingSurface</a>.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - bounds, clip rectangles (<a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">clipRects</a> / <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">clipSize</a>) and platform info; must be freed with   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeInfo</a>.</p></li><li><p class="paragraph"><a href="-awt-rectangle/index.html">AwtRectangle</a> - <code class="lang-kotlin">{ x, y, width, height }</code> used by bounds and clip.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-component/index.html">JAwtComponent</a> / <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-frame/index.html">JAwtFrame</a> - typed JObject aliases for <code class="lang-kotlin">java.awt.Component</code> / <code class="lang-kotlin">java.awt.Frame</code>.</p></li></ul></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/mingwMain"><p class="paragraph">Bindings for JAWT - access to the native structures behind AWT (<code class="lang-kotlin">java.awt</code>), used for native rendering onto a component or for hand-off of a native window to AWT.</p><h2 class="">Constants and versions</h2><p class="paragraph">All constants live on the <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/index.html">JAWT</a> object:</p><ul><li><p class="paragraph">Versions: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v3.html">JAWT.v3</a> (1.3), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v4.html">JAWT.v4</a> (1.4), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v7.html">JAWT.v7</a> (1.7), <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/v9.html">JAWT.v9</a> (9). Pass one to <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a> /   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">withAwt</a>; newer versions unlock extra entry points (<code class="lang-kotlin">Lock</code>/<code class="lang-kotlin">Unlock</code>/<code class="lang-kotlin">GetComponent</code> from 1.4,   embedding from 9).</p></li><li><p class="paragraph">Lock result flags returned by <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.lock</a>: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a>, <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-c-l-i-p_-c-h-a-n-g-e-d.html">JAWT.LOCK_CLIP_CHANGED</a>,   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-b-o-u-n-d-s_-c-h-a-n-g-e-d.html">JAWT.LOCK_BOUNDS_CHANGED</a>, <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-s-u-r-f-a-c-e_-c-h-a-n-g-e-d.html">JAWT.LOCK_SURFACE_CHANGED</a>.</p></li></ul><h2 class="">Typical rendering loop</h2><p class="paragraph">Obtain the <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-awt/index.html">Awt</a> interface, take a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> for a <code class="lang-kotlin">java.awt.Component</code> (usually a <code class="lang-kotlin">Canvas</code> or <code class="lang-kotlin">Window</code>), lock it, and read the platform-specific <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a>. Session helpers acquire and release everything for you:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">// context(env: JniEnv, memScope: MemScope)<br>withAwt(JAWT.v9) { awt -&gt;<br>    awt.useDrawingSurface(component) { surface -&gt;<br>        surface.locking {<br>            surface.useInfo { info -&gt;<br>                // info.bounds, info.clipRects, ...<br>                // platform members: hwnd/hdc on Windows, display/drawable on Linux, layer on macOS<br>                // draw...<br>            }<br>        }<br>    }<br>}</code></pre><span class="copy-tooltip"><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div><span class="copy-icon"></span></span></div><p class="paragraph">Or in one call: <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurfaceInfo</a>.</p><p class="paragraph">All operations on a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> <strong>must</strong> run on the same thread that obtained it via <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getDrawingSurface</a>. When calling <code class="lang-kotlin">lock</code> / <code class="lang-kotlin">unlock</code> / <code class="lang-kotlin">getInfo</code> / <code class="lang-kotlin">freeInfo</code> from another thread, set <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.env</a> to that thread's <code class="lang-kotlin">JniEnv</code> first.</p><h2 class="">Session helpers</h2><div class="table--container"><table><thead><tr><th>Helper</th><th>Role</th></tr></thead><tbody><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">withAwt</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a> + throw if the VM does not expose JAWT</td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.locking</a></td><td>lock / unlock the entire AWT (since 1.4)</td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurface</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getDrawingSurface</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeDrawingSurface</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.locking</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">lock</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">unlock</a>; throws on <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">DrawingSurface.useInfo</a></td><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getInfo</a> + <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeInfo</a></td></tr><tr><td><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.useDrawingSurfaceInfo</a></td><td>surface + lock + info stacked together</td></tr></tbody></table></div><p class="paragraph">Low-level entry points (<code class="lang-kotlin">getAwt</code>, <code class="lang-kotlin">getDrawingSurface</code>, <code class="lang-kotlin">lock</code>, <code class="lang-kotlin">getInfo</code>, …) remain available when you need finer control or want to cache the surface across frames.</p><h2 class="">Embedding a native window into AWT</h2><p class="paragraph">Since JAWT 9, a native container can host an AWT <code class="lang-kotlin">Frame</code>:</p><ul><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.createEmbeddedFrame</a> - create a <code class="lang-kotlin">java.awt.Frame</code> inside a native parent (HWND / Drawable / NSWindow).</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.setBounds</a> - move/resize that embedded frame relative to the native parent (<code class="lang-kotlin">Component.setBounds</code> alone   keeps embedded frames at <code class="lang-kotlin">(0, 0)</code> for compatibility).</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.synthesizeWindowActivation</a> - synthesize activate / deactivate for the embedded frame.</p></li></ul><p class="paragraph">The reverse direction - resolve a <code class="lang-kotlin">java.awt.Component</code> from a native handle - is <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">Awt.getComponent</a> (since 1.4).</p><p class="paragraph">Platform handles passed to embedding / <code class="lang-kotlin">getComponent</code>:</p><div class="table--container"><table><thead><tr><th>Platform</th><th>Handle</th></tr></thead><tbody><tr><td>Windows</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">HWND</code></td></tr><tr><td>Linux</td><td>X11 <code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">Drawable</code></td></tr><tr><td>macOS</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">NSWindow</code></td></tr></tbody></table></div><h2 class="">Platform-specific <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> members</h2><p class="paragraph">Each desktop source set exposes the native structure members directly on <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - no <code class="lang-kotlin">platformInfo</code> cast:</p><p class="paragraph"><strong>Windows</strong> (<code class="lang-kotlin">mingwMain</code>):</p><ul><li><p class="paragraph"><a href="hwnd.html">hwnd</a> - window handle (mutually exclusive with <a href="hbitmap.html">hbitmap</a> / <a href="pbits.html">pbits</a>)</p></li><li><p class="paragraph"><a href="hbitmap.html">hbitmap</a> - DDB handle</p></li><li><p class="paragraph"><a href="pbits.html">pbits</a> - DIB bits pointer</p></li><li><p class="paragraph"><a href="hdc.html">hdc</a> - preferred device context (use instead of <code class="lang-kotlin">BeginPaint</code> / <code class="lang-kotlin">GetDC</code>)</p></li><li><p class="paragraph"><a href="hpalette.html">hpalette</a></p></li></ul><p class="paragraph"><strong>Linux</strong> (<code class="lang-kotlin">linuxMain</code>):</p><ul><li><p class="paragraph">drawable, display, visualID, colormapID, depth</p></li><li><p class="paragraph">GetAWTColor - RGB → pixel for paletted modes (since 1.4)</p></li></ul><p class="paragraph"><strong>macOS</strong> (<code class="lang-kotlin">macosMain</code>):</p><ul><li><p class="paragraph">layer / windowLayer - <code class="lang-kotlin">CALayer</code> of the surface / window</p></li></ul><h2 class="">Types</h2><ul><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-awt/index.html">Awt</a> - the JAWT interface pointer returned by <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">getAwt</a>.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface/index.html">DrawingSurface</a> - drawing surface of a <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-component/index.html">JAwtComponent</a>; must be freed with <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeDrawingSurface</a>.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - bounds, clip rectangles (<a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">clipRects</a> / <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">clipSize</a>) and platform info; must be freed with   <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/index.html">freeInfo</a>.</p></li><li><p class="paragraph"><a href="-awt-rectangle/index.html">AwtRectangle</a> - <code class="lang-kotlin">{ x, y, width, height }</code> used by bounds and clip.</p></li><li><p class="paragraph"><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-component/index.html">JAwtComponent</a> / <a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-j-awt-frame/index.html">JAwtFrame</a> - typed JObject aliases for <code class="lang-kotlin">java.awt.Component</code> / <code class="lang-kotlin">java.awt.Frame</code>.</p></li></ul></div><div class="content sourceset-dependent-content" data-togglable=":jawt-binding/nativeMain"><p class="paragraph">Bindings for JAWT - access to the native structures behind AWT (<code class="lang-kotlin">java.awt</code>), used for native rendering onto a component or for hand-off of a native window to AWT.</p><h2 class="">Constants and versions</h2><p class="paragraph">All constants live on the <a href="-j-a-w-t/index.html">JAWT</a> object:</p><ul><li><p class="paragraph">Versions: <a href="-j-a-w-t/v3.html">JAWT.v3</a> (1.3), <a href="-j-a-w-t/v4.html">JAWT.v4</a> (1.4), <a href="-j-a-w-t/v7.html">JAWT.v7</a> (1.7), <a href="-j-a-w-t/v9.html">JAWT.v9</a> (9). Pass one to <a href="get-awt.html">getAwt</a> /   <a href="with-awt.html">withAwt</a>; newer versions unlock extra entry points (<code class="lang-kotlin">Lock</code>/<code class="lang-kotlin">Unlock</code>/<code class="lang-kotlin">GetComponent</code> from 1.4,   embedding from 9).</p></li><li><p class="paragraph">Lock result flags returned by <a href="lock.html">DrawingSurface.lock</a>: <a href="-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a>, <a href="-j-a-w-t/-l-o-c-k_-c-l-i-p_-c-h-a-n-g-e-d.html">JAWT.LOCK_CLIP_CHANGED</a>,   <a href="-j-a-w-t/-l-o-c-k_-b-o-u-n-d-s_-c-h-a-n-g-e-d.html">JAWT.LOCK_BOUNDS_CHANGED</a>, <a href="-j-a-w-t/-l-o-c-k_-s-u-r-f-a-c-e_-c-h-a-n-g-e-d.html">JAWT.LOCK_SURFACE_CHANGED</a>.</p></li></ul><h2 class="">Typical rendering loop</h2><p class="paragraph">Obtain the <a href="-awt/index.html">Awt</a> interface, take a <a href="-drawing-surface/index.html">DrawingSurface</a> for a <code class="lang-kotlin">java.awt.Component</code> (usually a <code class="lang-kotlin">Canvas</code> or <code class="lang-kotlin">Window</code>), lock it, and read the platform-specific <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a>. Session helpers acquire and release everything for you:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">// context(env: JniEnv, memScope: MemScope)<br>withAwt(JAWT.v9) { awt -&gt;<br>    awt.useDrawingSurface(component) { surface -&gt;<br>        surface.locking {<br>            surface.useInfo { info -&gt;<br>                // info.bounds, info.clipRects, ...<br>                // platform members: hwnd/hdc on Windows, display/drawable on Linux, layer on macOS<br>                // draw...<br>            }<br>        }<br>    }<br>}</code></pre><span class="copy-tooltip"><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div><span class="copy-icon"></span></span></div><p class="paragraph">Or in one call: <a href="use-drawing-surface-info.html">Awt.useDrawingSurfaceInfo</a>.</p><p class="paragraph">All operations on a <a href="-drawing-surface/index.html">DrawingSurface</a> <strong>must</strong> run on the same thread that obtained it via <a href="get-drawing-surface.html">getDrawingSurface</a>. When calling <code class="lang-kotlin">lock</code> / <code class="lang-kotlin">unlock</code> / <code class="lang-kotlin">getInfo</code> / <code class="lang-kotlin">freeInfo</code> from another thread, set <a href="env.html">DrawingSurface.env</a> to that thread's <code class="lang-kotlin">JniEnv</code> first.</p><h2 class="">Session helpers</h2><div class="table--container"><table><thead><tr><th>Helper</th><th>Role</th></tr></thead><tbody><tr><td><a href="with-awt.html">withAwt</a></td><td><a href="get-awt.html">getAwt</a> + throw if the VM does not expose JAWT</td></tr><tr><td><a href="locking.html">Awt.locking</a></td><td>lock / unlock the entire AWT (since 1.4)</td></tr><tr><td><a href="use-drawing-surface.html">Awt.useDrawingSurface</a></td><td><a href="get-drawing-surface.html">getDrawingSurface</a> + <a href="free-drawing-surface.html">freeDrawingSurface</a></td></tr><tr><td><a href="locking.html">DrawingSurface.locking</a></td><td><a href="lock.html">lock</a> + <a href="unlock.html">unlock</a>; throws on <a href="-j-a-w-t/-l-o-c-k_-e-r-r-o-r.html">JAWT.LOCK_ERROR</a></td></tr><tr><td><a href="use-info.html">DrawingSurface.useInfo</a></td><td><a href="get-info.html">getInfo</a> + <a href="free-info.html">freeInfo</a></td></tr><tr><td><a href="use-drawing-surface-info.html">Awt.useDrawingSurfaceInfo</a></td><td>surface + lock + info stacked together</td></tr></tbody></table></div><p class="paragraph">Low-level entry points (<code class="lang-kotlin">getAwt</code>, <code class="lang-kotlin">getDrawingSurface</code>, <code class="lang-kotlin">lock</code>, <code class="lang-kotlin">getInfo</code>, …) remain available when you need finer control or want to cache the surface across frames.</p><h2 class="">Embedding a native window into AWT</h2><p class="paragraph">Since JAWT 9, a native container can host an AWT <code class="lang-kotlin">Frame</code>:</p><ul><li><p class="paragraph"><a href="create-embedded-frame.html">Awt.createEmbeddedFrame</a> - create a <code class="lang-kotlin">java.awt.Frame</code> inside a native parent (HWND / Drawable / NSWindow).</p></li><li><p class="paragraph"><a href="set-bounds.html">Awt.setBounds</a> - move/resize that embedded frame relative to the native parent (<code class="lang-kotlin">Component.setBounds</code> alone   keeps embedded frames at <code class="lang-kotlin">(0, 0)</code> for compatibility).</p></li><li><p class="paragraph"><a href="synthesize-window-activation.html">Awt.synthesizeWindowActivation</a> - synthesize activate / deactivate for the embedded frame.</p></li></ul><p class="paragraph">The reverse direction - resolve a <code class="lang-kotlin">java.awt.Component</code> from a native handle - is <a href="get-component.html">Awt.getComponent</a> (since 1.4).</p><p class="paragraph">Platform handles passed to embedding / <code class="lang-kotlin">getComponent</code>:</p><div class="table--container"><table><thead><tr><th>Platform</th><th>Handle</th></tr></thead><tbody><tr><td>Windows</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">HWND</code></td></tr><tr><td>Linux</td><td>X11 <code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">Drawable</code></td></tr><tr><td>macOS</td><td><code class="org.jetbrains.dokka.pages.commenttable@199e8abf lang-kotlin">NSWindow</code></td></tr></tbody></table></div><h2 class="">Platform-specific <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a> members</h2><p class="paragraph">Each desktop source set exposes the native structure members directly on <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - no <code class="lang-kotlin">platformInfo</code> cast:</p><p class="paragraph"><strong>Windows</strong> (<code class="lang-kotlin">mingwMain</code>):</p><ul><li><p class="paragraph">hwnd - window handle (mutually exclusive with hbitmap / pbits)</p></li><li><p class="paragraph">hbitmap - DDB handle</p></li><li><p class="paragraph">pbits - DIB bits pointer</p></li><li><p class="paragraph">hdc - preferred device context (use instead of <code class="lang-kotlin">BeginPaint</code> / <code class="lang-kotlin">GetDC</code>)</p></li><li><p class="paragraph">hpalette</p></li></ul><p class="paragraph"><strong>Linux</strong> (<code class="lang-kotlin">linuxMain</code>):</p><ul><li><p class="paragraph">drawable, display, visualID, colormapID, depth</p></li><li><p class="paragraph">GetAWTColor - RGB → pixel for paletted modes (since 1.4)</p></li></ul><p class="paragraph"><strong>macOS</strong> (<code class="lang-kotlin">macosMain</code>):</p><ul><li><p class="paragraph">layer / windowLayer - <code class="lang-kotlin">CALayer</code> of the surface / window</p></li></ul><h2 class="">Types</h2><ul><li><p class="paragraph"><a href="-awt/index.html">Awt</a> - the JAWT interface pointer returned by <a href="get-awt.html">getAwt</a>.</p></li><li><p class="paragraph"><a href="-drawing-surface/index.html">DrawingSurface</a> - drawing surface of a <a href="-j-awt-component/index.html">JAwtComponent</a>; must be freed with <a href="free-drawing-surface.html">freeDrawingSurface</a>.</p></li><li><p class="paragraph"><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a> - bounds, clip rectangles (<a href="clip-rects.html">clipRects</a> / <a href="clip-size.html">clipSize</a>) and platform info; must be freed with   <a href="free-info.html">freeInfo</a>.</p></li><li><p class="paragraph"><a href="-awt-rectangle/index.html">AwtRectangle</a> - <code class="lang-kotlin">{ x, y, width, height }</code> used by bounds and clip.</p></li><li><p class="paragraph"><a href="-j-awt-component/index.html">JAwtComponent</a> / <a href="-j-awt-frame/index.html">JAwtFrame</a> - typed JObject aliases for <code class="lang-kotlin">java.awt.Component</code> / <code class="lang-kotlin">java.awt.Frame</code>.</p></li></ul></div>    </div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button><button class="section-tab" data-togglable="FUNCTION,EXTENSION_FUNCTION">Functions</button><button class="section-tab" data-togglable="PROPERTY,EXTENSION_PROPERTY">Properties</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="-1498561542%2FClasslikes%2F-1671044693" anchor-label="_jawtComponent" id="-1498561542%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="_jawt-component/index.html"><span>_</span><wbr><span>jawt</span><wbr><span><span>Component</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1498561542%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">class </span><a href="_jawt-component/index.html">_jawtComponent</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">rawPtr<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-native-ptr/index.html">NativePtr</a></span></span><span class="token punctuation">)</span> : <a href="../../jni-binding/io.github.mimimishkin.jni.binding/_jobject/index.html">_jobject</a></div><div class="brief "><p class="paragraph">The underlying <code class="lang-kotlin">open</code> opaque type for <a href="-j-awt-component/index.html">JAwtComponent</a>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1502091402%2FClasslikes%2F-1671044693" anchor-label="_jawtFrame" id="1502091402%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="_jawt-frame/index.html"><span>_</span><wbr><span>jawtFrame</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1502091402%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">class </span><a href="_jawt-frame/index.html">_jawtFrame</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">rawPtr<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-native-ptr/index.html">NativePtr</a></span></span><span class="token punctuation">)</span> : <a href="_jawt-component/index.html">_jawtComponent</a></div><div class="brief "><p class="paragraph">The underlying <code class="lang-kotlin">open</code> opaque type for <a href="-j-awt-frame/index.html">JAwtFrame</a>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-504998560%2FClasslikes%2F-1671044693" anchor-label="Awt" id="-504998560%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-awt/index.html"><span><span>Awt</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-504998560%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-awt/index.html">Awt</a><span class="token operator"> = </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-pointer/index.html">CPointer</a><span class="token operator">&lt;</span><a href="-raw_-awt/index.html">Raw_Awt</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">AWT native interface.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2058515827%2FClasslikes%2F519642250" anchor-label="AwtRectangle" id="2058515827%2FClasslikes%2F519642250" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain,:jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-awt-rectangle/index.html"><span>Awt</span><wbr><span><span>Rectangle</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2058515827%2FClasslikes%2F519642250"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/intermideateMain" data-active="" data-toggle=":jawt-binding/intermideateMain">intermideate</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-togglable=":jawt-binding/intermideateMain"><div class="symbol monospace"><span class="token keyword">actual </span><span class="token keyword">typealias </span><a href="-awt-rectangle/index.html">AwtRectangle</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt_Rectangle///PointingToDeclaration/">jawt_Rectangle</span></div><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-awt-rectangle/index.html">AwtRectangle</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt_Rectangle///PointingToDeclaration/">jawt_Rectangle</span></div><div class="brief "><p class="paragraph">Structure for a native rectangle.</p></div></div><div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">expect </span><span class="token keyword">class </span><a href="-awt-rectangle/index.html">AwtRectangle</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-struct-var/index.html">CStructVar</a></div><div class="brief "><p class="paragraph">Structure for a native rectangle.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1186020970%2FClasslikes%2F-1671044693" anchor-label="AwtVersion" id="1186020970%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-awt-version/index.html"><span>Awt</span><wbr><span><span>Version</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1186020970%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-awt-version/index.html">AwtVersion</a><span class="token operator"> = </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Java version that corresponds to the new JAWT API.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1579220949%2FClasslikes%2F-1671044693" anchor-label="DrawingSurface" id="1579220949%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-drawing-surface/index.html"><span>Drawing</span><wbr><span><span>Surface</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1579220949%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token operator"> = </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-pointer/index.html">CPointer</a><span class="token operator">&lt;</span><a href="-raw_-drawing-surface/index.html">Raw_DrawingSurface</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Contains the underlying drawing information of a component.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1899194169%2FClasslikes%2F-1671044693" anchor-label="DrawingSurfaceInfo" id="-1899194169%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-drawing-surface-info/index.html"><span>Drawing</span><wbr><span>Surface</span><wbr><span><span>Info</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1899194169%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token operator"> = </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-pointer/index.html">CPointer</a><span class="token operator">&lt;</span><a href="-raw_-drawing-surface-info/index.html">Raw_DrawingSurfaceInfo</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Contains the underlying drawing information of a component.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1178998704%2FClasslikes%2F-1671044693" anchor-label="JAWT" id="1178998704%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-j-a-w-t/index.html"><span><span>JAWT</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1178998704%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-j-a-w-t/index.html">JAWT</a></div><div class="brief "><p class="paragraph">Functions and utilities to work with JAWT (Java Abstract Window Toolkit).</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-52634283%2FClasslikes%2F-1671044693" anchor-label="JAwtComponent" id="-52634283%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-j-awt-component/index.html"><span>JAwt</span><wbr><span><span>Component</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-52634283%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-j-awt-component/index.html">JAwtComponent</a><span class="token operator"> = </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-j-ref/index.html">JRef</a><span class="token operator">&lt;</span><a href="_jawt-component/index.html">_jawtComponent</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Pointer to <code class="lang-kotlin">java.awt.Component</code>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1742215013%2FClasslikes%2F-1671044693" anchor-label="JAwtFrame" id="1742215013%2FClasslikes%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-j-awt-frame/index.html"><span>JAwt</span><wbr><span><span>Frame</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1742215013%2FClasslikes%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-j-awt-frame/index.html">JAwtFrame</a><span class="token operator"> = </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-j-ref/index.html">JRef</a><span class="token operator">&lt;</span><a href="_jawt-component/index.html">_jawtComponent</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Pointer to <code class="lang-kotlin">java.awt.Frame</code>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1367388233%2FClasslikes%2F519642250" anchor-label="Raw_Awt" id="-1367388233%2FClasslikes%2F519642250" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain,:jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-raw_-awt/index.html"><span>Raw_</span><wbr><span>Awt</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1367388233%2FClasslikes%2F519642250"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/intermideateMain" data-active="" data-toggle=":jawt-binding/intermideateMain">intermideate</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-togglable=":jawt-binding/intermideateMain"><div class="symbol monospace"><span class="token keyword">actual </span><span class="token keyword">typealias </span><a href="-raw_-awt/index.html">Raw_Awt</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt///PointingToDeclaration/">jawt</span></div><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-raw_-awt/index.html">Raw_Awt</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt///PointingToDeclaration/">jawt</span></div><div class="brief "><p class="paragraph">The underlying type for <a href="-awt/index.html">Awt</a>.</p></div></div><div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">expect </span><span class="token keyword">class </span><a href="-raw_-awt/index.html">Raw_Awt</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-struct-var/index.html">CStructVar</a></div><div class="brief "><p class="paragraph">The underlying type for <a href="-awt/index.html">Awt</a>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1533475102%2FClasslikes%2F519642250" anchor-label="Raw_DrawingSurface" id="1533475102%2FClasslikes%2F519642250" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain,:jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-raw_-drawing-surface/index.html"><span>Raw_</span><wbr><span>Drawing</span><wbr><span><span>Surface</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1533475102%2FClasslikes%2F519642250"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/intermideateMain" data-active="" data-toggle=":jawt-binding/intermideateMain">intermideate</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-togglable=":jawt-binding/intermideateMain"><div class="symbol monospace"><span class="token keyword">actual </span><span class="token keyword">typealias </span><a href="-raw_-drawing-surface/index.html">Raw_DrawingSurface</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt_DrawingSurface///PointingToDeclaration/">jawt_DrawingSurface</span></div><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-raw_-drawing-surface/index.html">Raw_DrawingSurface</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt_DrawingSurface///PointingToDeclaration/">jawt_DrawingSurface</span></div><div class="brief "><p class="paragraph">The underlying type for <a href="-drawing-surface/index.html">DrawingSurface</a>.</p></div></div><div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">expect </span><span class="token keyword">class </span><a href="-raw_-drawing-surface/index.html">Raw_DrawingSurface</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-struct-var/index.html">CStructVar</a></div><div class="brief "><p class="paragraph">The underlying type for <a href="-drawing-surface/index.html">DrawingSurface</a>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="443729296%2FClasslikes%2F519642250" anchor-label="Raw_DrawingSurfaceInfo" id="443729296%2FClasslikes%2F519642250" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain,:jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/nativeMain,:jawt-binding/intermideateMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-raw_-drawing-surface-info/index.html"><span>Raw_</span><wbr><span>Drawing</span><wbr><span>Surface</span><wbr><span><span>Info</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="443729296%2FClasslikes%2F519642250"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/intermideateMain" data-filterable-set=":jawt-binding/intermideateMain" data-active="" data-toggle=":jawt-binding/intermideateMain">intermideate</button><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-togglable=":jawt-binding/intermideateMain"><div class="symbol monospace"><span class="token keyword">actual </span><span class="token keyword">typealias </span><a href="-raw_-drawing-surface-info/index.html">Raw_DrawingSurfaceInfo</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt_DrawingSurfaceInfo///PointingToDeclaration/">jawt_DrawingSurfaceInfo</span></div><div class="symbol monospace"><span class="token keyword">typealias </span><a href="-raw_-drawing-surface-info/index.html">Raw_DrawingSurfaceInfo</a><span class="token operator"> = </span><span data-unresolved-link="jni/jawt_DrawingSurfaceInfo///PointingToDeclaration/">jawt_DrawingSurfaceInfo</span></div><div class="brief "><p class="paragraph">The underlying type for <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a>.</p></div></div><div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">expect </span><span class="token keyword">class </span><a href="-raw_-drawing-surface-info/index.html">Raw_DrawingSurfaceInfo</a> : <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-struct-var/index.html">CStructVar</a></div><div class="brief "><p class="paragraph">The underlying type for <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="EXTENSION_PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="-1927364305%2FProperties%2F-1671044693" anchor-label="bounds" id="-1927364305%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="bounds.html"><span><span>bounds</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1927364305%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="bounds.html">bounds</a><span class="token operator">: </span><a href="-awt-rectangle/index.html">AwtRectangle</a></div><div class="brief "><p class="paragraph">Bounding rectangle of the drawing surface.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1238371402%2FProperties%2F-1671044693" anchor-label="clip" id="1238371402%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="clip.html"><span><span>clip</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1238371402%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="clip.html">clip</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-array-pointer/index.html">CArrayPointer</a><span class="token operator">&lt;</span><a href="-awt-rectangle/index.html">AwtRectangle</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Clip rectangle C array.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-785271851%2FProperties%2F-1671044693" anchor-label="clipRects" id="-785271851%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="clip-rects.html"><span>clip</span><wbr><span><span>Rects</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-785271851%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="clip-rects.html">clipRects</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><a href="-awt-rectangle/index.html">AwtRectangle</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Clip rectangle list.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1132512917%2FProperties%2F-1671044693" anchor-label="clipSize" id="-1132512917%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="clip-size.html"><span>clip</span><wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1132512917%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="clip-size.html">clipSize</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Number of rectangles in the clip.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="209511790%2FProperties%2F-1504490655" anchor-label="colormapID" id="209511790%2FProperties%2F-1504490655" data-filterable-set=":jawt-binding/linuxMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="colormap-i-d.html"><span>colormap</span><wbr><span><span>ID</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="209511790%2FProperties%2F-1504490655"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-active="" data-toggle=":jawt-binding/linuxMain">linux</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/linuxMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="colormap-i-d.html">colormapID</a><span class="token operator">: </span><span data-unresolved-link="jni/Colormap///PointingToDeclaration/">Colormap</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="456520697%2FProperties%2F-1504490655" anchor-label="depth" id="456520697%2FProperties%2F-1504490655" data-filterable-set=":jawt-binding/linuxMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="depth.html"><span><span>depth</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="456520697%2FProperties%2F-1504490655"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-active="" data-toggle=":jawt-binding/linuxMain">linux</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/linuxMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="depth.html">depth</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="58775672%2FProperties%2F-1504490655" anchor-label="display" id="58775672%2FProperties%2F-1504490655" data-filterable-set=":jawt-binding/linuxMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="display.html"><span><span>display</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="58775672%2FProperties%2F-1504490655"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-active="" data-toggle=":jawt-binding/linuxMain">linux</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/linuxMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="display.html">display</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-pointer/index.html">CPointer</a><span class="token operator">&lt;</span><span data-unresolved-link="jni/Display///PointingToDeclaration/">Display</span><span class="token operator">&gt;</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="641864856%2FProperties%2F-1504490655" anchor-label="drawable" id="641864856%2FProperties%2F-1504490655" data-filterable-set=":jawt-binding/linuxMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="drawable.html"><span><span>drawable</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="641864856%2FProperties%2F-1504490655"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-active="" data-toggle=":jawt-binding/linuxMain">linux</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/linuxMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="drawable.html">drawable</a><span class="token operator">: </span><span data-unresolved-link="jni/Drawable///PointingToDeclaration/">Drawable</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1964890703%2FProperties%2F-1671044693" anchor-label="env" id="-1964890703%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="env.html"><span><span>env</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1964890703%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">var </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="env.html">env</a><span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></div><div class="brief "><p class="paragraph">Cached reference to the Java environment of the calling thread. If <a href="lock.html">lock</a>, <a href="unlock.html">unlock</a>, <a href="get-info.html">getInfo</a> or <a href="free-info.html">freeInfo</a> are called from a different thread, this data member should be set before calling those functions.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1362313907%2FProperties%2F-1636528003" anchor-label="hbitmap" id="-1362313907%2FProperties%2F-1636528003" data-filterable-set=":jawt-binding/mingwMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="hbitmap.html"><span><span>hbitmap</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1362313907%2FProperties%2F-1636528003"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain" data-active="" data-toggle=":jawt-binding/mingwMain">mingw</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/mingwMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="hbitmap.html">hbitmap</a><span class="token operator">: </span><span data-unresolved-link="platform.windows/HBITMAP///PointingToDeclaration/">HBITMAP</span></div><div class="brief "><p class="paragraph">DDB handle.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-596018275%2FProperties%2F-1636528003" anchor-label="hdc" id="-596018275%2FProperties%2F-1636528003" data-filterable-set=":jawt-binding/mingwMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="hdc.html"><span><span>hdc</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-596018275%2FProperties%2F-1636528003"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain" data-active="" data-toggle=":jawt-binding/mingwMain">mingw</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/mingwMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="hdc.html">hdc</a><span class="token operator">: </span><span data-unresolved-link="platform.windows/HDC///PointingToDeclaration/">HDC</span></div><div class="brief "><p class="paragraph">This HDC should always be used instead of the HDC returned from <code class="lang-kotlin">BeginPaint()</code> or any calls to <code class="lang-kotlin">GetDC()</code>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1700175629%2FProperties%2F-1636528003" anchor-label="hpalette" id="1700175629%2FProperties%2F-1636528003" data-filterable-set=":jawt-binding/mingwMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="hpalette.html"><span><span>hpalette</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1700175629%2FProperties%2F-1636528003"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain" data-active="" data-toggle=":jawt-binding/mingwMain">mingw</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/mingwMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="hpalette.html">hpalette</a><span class="token operator">: </span><span data-unresolved-link="platform.windows/HPALETTE///PointingToDeclaration/">HPALETTE</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-784714241%2FProperties%2F-1636528003" anchor-label="hwnd" id="-784714241%2FProperties%2F-1636528003" data-filterable-set=":jawt-binding/mingwMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="hwnd.html"><span><span>hwnd</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-784714241%2FProperties%2F-1636528003"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain" data-active="" data-toggle=":jawt-binding/mingwMain">mingw</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/mingwMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="hwnd.html">hwnd</a><span class="token operator">: </span><span data-unresolved-link="platform.windows/HWND///PointingToDeclaration/">HWND</span></div><div class="brief "><p class="paragraph">Native window handle.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="830536327%2FProperties%2F1175767839" anchor-label="layer" id="830536327%2FProperties%2F1175767839" data-filterable-set=":jawt-binding/macosMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/macosMain" data-filterable-set=":jawt-binding/macosMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="layer.html"><span><span>layer</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="830536327%2FProperties%2F1175767839"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/macosMain" data-filterable-set=":jawt-binding/macosMain" data-active="" data-toggle=":jawt-binding/macosMain">macos</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/macosMain"><div class="symbol monospace"><span class="token keyword">var </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="layer.html">layer</a><span class="token operator">: </span><span data-unresolved-link="platform.QuartzCore/CALayer///PointingToDeclaration/">CALayer</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-186045268%2FProperties%2F-1636528003" anchor-label="pbits" id="-186045268%2FProperties%2F-1636528003" data-filterable-set=":jawt-binding/mingwMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="pbits.html"><span><span>pbits</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-186045268%2FProperties%2F-1636528003"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/mingwMain" data-filterable-set=":jawt-binding/mingwMain" data-active="" data-toggle=":jawt-binding/mingwMain">mingw</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/mingwMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="pbits.html">pbits</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-opaque-pointer/index.html">COpaquePointer</a></div><div class="brief "><p class="paragraph">DIB handle.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1017171357%2FProperties%2F-1671044693" anchor-label="surface" id="-1017171357%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="surface.html"><span><span>surface</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1017171357%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="surface.html">surface</a><span class="token operator">: </span><a href="-drawing-surface/index.html">DrawingSurface</a></div><div class="brief "><p class="paragraph">Cached pointer to the underlying drawing surface.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="208695321%2FProperties%2F-1671044693" anchor-label="target" id="208695321%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="target.html"><span><span>target</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="208695321%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="target.html">target</a><span class="token operator">: </span><a href="-j-awt-component/index.html">JAwtComponent</a></div><div class="brief "><p class="paragraph">Cached reference to the target object.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-871770963%2FProperties%2F-1671044693" anchor-label="version" id="-871770963%2FProperties%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="version.html"><span><span>version</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-871770963%2FProperties%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="version.html">version</a><span class="token operator">: </span><a href="-awt-version/index.html">AwtVersion</a></div><div class="brief "><p class="paragraph">Version of AWT.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="845848149%2FProperties%2F-1504490655" anchor-label="visualID" id="845848149%2FProperties%2F-1504490655" data-filterable-set=":jawt-binding/linuxMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="visual-i-d.html"><span>visual</span><wbr><span><span>ID</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="845848149%2FProperties%2F-1504490655"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-active="" data-toggle=":jawt-binding/linuxMain">linux</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/linuxMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="visual-i-d.html">visualID</a><span class="token operator">: </span><span data-unresolved-link="jni/VisualID///PointingToDeclaration/">VisualID</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="561749495%2FProperties%2F1175767839" anchor-label="windowLayer" id="561749495%2FProperties%2F1175767839" data-filterable-set=":jawt-binding/macosMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/macosMain" data-filterable-set=":jawt-binding/macosMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="window-layer.html"><span>window</span><wbr><span><span>Layer</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="561749495%2FProperties%2F1175767839"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/macosMain" data-filterable-set=":jawt-binding/macosMain" data-active="" data-toggle=":jawt-binding/macosMain">macos</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/macosMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="window-layer.html">windowLayer</a><span class="token operator">: </span><span data-unresolved-link="platform.QuartzCore/CALayer///PointingToDeclaration/">CALayer</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="1925287809%2FFunctions%2F-1671044693" anchor-label="createEmbeddedFrame" id="1925287809%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="create-embedded-frame.html"><span>create</span><wbr><span>Embedded</span><wbr><span><span>Frame</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1925287809%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="create-embedded-frame.html"><span class="token function">createEmbeddedFrame</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">platformInfo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-opaque-pointer/index.html">COpaquePointer</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-j-awt-frame/index.html">JAwtFrame</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Creates a <code class="lang-kotlin">java.awt.Frame</code> placed in a native container. Container is referenced by the native platform handle:</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2034694453%2FFunctions%2F-1671044693" anchor-label="freeDrawingSurface" id="2034694453%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="free-drawing-surface.html"><span>free</span><wbr><span>Drawing</span><wbr><span><span>Surface</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2034694453%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="free-drawing-surface.html"><span class="token function">freeDrawingSurface</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">surface<span class="token operator">: </span><a href="-drawing-surface/index.html">DrawingSurface</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Free the drawing surface allocated in <a href="get-drawing-surface.html">getDrawingSurface</a>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1018147495%2FFunctions%2F-1671044693" anchor-label="freeInfo" id="1018147495%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="free-info.html"><span>free</span><wbr><span><span>Info</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1018147495%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="free-info.html"><span class="token function">freeInfo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">info<span class="token operator">: </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Free the drawing surface info.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-627264706%2FFunctions%2F-1671044693" anchor-label="getAwt" id="-627264706%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-awt.html"><span>get</span><wbr><span><span>Awt</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-627264706%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a><span class="token punctuation">, </span></span><span class="parameter ">placement<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-native-placement/index.html">NativePlacement</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="get-awt.html"><span class="token function">getAwt</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">version<span class="token operator">: </span><a href="-awt-version/index.html">AwtVersion</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-awt/index.html">Awt</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Get the AWT native structure.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1775104497%2FFunctions%2F-1504490655" anchor-label="GetAWTColor" id="-1775104497%2FFunctions%2F-1504490655" data-filterable-set=":jawt-binding/linuxMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-get-a-w-t-color.html"><span>Get</span><wbr><span><span>AWTColor</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1775104497%2FFunctions%2F-1504490655"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/linuxMain" data-filterable-set=":jawt-binding/linuxMain" data-active="" data-toggle=":jawt-binding/linuxMain">linux</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/linuxMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../../jawt-binding/io.github.mimimishkin.jni.binding.awt/-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">.</span><a href="-get-a-w-t-color.html"><span class="token function">GetAWTColor</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">r<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">g<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">b<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Returns a pixel value from a set of RGB values. This is useful for paletted color (256 color) modes.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1190476067%2FFunctions%2F-1671044693" anchor-label="getComponent" id="-1190476067%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-component.html"><span>get</span><wbr><span><span>Component</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1190476067%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="get-component.html"><span class="token function">getComponent</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">platformInfo<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-c-opaque-pointer/index.html">COpaquePointer</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-j-awt-component/index.html">JAwtComponent</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Returns a reference to a <code class="lang-kotlin">java.awt.Component</code> from a native platform handle:</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="768841988%2FFunctions%2F-1671044693" anchor-label="getDrawingSurface" id="768841988%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-drawing-surface.html"><span>get</span><wbr><span>Drawing</span><wbr><span><span>Surface</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="768841988%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="get-drawing-surface.html"><span class="token function">getDrawingSurface</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">target<span class="token operator">: </span><a href="-j-awt-component/index.html">JAwtComponent</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Return a drawing surface from a target <a href="-j-awt-component/index.html">JAwtComponent</a>. This value may be cached.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="48491624%2FFunctions%2F-1671044693" anchor-label="getInfo" id="48491624%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-info.html"><span>get</span><wbr><span><span>Info</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="48491624%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="get-info.html"><span class="token function">getInfo</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Get the drawing surface info. The value returned may be cached, but the values may change if additional calls to <a href="lock.html">lock</a> or <a href="unlock.html">unlock</a> are made.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-890316850%2FFunctions%2F-1671044693" anchor-label="lock" id="-890316850%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="lock.html"><span><span>lock</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-890316850%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="lock.html"><span class="token function">lock</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Locks the entire AWT for synchronization purposes.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="lock.html"><span class="token function">lock</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Lock the surface of the target component for native rendering. When finished drawing, the surface must be unlocked with <a href="unlock.html">unlock</a>).</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2051985609%2FFunctions%2F-1671044693" anchor-label="locking" id="-2051985609%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="locking.html"><span><span>locking</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2051985609%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="locking.html">T</a><span class="token operator">&gt; </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="locking.html"><span class="token function">locking</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">block<span class="token operator">: </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="locking.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="locking.html">T</a></div><div class="brief "><p class="paragraph">Locks the entire AWT, executes <a href="locking.html">block</a> and then release lock.</p></div><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="locking.html">T</a><span class="token operator">&gt; </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="locking.html"><span class="token function">locking</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">block<span class="token operator">: </span><span class="token keyword">context</span><span class="token punctuation">(</span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a><span class="token punctuation">) </span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="locking.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="locking.html">T</a></div><div class="brief "><p class="paragraph">Locks the surface and executes <a href="locking.html">block</a>, then release lock.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1795999018%2FFunctions%2F-1671044693" anchor-label="setBounds" id="-1795999018%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-bounds.html"><span>set</span><wbr><span><span>Bounds</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1795999018%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="set-bounds.html"><span class="token function">setBounds</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">embeddedFrame<span class="token operator">: </span><a href="-j-awt-frame/index.html">JAwtFrame</a><span class="token punctuation">, </span></span><span class="parameter ">x<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">y<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">w<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token punctuation">, </span></span><span class="parameter ">h<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Moves and resizes the embedded frame. The new location of the top-left corner is specified by x and y parameters relative to the native parent component. The new size is specified by width and height.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2042462865%2FFunctions%2F-1671044693" anchor-label="synthesizeWindowActivation" id="2042462865%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="synthesize-window-activation.html"><span>synthesize</span><wbr><span>Window</span><wbr><span><span>Activation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2042462865%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="synthesize-window-activation.html"><span class="token function">synthesizeWindowActivation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">embeddedFrame<span class="token operator">: </span><a href="-j-awt-frame/index.html">JAwtFrame</a><span class="token punctuation">, </span></span><span class="parameter ">doActivate<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Synthesize a native message to activate or deactivate an EmbeddedFrame window. If <a href="synthesize-window-activation.html">doActivate</a> is <code class="lang-kotlin">true</code> activates the window, otherwise, deactivates the window.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1131972416%2FFunctions%2F-1671044693" anchor-label="unlock" id="-1131972416%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="unlock.html"><span><span>unlock</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1131972416%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">fun </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="unlock.html"><span class="token function">unlock</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Unlocks the entire AWT for synchronization purposes.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="unlock.html"><span class="token function">unlock</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Unlock the drawing surface of the target component for native rendering.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1518244469%2FFunctions%2F-1671044693" anchor-label="useDrawingSurface" id="-1518244469%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="use-drawing-surface.html"><span>use</span><wbr><span>Drawing</span><wbr><span><span>Surface</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1518244469%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="use-drawing-surface.html">T</a><span class="token operator">&gt; </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="use-drawing-surface.html"><span class="token function">useDrawingSurface</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">target<span class="token operator">: </span><a href="-j-awt-component/index.html">JAwtComponent</a><span class="token punctuation">, </span></span><span class="parameter ">block<span class="token operator">: </span><span class="token punctuation">(</span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="use-drawing-surface.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="use-drawing-surface.html">T</a></div><div class="brief "><p class="paragraph">Gets a <a href="-drawing-surface/index.html">DrawingSurface</a> from a target <a href="-j-awt-component/index.html">JAwtComponent</a> and executes <a href="use-drawing-surface.html">block</a> with it. Then safely release the surface.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1247980761%2FFunctions%2F-1671044693" anchor-label="useDrawingSurfaceInfo" id="-1247980761%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="use-drawing-surface-info.html"><span>use</span><wbr><span>Drawing</span><wbr><span>Surface</span><wbr><span><span>Info</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1247980761%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="use-drawing-surface-info.html">T</a><span class="token operator">&gt; </span><a href="-awt/index.html">Awt</a><span class="token punctuation">.</span><a href="use-drawing-surface-info.html"><span class="token function">useDrawingSurfaceInfo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">target<span class="token operator">: </span><a href="-j-awt-component/index.html">JAwtComponent</a><span class="token punctuation">, </span></span><span class="parameter ">block<span class="token operator">: </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><span class="token punctuation">(</span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="use-drawing-surface-info.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="use-drawing-surface-info.html">T</a></div><div class="brief "><p class="paragraph">Alias for stacking <a href="use-drawing-surface.html">Awt.useDrawingSurface</a>, <a href="locking.html">DrawingSurface.locking</a> and <a href="use-info.html">DrawingSurface.useInfo</a>.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1863517202%2FFunctions%2F-1671044693" anchor-label="useInfo" id="-1863517202%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="use-info.html"><span>use</span><wbr><span><span>Info</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1863517202%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="use-info.html">T</a><span class="token operator">&gt; </span><a href="-drawing-surface/index.html">DrawingSurface</a><span class="token punctuation">.</span><a href="use-info.html"><span class="token function">useInfo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">block<span class="token operator">: </span><span class="token punctuation">(</span><a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="use-info.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="use-info.html">T</a></div><div class="brief "><p class="paragraph">Gets a <a href="-drawing-surface-info/index.html">DrawingSurfaceInfo</a> and executes <a href="use-info.html">block</a>, then release the surface info.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="302258149%2FFunctions%2F-1671044693" anchor-label="withAwt" id="302258149%2FFunctions%2F-1671044693" data-filterable-set=":jawt-binding/nativeMain"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="with-awt.html"><span>with</span><wbr><span><span>Awt</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="302258149%2FFunctions%2F-1671044693"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jawt-binding/nativeMain" data-filterable-set=":jawt-binding/nativeMain" data-active="" data-toggle=":jawt-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":jawt-binding/nativeMain"><div class="symbol monospace"><span class="token keyword">context</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">env<span class="token operator">: </span><a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a><span class="token punctuation">, </span></span><span class="parameter ">placement<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlinx.cinterop/-native-placement/index.html">NativePlacement</a></span></span><span class="token punctuation">)</span><br><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="with-awt.html">T</a><span class="token operator">&gt; </span><a href="with-awt.html"><span class="token function">withAwt</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">version<span class="token operator">: </span><a href="-awt-version/index.html">AwtVersion</a><span class="token punctuation">, </span></span><span class="parameter ">block<span class="token operator">: </span><span class="token punctuation">(</span><a href="-awt/index.html">Awt</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><a href="with-awt.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="with-awt.html">T</a></div><div class="brief "><p class="paragraph">Receive <a href="-awt/index.html">Awt</a> from <a href="../../jni-binding/io.github.mimimishkin.jni.binding/-jni-env/index.html">JniEnv</a> and executes <a href="with-awt.html">block</a> with it.</p></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

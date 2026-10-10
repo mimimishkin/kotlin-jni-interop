@@ -1,0 +1,388 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>io.github.mimimishkin.jni.binding.plugin.consumer</title>
+<link href="../../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../../scripts/sourceset_dependencies.js" async></script>
+<link href="../../styles/style.css" rel="Stylesheet">
+<link href="../../styles/main.css" rel="Stylesheet">
+<link href="../../styles/prism.css" rel="Stylesheet">
+<link href="../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../../scripts/main.js" defer></script>
+<script type="text/javascript" src="../../scripts/prism.js" async></script>
+<script type="text/javascript" src="../../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../../index.html" tabindex="1">
+                    kotlin-jni-interop
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;io.github.mimimishkin.jni.binding.plugin.consumer/index.html&quot;}">dev</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector jvm-like" data-active="" aria-pressed="true" data-filter=":jni-binding-plugins/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding-plugins/main" data-filter=":jni-binding-plugins/main">
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    kotlin-jni-interop
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" data-page-type="package" id="content" pageids="jni-binding-plugins::io.github.mimimishkin.jni.binding.plugin.consumer////PointingToDeclaration//511885278">
+  <div class="breadcrumbs"><a href="../index.html">jni-binding-plugins</a><span class="delimiter">/</span><span class="current">io.github.mimimishkin.jni.binding.plugin.consumer</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="TYPE">Types</button><button class="section-tab" data-togglable="FUNCTION,EXTENSION_FUNCTION">Functions</button><button class="section-tab" data-togglable="PROPERTY,EXTENSION_PROPERTY">Properties</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="tableheader">Types</h2>
+        <div class="table"><a data-name="-964598915%2FClasslikes%2F511885278" anchor-label="GenerateJniActualsTask" id="-964598915%2FClasslikes%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-generate-jni-actuals-task/index.html"><span>Generate</span><wbr><span>Jni</span><wbr><span>Actuals</span><wbr><span><span>Task</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-964598915%2FClasslikes%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="org.gradle.api.tasks/UntrackedTask///PointingToDeclaration/"><span class="token annotation builtin">UntrackedTask</span></span><span class="token punctuation">(</span><span>because<span class="token operator"> = </span><span class="breakable-word"><span class="token string">"Writes @JniActual stubs into the selected producer's sources, which cannot be declared as outputs before the producer has been selected"</span></span></span><wbr><span class="token punctuation">)</span></div></div><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-generate-jni-actuals-task/index.html">GenerateJniActualsTask</a> : <span data-unresolved-link="org.gradle.api/DefaultTask///PointingToDeclaration/">DefaultTask</span></div><div class="brief "><p class="paragraph">Generates <code class="lang-kotlin">TODO()</code>-bodied <code class="lang-kotlin">@JniActual</code> stubs for the <code class="lang-kotlin">@JniExpect</code> declarations of a consumer compilation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1531687867%2FClasslikes%2F511885278" anchor-label="JniActualsProducer" id="-1531687867%2FClasslikes%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jni-actuals-producer/index.html"><span>Jni</span><wbr><span>Actuals</span><wbr><span><span>Producer</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1531687867%2FClasslikes%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-jni-actuals-producer/index.html">JniActualsProducer</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>path<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>projectDir<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/File.html">File</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>actuals<span class="token operator">: </span><span data-unresolved-link="org.gradle.api.file/FileCollection///PointingToDeclaration/">FileCollection</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">A producer project the <code class="lang-kotlin">@JniActual</code> stubs can be generated into.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="505075398%2FClasslikes%2F511885278" anchor-label="JniBindingTarget" id="505075398%2FClasslikes%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jni-binding-target/index.html"><span>Jni</span><wbr><span>Binding</span><wbr><span><span>Target</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="505075398%2FClasslikes%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-jni-binding-target/index.html">JniBindingTarget</a> : <span data-unresolved-link="org.gradle.api/Named///PointingToDeclaration/">Named</span>, <span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/HasProject///PointingToDeclaration/">HasProject</span></div><div class="brief "><p class="paragraph">A single platform target of a JNI library binding.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1934685170%2FClasslikes%2F511885278" anchor-label="JniLibConsumerPlugin" id="-1934685170%2FClasslikes%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jni-lib-consumer-plugin/index.html"><span>Jni</span><wbr><span>Lib</span><wbr><span>Consumer</span><wbr><span><span>Plugin</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1934685170%2FClasslikes%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-jni-lib-consumer-plugin/index.html">JniLibConsumerPlugin</a> : <span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/KotlinCompilerPluginSupportPlugin///PointingToDeclaration/">KotlinCompilerPluginSupportPlugin</span></div><div class="brief "><p class="paragraph">Plugin for consuming JNI libraries.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-480335906%2FClasslikes%2F511885278" anchor-label="JniLibrariesContainer" id="-480335906%2FClasslikes%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jni-libraries-container/index.html"><span>Jni</span><wbr><span>Libraries</span><wbr><span><span>Container</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-480335906%2FClasslikes%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-jni-libraries-container/index.html">JniLibrariesContainer</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>compilation<span class="token operator">: </span><span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/KotlinCompilation///PointingToDeclaration/">KotlinCompilation</span><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">backingContainer<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/NamedDomainObjectContainer///PointingToDeclaration/">NamedDomainObjectContainer</span><span class="token operator">&lt;</span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token operator">&gt;</span><span class="token operator"> = </span>jniLibraryConfigSet(compilation)</span></span><span class="token punctuation">)</span> : <span data-unresolved-link="org.gradle.api/NamedDomainObjectContainer///PointingToDeclaration/">NamedDomainObjectContainer</span><span class="token operator">&lt;</span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token operator">&gt; </span>, <span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/HasProject///PointingToDeclaration/">HasProject</span></div><div class="brief "><p class="paragraph">Container of JNI libraries configured for a single JVM/Android <span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/KotlinCompilation///PointingToDeclaration/">compilation</span>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1759207105%2FClasslikes%2F511885278" anchor-label="JniLibraryConfig" id="-1759207105%2FClasslikes%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jni-library-config/index.html"><span>Jni</span><wbr><span>Library</span><wbr><span><span>Config</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1759207105%2FClasslikes%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-jni-library-config/index.html">JniLibraryConfig</a> : <span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/HasProject///PointingToDeclaration/">HasProject</span>, <span data-unresolved-link="org.gradle.api/Named///PointingToDeclaration/">Named</span></div><div class="brief "><p class="paragraph">Configuration of a single JNI library used by a JVM/Android compilation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-183258490%2FClasslikes%2F511885278" anchor-label="JniLibrarySource" id="-183258490%2FClasslikes%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-jni-library-source/index.html"><span>Jni</span><wbr><span>Library</span><wbr><span><span>Source</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-183258490%2FClasslikes%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-jni-library-source/index.html">JniLibrarySource</a></div><div class="brief "><p class="paragraph">Provides paths to binding artifacts of a single <a href="-jni-binding-target/index.html">platform target</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="EXTENSION_PROPERTY">
+        <h2 class="tableheader">Properties</h2>
+        <div class="table"><a data-name="-1713070125%2FProperties%2F511885278" anchor-label="jniLibraries" id="-1713070125%2FProperties%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="jni-libraries.html"><span>jni</span><wbr><span><span>Libraries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1713070125%2FProperties%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">val </span><span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/KotlinCompilation///PointingToDeclaration/">KotlinCompilation</span><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token punctuation">.</span><a href="jni-libraries.html">jniLibraries</a><span class="token operator">: </span><a href="-jni-libraries-container/index.html">JniLibrariesContainer</a></div><div class="brief "><p class="paragraph">Container of JNI libraries of this compilation. Created lazily on first access.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="EXTENSION_FUNCTION">
+        <h2 class="tableheader">Functions</h2>
+        <div class="table"><a data-name="68030907%2FFunctions%2F511885278" anchor-label="androidArm32" id="68030907%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="android-arm32.html"><span>android</span><wbr><span><span>Arm32</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="68030907%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="android-arm32.html"><span class="token function">androidArm32</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"androidNativeArm32"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the Android Native ARM32 target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1236405850%2FFunctions%2F511885278" anchor-label="androidArm64" id="1236405850%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="android-arm64.html"><span>android</span><wbr><span><span>Arm64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1236405850%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="android-arm64.html"><span class="token function">androidArm64</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"androidNativeArm64"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the Android Native ARM64 target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-858036234%2FFunctions%2F511885278" anchor-label="androidX64" id="-858036234%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="android-x64.html"><span>android</span><wbr><span><span>X64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-858036234%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="android-x64.html"><span class="token function">androidX64</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"androidNativeX64"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the Android Native x86_64 target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-839493578%2FFunctions%2F511885278" anchor-label="androidX86" id="-839493578%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="android-x86.html"><span>android</span><wbr><span><span>X86</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-839493578%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="android-x86.html"><span class="token function">androidX86</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"androidNativeX86"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the Android Native x86 target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1877562666%2FFunctions%2F511885278" anchor-label="jniLibraries" id="-1877562666%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="jni-libraries.html"><span>jni</span><wbr><span><span>Libraries</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1877562666%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><span data-unresolved-link="org.jetbrains.kotlin.gradle.plugin/KotlinCompilation///PointingToDeclaration/">KotlinCompilation</span><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span><span class="token punctuation">.</span><a href="jni-libraries.html"><span class="token function">jniLibraries</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">action<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-libraries-container/index.html">JniLibrariesContainer</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configures JNI libraries of this compilation with the given <a href="jni-libraries.html">action</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1143762293%2FFunctions%2F511885278" anchor-label="linuxArm64" id="1143762293%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="linux-arm64.html"><span>linux</span><wbr><span><span>Arm64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1143762293%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="linux-arm64.html"><span class="token function">linuxArm64</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"linuxArm64"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the Linux ARM64 target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="487117265%2FFunctions%2F511885278" anchor-label="linuxX64" id="487117265%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="linux-x64.html"><span>linux</span><wbr><span><span>X64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="487117265%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="linux-x64.html"><span class="token function">linuxX64</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"linuxX64"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the Linux x86_64 target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1202745834%2FFunctions%2F511885278" anchor-label="macosArm64" id="-1202745834%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="macos-arm64.html"><span>macos</span><wbr><span><span>Arm64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1202745834%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="macos-arm64.html"><span class="token function">macosArm64</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"macosArm64"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the macOS ARM64 (Apple Silicon) target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-971735869%2FFunctions%2F511885278" anchor-label="mingwX64" id="-971735869%2FFunctions%2F511885278" data-filterable-set=":jni-binding-plugins/main"></a>
+          <div class="table-row table-row_content" data-filterable-current=":jni-binding-plugins/main" data-filterable-set=":jni-binding-plugins/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="mingw-x64.html"><span>mingw</span><wbr><span><span>X64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-971735869%2FFunctions%2F511885278"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding-plugins/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="-jni-library-config/index.html">JniLibraryConfig</a><span class="token punctuation">.</span><a href="mingw-x64.html"><span class="token function">mingwX64</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">name<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">"mingwX64"</span><span class="token punctuation">, </span></span><span class="parameter ">configure<span class="token operator">: </span><span data-unresolved-link="org.gradle.api/Action///PointingToDeclaration/">Action</span><span class="token operator">&lt;</span><a href="-jni-binding-target/index.html">JniBindingTarget</a><span class="token operator">&gt;</span><span class="token operator"> = </span>{}</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="-jni-binding-target/index.html">JniBindingTarget</a></div><div class="brief "><p class="paragraph">Registers the Windows mingwX64 target.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>jni-binding</title>
+<link href="../images/logo-icon.svg" rel="icon" type="image/svg"><script>var pathToRoot = "../";</script>
+    <script>document.documentElement.classList.replace("no-js", "js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+      if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      } else {
+        const savedDarkMode = JSON.parse(storage)
+        if (savedDarkMode === true) {
+          document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+      }
+    </script>
+<script type="text/javascript" src="../scripts/sourceset_dependencies.js" async></script>
+<link href="../styles/style.css" rel="Stylesheet">
+<link href="../styles/main.css" rel="Stylesheet">
+<link href="../styles/prism.css" rel="Stylesheet">
+<link href="../styles/logo-styles.css" rel="Stylesheet">
+<link href="../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../scripts/safe-local-storage_blocking.js"></script>
+<script type="text/javascript" src="../scripts/navigation-loader.js" async></script>
+<script type="text/javascript" src="../scripts/platform-content-handler.js" async></script>
+<script type="text/javascript" src="../scripts/main.js" defer></script>
+<script type="text/javascript" src="../scripts/prism.js" async></script>
+<script type="text/javascript" src="../ui-kit/ui-kit.min.js" defer></script></head>
+<body>
+<div class="root">
+    <header class="navigation theme-dark" id="navigation-wrapper" role="banner">
+<a class="library-name--link" href="../index.html" tabindex="1">
+                    kotlin-jni-interop
+            </a>        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle" type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+<dokka-template-command data="{&quot;@class&quot;:&quot;org.jetbrains.dokka.base.templating.ReplaceVersionsCommand&quot;,&quot;location&quot;:&quot;index.html&quot;}">dev</dokka-template-command>        </div>
+        <div class="navigation-controls">
+        <ul class="filter-section filter-section_loading" id="filter-section" aria-label="Target filter">
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jni-binding/androidNativeMain">androidNative</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jni-binding/desktopMain">desktop</button>
+                <button class="platform-tag platform-selector native-like" data-active="" aria-pressed="true" data-filter=":jni-binding/nativeMain">native</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox" data-role="dropdown-toggle" aria-controls="platform-tags-listbox" aria-haspopup="listbox" aria-expanded="false" aria-label="Toggle source sets"></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox" aria-label="Target filter">
+                    <div class="dropdown--header"><span>Target filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close target filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding/androidNativeMain" data-filter=":jni-binding/androidNativeMain">
+                                <span class="checkbox--icon"></span>
+                                androidNative
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding/desktopMain" data-filter=":jni-binding/desktopMain">
+                                <span class="checkbox--icon"></span>
+                                desktop
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option native-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":jni-binding/nativeMain" data-filter=":jni-binding/nativeMain">
+                                <span class="checkbox--icon"></span>
+                                native
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </ul>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button" type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </header>
+    <div id="container">
+        <nav id="leftColumn" class="sidebar" data-item-type="SECTION" data-item-config="{&quot;defaultSize&quot;: 280, &quot;minSize&quot;: 200, &quot;maxSize&quot;: 400}">
+            <a class="toc--skip-link" href="#main">Skip to content</a>
+            <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list" data-role="dropdown-listbox" aria-label="Table of contents">
+                    <div class="dropdown--header">
+                            <span>
+                                    kotlin-jni-interop
+                            </span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar--inner" id="sideMenu"></div>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </nav>
+        <div id="resizer" class="resizer" data-item-type="BAR"></div>
+        <div id="main" data-item-type="SECTION" role="main">
+<div class="main-content" id="content" pageids="jni-binding::////PointingToDeclaration//1716497918">
+  <div class="breadcrumbs"></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>jni-binding</span></span></h1>
+    <div class="platform-hinted UnderCoverText with-platform-tabs" data-platform-hinted="data-platform-hinted">
+      <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":jni-binding/androidNativeMain" data-filterable-set=":jni-binding/androidNativeMain" data-active="" data-toggle=":jni-binding/androidNativeMain">androidNative</button><button class="platform-bookmark" data-filterable-current=":jni-binding/desktopMain" data-filterable-set=":jni-binding/desktopMain" data-toggle=":jni-binding/desktopMain">desktop</button><button class="platform-bookmark" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain" data-toggle=":jni-binding/nativeMain">native</button></div>
+<div class="content sourceset-dependent-content" data-togglable=":jni-binding/androidNativeMain"><p class="paragraph">Kotlin/Native bindings for the Java Native Interface (JNI). The module wraps the C JNI API into idiomatic Kotlin - null-safe reference types, <code class="lang-kotlin">context(JniEnv)</code> parameters, DSLs and small helpers - so the native side of a JNI library can be written without C and without any manual cinterop setup.</p><p class="paragraph">It targets both <strong>desktop</strong> (mingwX64, linuxX64, linuxArm64, macosArm64) and <strong>Android Native</strong> (androidNativeArm32/64, androidNativeX86/X64). Desktop builds sit on <code class="lang-kotlin">jni-binding-raw</code>; Android builds use the platform NDK headers.</p><p class="paragraph">The producer Gradle plugin adds this artifact to native source sets automatically. Combine it with <code class="lang-kotlin">jni-binding-annotations</code> and the producer/consumer plugins to keep the JVM and native sides of your bindings in sync - see the repository <a href="https://github.com/mimimishkin/kotlin-jni-interop#readme">README</a>. Every function mirrors its JNI counterpart one-to-one; the <a href="https://docs.oracle.com/en/java/javase/22/docs/specs/jni/functions.html">JNI Specification</a> is the authoritative behaviour reference.</p></div><div class="content sourceset-dependent-content" data-togglable=":jni-binding/desktopMain"><p class="paragraph">Kotlin/Native bindings for the Java Native Interface (JNI). The module wraps the C JNI API into idiomatic Kotlin - null-safe reference types, <code class="lang-kotlin">context(JniEnv)</code> parameters, DSLs and small helpers - so the native side of a JNI library can be written without C and without any manual cinterop setup.</p><p class="paragraph">It targets both <strong>desktop</strong> (mingwX64, linuxX64, linuxArm64, macosArm64) and <strong>Android Native</strong> (androidNativeArm32/64, androidNativeX86/X64). Desktop builds sit on <code class="lang-kotlin">jni-binding-raw</code>; Android builds use the platform NDK headers.</p><p class="paragraph">The producer Gradle plugin adds this artifact to native source sets automatically. Combine it with <code class="lang-kotlin">jni-binding-annotations</code> and the producer/consumer plugins to keep the JVM and native sides of your bindings in sync - see the repository <a href="https://github.com/mimimishkin/kotlin-jni-interop#readme">README</a>. Every function mirrors its JNI counterpart one-to-one; the <a href="https://docs.oracle.com/en/java/javase/22/docs/specs/jni/functions.html">JNI Specification</a> is the authoritative behaviour reference.</p></div><div class="content sourceset-dependent-content" data-active="" data-togglable=":jni-binding/nativeMain"><p class="paragraph">Kotlin/Native bindings for the Java Native Interface (JNI). The module wraps the C JNI API into idiomatic Kotlin - null-safe reference types, <code class="lang-kotlin">context(JniEnv)</code> parameters, DSLs and small helpers - so the native side of a JNI library can be written without C and without any manual cinterop setup.</p><p class="paragraph">It targets both <strong>desktop</strong> (mingwX64, linuxX64, linuxArm64, macosArm64) and <strong>Android Native</strong> (androidNativeArm32/64, androidNativeX86/X64). Desktop builds sit on <code class="lang-kotlin">jni-binding-raw</code>; Android builds use the platform NDK headers.</p><p class="paragraph">The producer Gradle plugin adds this artifact to native source sets automatically. Combine it with <code class="lang-kotlin">jni-binding-annotations</code> and the producer/consumer plugins to keep the JVM and native sides of your bindings in sync - see the repository <a href="https://github.com/mimimishkin/kotlin-jni-interop#readme">README</a>. Every function mirrors its JNI counterpart one-to-one; the <a href="https://docs.oracle.com/en/java/javase/22/docs/specs/jni/functions.html">JNI Specification</a> is the authoritative behaviour reference.</p></div>    </div>
+  </div>
+  <h2 class="">Packages</h2>
+  <div class="table"><a data-name="-524599820%2FPackages%2F1716497918" anchor-label="io.github.mimimishkin.jni.binding" id="-524599820%2FPackages%2F1716497918" data-filterable-set=":jni-binding/nativeMain,:jni-binding/androidNativeMain,:jni-binding/desktopMain"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":jni-binding/nativeMain,:jni-binding/androidNativeMain,:jni-binding/desktopMain" data-filterable-set=":jni-binding/nativeMain,:jni-binding/androidNativeMain,:jni-binding/desktopMain">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="io.github.mimimishkin.jni.binding/index.html">io.github.mimimishkin.jni.binding</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-524599820%2FPackages%2F1716497918"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag native-like">androidNative</div>
+              <div class="platform-tag native-like">desktop</div>
+              <div class="platform-tag native-like">native</div>
+            </div>
+          </div>
+        </div>
+        <div><span class="brief-comment"><a data-name="-524599820%2FPackages%2F1716497918" anchor-label="io.github.mimimishkin.jni.binding" id="-524599820%2FPackages%2F1716497918" data-filterable-set=":jni-binding/nativeMain,:jni-binding/androidNativeMain,:jni-binding/desktopMain"></a>
+            <p class="paragraph">Core bindings: all JNI types, the <a href="io.github.mimimishkin.jni.binding/-j-n-i/index.html">JNI</a> object with version constants, the Invocation API (<code class="lang-kotlin">createJavaVM</code>, <code class="lang-kotlin">attachCurrentThread</code>, …), every function of the JNI <code class="lang-kotlin">JniEnv</code> interface, and Kotlin utilities around them.</p>
+          </span></div>
+      </div>
+    </div>
+<a data-name="-536278894%2FPackages%2F-2108830934" anchor-label="io.github.mimimishkin.jni.binding.accessors" id="-536278894%2FPackages%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+    <div class="table-row table-row_platform-tagged" data-filterable-current=":jni-binding/nativeMain" data-filterable-set=":jni-binding/nativeMain">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="io.github.mimimishkin.jni.binding.accessors/index.html">io.github.mimimishkin.jni.binding.accessors</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-536278894%2FPackages%2F-2108830934"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right platform-tags--wrapper">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag native-like">native</div>
+            </div>
+          </div>
+        </div>
+        <div><span class="brief-comment"><a data-name="-536278894%2FPackages%2F-2108830934" anchor-label="io.github.mimimishkin.jni.binding.accessors" id="-536278894%2FPackages%2F-2108830934" data-filterable-set=":jni-binding/nativeMain"></a>
+            <p class="paragraph">High-level typed access to Java methods, fields and arrays - Kotlin lambdas, <code class="lang-kotlin">ReadWriteProperty</code> delegates and scoped DSLs. Everything here stays <code class="lang-kotlin">context(JniEnv, MemScope)</code> / <code class="lang-kotlin">NativePlacement</code>-friendly.</p>
+          </span></div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <div class="footer--container">
+            <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+            <div class="footer--content">
+                <div>
+                    <span>Generated by </span>
+                    <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                        Dokka
+                    </a>
+                    <div>© 2026 Copyright</div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
