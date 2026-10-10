@@ -24,6 +24,14 @@ gradlePlugin {
                 description = "Gradle plugin that simplifies wiring JVM module with JNI library"
                 tags = setOf("jni", "kotlin", "binding")
                 implementationClass = "io.github.mimimishkin.jni.binding.plugin.consumer.JniLibConsumerPlugin"
+            },
+
+            create("jni-binding") {
+                id = "io.github.mimimishkin.jni-binding"
+                displayName = "JNI Binding"
+                description = "Gradle plugin applying both the producer and the consumer part, for a single-module project"
+                tags = setOf("jni", "kotlin", "binding")
+                implementationClass = "io.github.mimimishkin.jni.binding.plugin.JniLibBindingPlugin"
             }
         ).forEach {
             it.compatibility {

@@ -35,6 +35,7 @@ that sample as the full reference.
 - [What you write instead](#what-you-write-instead)
 - [What you get](#what-you-get)
 - [Quick start](#quick-start)
+- [Single-module projects](#single-module-projects)
 - [Configuration](#configuration)
 - [Annotations](#annotations)
 - [Fast and Critical natives](#fast-and-critical-natives)
@@ -204,6 +205,47 @@ That is the whole contract: `@JniExpect` on the JVM side is implemented by `@Jni
 
 Tip: declare `@JniExpect` first, then run `./gradlew :app:generateJniActuals` to stub the missing `@JniActual`s
 into the producer.
+
+### Single-module projects
+
+Most projects keep the producer and the consumer apart, because they are separate artifacts with separate
+lifecycles. A small project — a library, a sample, a prototype — has one module with a native target and a JVM
+target instead. `io.github.mimimishkin.jni-binding` applies both parts in one go:
+
+```kotlin
+// build.gradle.kts
+
+plugins {
+    kotlin("multiplatform")
+    id("io.github.mimimishkin.jni-binding") version "2.0.0"   // producer + consumer
+}
+
+kotlin {
+    jvmToolchain(17)
+
+    jvm {
+        compilations.named("main") {
+            jniLibraries.create("native") {
+                mingwX64 {
+                    fromProducer(project)   // this very module is the producer
+                    copyToResources()
+                }
+            }
+        }
+    }
+
+    mingwX64().binaries.sharedLib("native") {
+        linkJvm()
+    }
+}
+
+jniLibraries {
+    expectedJdkVersion = 17
+}
+```
+
+The Kotlin code is unchanged. The only difference to watch for is the source sets: everything goes into `nativeMain` /
+`jvmMain` of one module rather than into two modules.
 
 ### Naming
 
