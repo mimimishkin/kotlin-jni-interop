@@ -3,16 +3,15 @@ name: Documentation
 on:
   push:
     branches: [ 'master' ]
+    tags: [ 'v*' ]
   workflow_dispatch:
 
 concurrency:
-  group: pages
+  group: documentation
   cancel-in-progress: false
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
   documentation:
@@ -34,7 +33,7 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: 'platforms;android-37.0'
-          log-accepted-android-sdk-licenses: false
+          log-accepted-android-licenses: false
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -42,20 +41,43 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      # The version string Dokka's versioning plugin labels the output with and shows in the version dropdown: a tag
+      # documents that released version, anything else is the moving `dev`.
+      - name: Resolve the version
+        id: version
+        run: |
+          version=dev
+          [ "$GITHUB_REF_TYPE" = tag ] && version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Dokka's versioning plugin wants an archive that holds every previous version as its own Dokka output, one
+      # directory per version. The published site is already that set - its root is the newest version and the versions
+      # before it sit under `older/` - so it is simply fetched here; the `prepareDokkaArchive` Gradle task reshapes it
+      # into the archive, before generation reads it.
+      - name: Fetch the published site
+        run: |
+          mkdir -p published
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            git archive FETCH_HEAD | tar -x -C published
+          fi
+
       # `:dokkaGenerate`, with the project path, is the aggregating task: the root declares a `dokka(project(...))`
       # dependency on every subproject it documents, and Dokka merges them into a single site with one shared
-      # navigation. Without the path Gradle would run the task in every subproject on its own.
+      # navigation. The versioning plugin adds the dropdown and bundles the archive under `older/`.
       - name: Generate the documentation
-        run: ./gradlew :dokkaGenerate --no-configuration-cache
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ./gradlew :dokkaGenerate --no-configuration-cache \
+            -PdocVersion="$VERSION" \
+            -PpublishedDocsDir="$PWD/published"
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6
-
-      - name: Upload the documentation as a Pages artifact
-        uses: actions/upload-pages-artifact@v5
+      # The generated directory is self-contained - the current version plus every archive version under `older/` - so
+      # the branch is replaced wholesale rather than merged with what its previous run left behind.
+      - name: Publish the site
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          # Dokka writes the aggregated site here: one directory per documented subproject plus shared assets.
-          path: build/dokka/html
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v5
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/dokka/html
+          force_orphan: true
